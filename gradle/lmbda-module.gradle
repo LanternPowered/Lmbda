@@ -9,6 +9,14 @@ version = 'dev-SNAPSHOT'
 
 defaultTasks 'licenseFormat', 'build'
 
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+}
+
 jar {
 	classifier = ''
 }

@@ -27,6 +27,7 @@ package org.lanternpowered.lmbda;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleInfo;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -177,7 +178,12 @@ public final class LambdaFactory {
                 methodHandle = lookup.unreflect((Method) executable);
             }
 
-            return create(functionalInterface, methodHandle);
+            // Generate the lambda class
+            final CallSite callSite = LambdaMetafactory.metafactory(lookup, functionalInterface.methodName,
+                    functionalInterface.classType, functionalInterface.methodType, methodHandle, methodHandle.type());
+
+            // Create the function
+            return (F) callSite.getTarget().invoke();
         } catch (Throwable e) {
             throw new IllegalStateException("Couldn't create lambda for: \"" + executable + "\". "
                     + "Failed to implement: " + functionalInterface, e);
@@ -197,8 +203,11 @@ public final class LambdaFactory {
     @SuppressWarnings("unchecked")
     public static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle) {
         try {
+            final MethodHandleInfo info = UnsafeMethodHandles.trustedLookup.revealDirect(methodHandle);
+            final MethodHandles.Lookup lookup = UnsafeMethodHandles.trustedLookup.in(info.getDeclaringClass());
+
             // Generate the lambda class
-            final CallSite callSite = LambdaMetafactory.metafactory(UnsafeMethodHandles.trustedLookup, functionalInterface.methodName,
+            final CallSite callSite = LambdaMetafactory.metafactory(lookup, functionalInterface.methodName,
                     functionalInterface.classType, functionalInterface.methodType, methodHandle, methodHandle.type());
 
             // Create the function

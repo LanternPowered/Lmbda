@@ -24,6 +24,8 @@
  */
 package org.lanternpowered.lmbda;
 
+import org.lanternpowered.lmbda.util.UncheckedThrowables;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
@@ -35,6 +37,7 @@ import java.security.PrivilegedAction;
 /**
  * A utility class full of magic related to {@link MethodHandles}.
  */
+@SuppressWarnings("ThrowableNotThrown")
 public final class UnsafeMethodHandles {
 
     static final MethodHandles.Lookup trustedLookup = loadTrustedLookup();
@@ -68,11 +71,12 @@ public final class UnsafeMethodHandles {
      * @param lookup The lookup of which the target class will be used to define the class in
      * @param byteCode The byte code of the class to define
      * @return The defined class
-     * @throws IllegalAccessException If the lookup doesn't have private access in it's target class
+     * @throws IllegalAccessException If the lookup doesn't have private access in its target class
      */
-    public static Class<?> defineNestmateClass(MethodHandles.Lookup lookup, byte[] byteCode) throws IllegalAccessException {
+    public static Class<?> defineNestmateClass(MethodHandles.Lookup lookup, byte[] byteCode) {
         if ((lookup.lookupModes() & MethodHandles.Lookup.PRIVATE) == 0) {
-            throw new IllegalAccessException("The lookup doesn't have private access, which is required to define nestmate classes.");
+            throw UncheckedThrowables.throwUnchecked(new IllegalAccessException(
+                    "The lookup doesn't have private access, which is required to define nestmate classes."));
         }
         return methodHandlesLookupAccess.defineNestmate(lookup, byteCode);
     }
