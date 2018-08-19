@@ -1,0 +1,5 @@
+plugins {
+    id 'net.minecrell.licenser' version '0.4'
+}
+
+apply from: rootProject.file('gradle/lmbda-module.gradle')

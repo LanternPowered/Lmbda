@@ -1,0 +1,49 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+// Basic project information
+group = 'org.lanterpowered'
+archivesBaseName = project.projectDir.name
+version = 'dev-SNAPSHOT'
+
+defaultTasks 'licenseFormat', 'build'
+
+jar {
+	classifier = ''
+}
+
+// Process the resource files
+processResources {
+    // Include the license file
+    from 'LICENSE.txt'
+}
+
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+
+    // Include all the source
+    from sourceSets.main.allSource
+    // And the license file
+    from rootProject.file('LICENSE.txt')
+}
+assemble.dependsOn sourceJar
+
+artifacts {
+    archives jar
+    archives sourceJar
+}
+
+license {
+    header rootProject.file('HEADER.txt')
+    include '**/*.java'
+
+    newLine false
+    ignoreFailures false
+
+    ext {
+        name = rootProject.name
+        url = 'https://www.lanternpowered.org'
+        organization = 'LanternPowered'
+    }
+}

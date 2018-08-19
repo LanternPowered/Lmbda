@@ -1,0 +1,18 @@
+////////////////////////////////////
+/// Gradle Wrapper update tasks. ///
+////////////////////////////////////
+
+// Gradle version used for generating the Gradle wrapper
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.9'
+}
+
+// A custom update wrapper task, using a custom task prevents
+// intellij from updating the wrapper constantly through
+// the wrapper task
+task updateWrapper(dependsOn: wrapper)
+
+gradle.taskGraph.whenReady { TaskExecutionGraph graph ->
+    // Only enable the wrapper task if the updateWrapper task is run
+    wrapper.enabled = graph.allTasks.contains(updateWrapper)
+}

@@ -1,0 +1,14 @@
+plugins {
+    id 'net.minecrell.licenser' version '0.4'
+}
+
+apply from: rootProject.file('gradle/lmbda-module.gradle')
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':lmbda-core')
+    compile 'org.ow2.asm:asm:6.2.1'
+}
