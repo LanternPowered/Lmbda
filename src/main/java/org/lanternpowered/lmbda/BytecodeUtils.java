@@ -27,7 +27,6 @@ package org.lanternpowered.lmbda;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
-import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.BIPUSH;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.D2F;
@@ -35,13 +34,12 @@ import static org.objectweb.asm.Opcodes.D2I;
 import static org.objectweb.asm.Opcodes.D2L;
 import static org.objectweb.asm.Opcodes.DLOAD;
 import static org.objectweb.asm.Opcodes.DRETURN;
-import static org.objectweb.asm.Opcodes.DSTORE;
 import static org.objectweb.asm.Opcodes.F2D;
 import static org.objectweb.asm.Opcodes.F2I;
 import static org.objectweb.asm.Opcodes.F2L;
 import static org.objectweb.asm.Opcodes.FLOAD;
 import static org.objectweb.asm.Opcodes.FRETURN;
-import static org.objectweb.asm.Opcodes.FSTORE;
+import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.I2B;
 import static org.objectweb.asm.Opcodes.I2D;
 import static org.objectweb.asm.Opcodes.I2F;
@@ -59,13 +57,11 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
-import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.L2D;
 import static org.objectweb.asm.Opcodes.L2F;
 import static org.objectweb.asm.Opcodes.L2I;
 import static org.objectweb.asm.Opcodes.LLOAD;
 import static org.objectweb.asm.Opcodes.LRETURN;
-import static org.objectweb.asm.Opcodes.LSTORE;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.SIPUSH;
 
@@ -498,35 +494,6 @@ final class BytecodeUtils {
     }
 
     /**
-     * Visits the {@link MethodVisitor} to apply the store
-     * operation for the given return {@link Type}
-     * and parameter index.
-     *
-     * @param mv The method visitor
-     * @param type The return type
-     */
-    static void visitStore(MethodVisitor mv, Type type, int parameter) {
-        final int sort = type.getSort();
-        if (sort == Type.BYTE ||
-                sort == Type.BOOLEAN ||
-                sort == Type.SHORT ||
-                sort == Type.CHAR ||
-                sort == Type.INT) {
-            mv.visitVarInsn(ISTORE, parameter);
-        } else if (sort == Type.DOUBLE) {
-            mv.visitVarInsn(DSTORE, parameter);
-        } else if (sort == Type.FLOAT) {
-            mv.visitVarInsn(FSTORE, parameter);
-        } else if (sort == Type.LONG) {
-            mv.visitVarInsn(LSTORE, parameter);
-        } else if (sort == Type.VOID) {
-            throw new IllegalStateException("Cannot load void parameter");
-        } else {
-            mv.visitVarInsn(ASTORE, parameter);
-        }
-    }
-
-    /**
      * Visits the {@link MethodVisitor} to apply the load
      * operation for the given return {@link Type}
      * and parameter index.
@@ -591,7 +558,7 @@ final class BytecodeUtils {
      * @param mv The method visitor
      * @param value The integer
      */
-    public static void visitPushInt(MethodVisitor mv, int value) {
+    static void visitPushInt(MethodVisitor mv, int value) {
         if (value == -1) {
             mv.visitInsn(ICONST_M1);
         } else if (value == 0) {
@@ -613,5 +580,34 @@ final class BytecodeUtils {
         } else {
             mv.visitLdcInsn(value);
         }
+    }
+
+    static void visitLoadType(MethodVisitor mv, Type type) {
+        final int sort = type.getSort();
+        if (sort == Type.INT) {
+            visitLoadType(mv, "Integer");
+        } else if (sort == Type.BYTE) {
+            visitLoadType(mv, "Byte");
+        } else if (sort == Type.BOOLEAN) {
+            visitLoadType(mv, "Boolean");
+        } else if (sort == Type.SHORT) {
+            visitLoadType(mv, "Short");
+        } else if (sort == Type.CHAR) {
+            visitLoadType(mv, "Character");
+        } else if (sort == Type.DOUBLE) {
+            visitLoadType(mv, "Double");
+        } else if (sort == Type.FLOAT) {
+            visitLoadType(mv, "Float");
+        } else if (sort == Type.LONG) {
+            visitLoadType(mv, "Long");
+        } else if (sort == Type.VOID) {
+            visitLoadType(mv, "Void");
+        } else {
+            mv.visitLdcInsn(type);
+        }
+    }
+
+    private static void visitLoadType(MethodVisitor mv, String name) {
+        mv.visitFieldInsn(GETSTATIC, "java/lang/" + name, "TYPE", "Ljava/lang/Class;");
     }
 }

@@ -99,6 +99,11 @@ final class InternalLambdaFactory {
 
     @SuppressWarnings("unchecked")
     static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle) {
+        return create(functionalInterface, methodHandle, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle, boolean forceMethodHandle) {
         requireNonNull(functionalInterface, "functionalInterface");
         requireNonNull(methodHandle, "methodHandle");
 
@@ -117,17 +122,17 @@ final class InternalLambdaFactory {
                     final Class<?> declaringClass = info.getDeclaringClass();
                     final Field field;
 
-                    // Whether method handle reflection should be used,
+                    // Whether method handles should be used,
                     // reflectAs cannot be used when the field is final
                     // for a setter method handle and will throw an
                     // exception, so we have to get the
                     // field a other way in this case
-                    boolean reflect = false;
+                    boolean useMethodHandle = false;
                     if ((refKind == MethodHandleInfo.REF_putField || refKind == MethodHandleInfo.REF_putStatic)
                             && Modifier.isFinal(info.getModifiers())) {
                         // Final fields cannot be accessed directly, so
                         // fall back to method handles in this case.
-                        reflect = true;
+                        useMethodHandle = true;
                         // reflectAs throws an exception for final fields
                         field = AccessController.doPrivileged((PrivilegedAction<Field>) () ->
                                 Arrays.stream(declaringClass.getDeclaredFields())
@@ -138,6 +143,10 @@ final class InternalLambdaFactory {
                     } else {
                         field = info.reflectAs(Field.class, lookup);
                     }
+                    // Force method handles, used by benchmark
+                    if (forceMethodHandle) {
+                        useMethodHandle = true;
+                    }
 
                     // Whether nestmates are available
                     final boolean nestmates = MethodHandlesX.isNestmateClassDefiningSupported();
@@ -147,11 +156,11 @@ final class InternalLambdaFactory {
                     // other access modifiers can still be accessed by injecting
                     // the class in the same package.
                     if (Modifier.isPrivate(field.getModifiers()) && !nestmates) {
-                        reflect = true;
+                        useMethodHandle = true;
                     }
 
                     final Class<?> theClass;
-                    if (reflect) {
+                    if (useMethodHandle) {
                         byte[] bytecode = null;
 
                         switch (info.getReferenceKind()) {
@@ -589,23 +598,19 @@ final class InternalLambdaFactory {
         // Field name
         mv.visitLdcInsn(field.getName());
         // Field type
-        mv.visitLdcInsn(Type.getType(field.getType()));
+        BytecodeUtils.visitLoadType(mv, Type.getType(field.getType()));
         // Find the static setter
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandles$Lookup", functionType,
                 "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/invoke/MethodHandle;", false);
         // Call asType to remove any generics from the setter method handle
-        if (returnType == void.class) {
-            mv.visitFieldInsn(GETSTATIC, "java/lang/Void", "TYPE", "Ljava/lang/Class;");
-        } else {
-            mv.visitLdcInsn(Type.getType(returnType));
-        }
+        BytecodeUtils.visitLoadType(mv, Type.getType(returnType));
         // Create parameters array
         BytecodeUtils.visitPushInt(mv, parameterTypes.length);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Class");
         for (int i = 0; i < parameterTypes.length; i++) {
             mv.visitInsn(DUP);
             BytecodeUtils.visitPushInt(mv, i);
-            mv.visitLdcInsn(Type.getType(parameterTypes[i]));
+            BytecodeUtils.visitLoadType(mv, Type.getType(parameterTypes[i]));
             mv.visitInsn(AASTORE);
         }
         mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodType", "methodType",
