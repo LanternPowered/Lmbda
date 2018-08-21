@@ -31,14 +31,11 @@ import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
-import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ANEWARRAY;
 import static org.objectweb.asm.Opcodes.DUP;
-import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
@@ -99,11 +96,6 @@ final class InternalLambdaFactory {
 
     @SuppressWarnings("unchecked")
     static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle) {
-        return create(functionalInterface, methodHandle, false);
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle, boolean forceMethodHandle) {
         requireNonNull(functionalInterface, "functionalInterface");
         requireNonNull(methodHandle, "methodHandle");
 
@@ -122,17 +114,8 @@ final class InternalLambdaFactory {
                     final Class<?> declaringClass = info.getDeclaringClass();
                     final Field field;
 
-                    // Whether method handles should be used,
-                    // reflectAs cannot be used when the field is final
-                    // for a setter method handle and will throw an
-                    // exception, so we have to get the
-                    // field a other way in this case
-                    boolean useMethodHandle = false;
                     if ((refKind == MethodHandleInfo.REF_putField || refKind == MethodHandleInfo.REF_putStatic)
                             && Modifier.isFinal(info.getModifiers())) {
-                        // Final fields cannot be accessed directly, so
-                        // fall back to method handles in this case.
-                        useMethodHandle = true;
                         // reflectAs throws an exception for final fields
                         field = AccessController.doPrivileged((PrivilegedAction<Field>) () ->
                                 Arrays.stream(declaringClass.getDeclaredFields())
@@ -143,72 +126,29 @@ final class InternalLambdaFactory {
                     } else {
                         field = info.reflectAs(Field.class, lookup);
                     }
-                    // Force method handles, used by benchmark
-                    if (forceMethodHandle) {
-                        useMethodHandle = true;
+
+                    ClassData classData = null;
+
+                    switch (info.getReferenceKind()) {
+                        case MethodHandleInfo.REF_getField:
+                            classData = createFieldGetterLambda(functionalInterface, field);
+                            break;
+                        case MethodHandleInfo.REF_getStatic:
+                            classData = createStaticFieldGetterLambda(functionalInterface, field);
+                            break;
+                        case MethodHandleInfo.REF_putField:
+                            classData = createFieldSetterLambda(functionalInterface, field);
+                            break;
+                        case MethodHandleInfo.REF_putStatic:
+                            classData = createStaticFieldSetterLambda(functionalInterface, field);
+                            break;
                     }
 
-                    // Whether nestmates are available
-                    final boolean nestmates = MethodHandlesX.isNestmateClassDefiningSupported();
+                    requireNonNull(classData);
 
-                    // If it's a private field and nestmate classes aren't available
-                    // then we also need to fallback to method handle reflection,
-                    // other access modifiers can still be accessed by injecting
-                    // the class in the same package.
-                    if (Modifier.isPrivate(field.getModifiers()) && !nestmates) {
-                        useMethodHandle = true;
-                    }
-
-                    final Class<?> theClass;
-                    if (useMethodHandle) {
-                        byte[] bytecode = null;
-
-                        switch (info.getReferenceKind()) {
-                            case MethodHandleInfo.REF_getField:
-                                bytecode = createMethodHandleFieldGetLambda(functionalInterface, field);
-                                break;
-                            case MethodHandleInfo.REF_getStatic:
-                                bytecode = createMethodHandleStaticFieldGetLambda(functionalInterface, field);
-                                break;
-                            case MethodHandleInfo.REF_putField:
-                                bytecode = createMethodHandleFieldSetLambda(functionalInterface, field);
-                                break;
-                            case MethodHandleInfo.REF_putStatic:
-                                bytecode = createMethodHandleStaticFieldSetLambda(functionalInterface, field);
-                                break;
-                        }
-
-                        requireNonNull(bytecode);
-
-                        // Reflect is always injected into the lmbda package to access internal fields
-                        theClass = MethodHandlesX.defineClass(
-                                MethodHandlesX.trustedLookup.in(MethodHandlesX.class), bytecode);
-                    } else {
-                        byte[] bytecode = null;
-
-                        switch (info.getReferenceKind()) {
-                            case MethodHandleInfo.REF_getField:
-                                bytecode = createFieldGetLambda(functionalInterface, field);
-                                break;
-                            case MethodHandleInfo.REF_getStatic:
-                                bytecode = createStaticFieldGetLambda(functionalInterface, field);
-                                break;
-                            case MethodHandleInfo.REF_putField:
-                                bytecode = createFieldSetLambda(functionalInterface, field);
-                                break;
-                            case MethodHandleInfo.REF_putStatic:
-                                bytecode = createStaticFieldSetLambda(functionalInterface, field);
-                                break;
-                        }
-
-                        requireNonNull(bytecode);
-
-                        if (nestmates) {
-                            theClass = MethodHandlesX.defineNestmateClass(lookup, bytecode);
-                        } else {
-                            theClass = MethodHandlesX.defineClass(lookup, bytecode);
-                        }
-                    }
+                    // Inject the class into the same class loader as the lambda factory
+                    final Class<?> theClass = MethodHandlesX.defineClass(
+                            MethodHandlesX.trustedLookup.in(MethodHandlesX.class), classData.name, classData.bytecode);
 
                     return AccessController.doPrivileged((PrivilegedAction<F>) () -> {
                         try {
@@ -233,163 +173,20 @@ final class InternalLambdaFactory {
         }
     }
 
-    private static byte[] createFieldGetLambda(FunctionalInterface functionalInterface, Field field) {
-        final Method method = functionalInterface.getMethod();
-        if (method.getParameterCount() != 1) {
-            throw new IllegalArgumentException("The functional interface requires exactly one parameter, "
-                    + "the target object to retrieve the value from.");
-        }
-        if (method.getReturnType() == void.class) {
-            throw new IllegalArgumentException("The return type of the functional interface may not be void.");
-        }
-
-        final Class<?> parameterTargetType = method.getParameterTypes()[0];
-        final Class<?> returnType = method.getReturnType();
-        final Class<?> fieldType = field.getType();
-
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName() + "$" + getterCounter.incrementAndGet();
-        final String internalClassName = className.replace('.', '/');
-
-        cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
-                new String[] { Type.getInternalName(functionalInterface.getFunctionClass())});
-
-        // Add a empty constructor
-        BytecodeUtils.visitEmptyConstructor(ACC_PRIVATE, cw);
-
-        visitFunctionMethod(cw, method, mv -> {
-            // Load the target object
-            mv.visitVarInsn(ALOAD, 1);
-            // Convert the target object
-            BytecodeUtils.visitConversion(mv, parameterTargetType, field.getDeclaringClass());
-            // Put the value in the field
-            mv.visitFieldInsn(GETFIELD, Type.getInternalName(field.getDeclaringClass()), field.getName(), Type.getDescriptor(fieldType));
-            // Convert the field value so that we can return it
-            BytecodeUtils.visitConversion(mv, fieldType, returnType);
-            // Return the value
-            BytecodeUtils.visitReturn(mv, Type.getType(returnType));
-        });
-
-        cw.visitEnd();
-        return cw.toByteArray();
-    }
-
-    private static byte[] createStaticFieldGetLambda(FunctionalInterface functionalInterface, Field field) {
-        final Method method = functionalInterface.getMethod();
-        if (method.getParameterCount() != 0) {
-            throw new IllegalArgumentException("The functional interface requires zero parameters.");
-        }
-        if (method.getReturnType() == void.class) {
-            throw new IllegalArgumentException("The return type of the functional interface may not be void.");
-        }
-
-        final Class<?> returnType = method.getReturnType();
-        final Class<?> fieldType = field.getType();
-
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName() + "$" + getterCounter.incrementAndGet();
-        final String internalClassName = className.replace('.', '/');
-
-        cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
-                new String[] { Type.getInternalName(functionalInterface.getFunctionClass())});
-
-        // Add a empty constructor
-        BytecodeUtils.visitEmptyConstructor(ACC_PRIVATE, cw);
-
-        visitFunctionMethod(cw, method, mv -> {
-            // Get the value from the field
-            mv.visitFieldInsn(GETSTATIC, Type.getInternalName(field.getDeclaringClass()), field.getName(), Type.getDescriptor(fieldType));
-            // Convert the field value so that we can return it
-            BytecodeUtils.visitConversion(mv, fieldType, returnType);
-            // Return the value
-            BytecodeUtils.visitReturn(mv, Type.getType(returnType));
-        });
-
-        cw.visitEnd();
-        return cw.toByteArray();
-    }
-
-    private static byte[] createFieldSetLambda(FunctionalInterface functionalInterface, Field field) {
-        final Method method = functionalInterface.getMethod();
-        if (method.getParameterCount() != 2) {
-            throw new IllegalArgumentException("The functional interface requires exactly two parameters, "
-                    + "the target object and value to put in the field.");
-        }
-        if (method.getReturnType() != void.class) {
-            throw new IllegalArgumentException("The return type of the functional interface must be void.");
-        }
-
-        final Class<?> parameterTargetType = method.getParameterTypes()[0];
-        final Class<?> parameterType = method.getParameterTypes()[1];
-        final Class<?> fieldType = field.getType();
-
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName() + "$" + setterCounter.incrementAndGet();
-        final String internalClassName = className.replace('.', '/');
-
-        cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
-                new String[] { Type.getInternalName(functionalInterface.getFunctionClass())});
-
-        // Add a empty constructor
-        BytecodeUtils.visitEmptyConstructor(ACC_PRIVATE, cw);
-
-        visitFunctionMethod(cw, method, mv -> {
-            mv.visitVarInsn(ALOAD, 1);
-            // Convert the target object
-            BytecodeUtils.visitConversion(mv, parameterTargetType, field.getDeclaringClass());
-            // Load the value that will be put in the static field
-            BytecodeUtils.visitLoad(mv, Type.getType(parameterType), 2);
-            // Convert the parameter value so that we can put it in the field
-            BytecodeUtils.visitConversion(mv, parameterType, fieldType);
-            // Put the value in the field
-            mv.visitFieldInsn(PUTFIELD, Type.getInternalName(field.getDeclaringClass()), field.getName(), Type.getDescriptor(fieldType));
-            // Just return
-            mv.visitInsn(RETURN);
-        });
-
-        cw.visitEnd();
-        return cw.toByteArray();
-    }
-
-    private static byte[] createStaticFieldSetLambda(FunctionalInterface functionalInterface, Field field) {
-        final Method method = functionalInterface.getMethod();
-        validateStaticFieldSetLambdaMethod(method);
-
-        final Class<?> parameterType = method.getParameterTypes()[0];
-        final Class<?> fieldType = field.getType();
-
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName() + "$" + setterCounter.incrementAndGet();
-        final String internalClassName = className.replace('.', '/');
-
-        cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
-                new String[] { Type.getInternalName(functionalInterface.getFunctionClass())});
-
-        // Add a empty constructor
-        BytecodeUtils.visitEmptyConstructor(ACC_PRIVATE, cw);
-
-        visitFunctionMethod(cw, method, mv -> {
-            // Load the value that will be put in the static field
-            BytecodeUtils.visitLoad(mv, Type.getType(parameterType), 1);
-            // Convert the parameter value so that we can put it in the field
-            BytecodeUtils.visitConversion(mv, parameterType, fieldType);
-            // Put the value in the field
-            mv.visitFieldInsn(PUTSTATIC, Type.getInternalName(field.getDeclaringClass()), field.getName(), Type.getDescriptor(fieldType));
-            // Just return
-            mv.visitInsn(RETURN);
-        });
-
-        cw.visitEnd();
-        return cw.toByteArray();
-    }
-
     private static final String METHOD_HANDLE_FIELD_NAME = "methodHandle";
 
-    private static byte[] createMethodHandleFieldGetLambda(FunctionalInterface functionalInterface, Field field) {
+    static final class ClassData {
+
+        final byte[] bytecode;
+        final String name;
+
+        ClassData(byte[] bytecode, String name) {
+            this.bytecode = bytecode;
+            this.name = name;
+        }
+    }
+
+    private static ClassData createFieldGetterLambda(FunctionalInterface functionalInterface, Field field) {
         final Method method = functionalInterface.getMethod();
         if (method.getParameterCount() != 1) {
             throw new IllegalArgumentException("The functional interface requires exactly one parameter, "
@@ -399,10 +196,8 @@ final class InternalLambdaFactory {
             throw new IllegalArgumentException("The return type of the functional interface may not be void.");
         }
 
-        final Class<?> parameterTargetType = method.getParameterTypes()[0];
+        final Class<?> targetType = method.getParameterTypes()[0];
         final Class<?> returnType = method.getReturnType();
-        final Class<?> targetType = field.getDeclaringClass();
-        final Class<?> fieldType = field.getType();
 
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
@@ -413,32 +208,28 @@ final class InternalLambdaFactory {
                 new String[] { Type.getInternalName(functionalInterface.getFunctionClass())});
 
         // Add a empty constructor
-        BytecodeUtils.visitEmptyConstructor(ACC_PRIVATE, cw);
+        BytecodeUtils.visitPrivateEmptyConstructor(cw);
 
-        visitMethodHandleField(cw, internalClassName, "findGetter", field, field.getType(), targetType);
+        visitMethodHandleField(cw, internalClassName, "findGetter", field, returnType, targetType);
         visitFunctionMethod(cw, method, mv -> {
             // Load the method handle to invoke
             mv.visitFieldInsn(GETSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;");
             // Load the target object
-            mv.visitVarInsn(ALOAD, 1);
-            // Convert the target object
-            BytecodeUtils.visitConversion(mv, parameterTargetType, targetType);
+            BytecodeUtils.visitLoad(mv, Type.getType(targetType), 1);
             // Invoke the method handle, the "invokeExact" method is polymorphic
             // so the descriptor will be different depending on the field type
             // This must match the signature provided by the constructed method handle
             mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
-                    "(" + Type.getDescriptor(targetType) + ")" + Type.getDescriptor(fieldType), false);
-            // Convert the field value so that we can return it
-            BytecodeUtils.visitConversion(mv, fieldType, returnType);
+                    "(" + Type.getDescriptor(targetType) + ")" + Type.getDescriptor(returnType), false);
             // Return the value
             BytecodeUtils.visitReturn(mv, Type.getType(returnType));
         });
 
         cw.visitEnd();
-        return cw.toByteArray();
+        return new ClassData(cw.toByteArray(), className);
     }
 
-    private static byte[] createMethodHandleStaticFieldGetLambda(FunctionalInterface functionalInterface, Field field) {
+    private static ClassData createStaticFieldGetterLambda(FunctionalInterface functionalInterface, Field field) {
         final Method method = functionalInterface.getMethod();
         if (method.getParameterCount() != 0) {
             throw new IllegalArgumentException("The functional interface requires zero parameters.");
@@ -448,8 +239,6 @@ final class InternalLambdaFactory {
         }
 
         final Class<?> returnType = method.getReturnType();
-        final Class<?> fieldType = field.getType();
-
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
         final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName() + "$" + getterCounter.incrementAndGet();
@@ -459,9 +248,9 @@ final class InternalLambdaFactory {
                 new String[] { Type.getInternalName(functionalInterface.getFunctionClass())});
 
         // Add a empty constructor
-        BytecodeUtils.visitEmptyConstructor(ACC_PRIVATE, cw);
+        BytecodeUtils.visitPrivateEmptyConstructor(cw);
 
-        visitMethodHandleField(cw, internalClassName, "findStaticSetter", field, void.class, fieldType);
+        visitMethodHandleField(cw, internalClassName, "findStaticGetter", field, returnType);
         visitFunctionMethod(cw, method, mv -> {
             // Load the method handle to invoke
             mv.visitFieldInsn(GETSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;");
@@ -469,18 +258,16 @@ final class InternalLambdaFactory {
             // so the descriptor will be different depending on the field type
             // This must match the signature provided by the constructed method handle
             mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
-                    "()" + Type.getDescriptor(fieldType), false);
-            // Convert the field value so that we can return it
-            BytecodeUtils.visitConversion(mv, fieldType, returnType);
+                    "()" + Type.getDescriptor(returnType), false);
             // Return the value
             BytecodeUtils.visitReturn(mv, Type.getType(returnType));
         });
 
         cw.visitEnd();
-        return cw.toByteArray();
+        return new ClassData(cw.toByteArray(), className);
     }
 
-    private static byte[] createMethodHandleFieldSetLambda(FunctionalInterface functionalInterface, Field field) {
+    private static ClassData createFieldSetterLambda(FunctionalInterface functionalInterface, Field field) {
         final Method method = functionalInterface.getMethod();
         if (method.getParameterCount() != 2) {
             throw new IllegalArgumentException("The functional interface requires exactly two parameters, "
@@ -490,10 +277,9 @@ final class InternalLambdaFactory {
             throw new IllegalArgumentException("The return type of the functional interface must be void.");
         }
 
-        final Class<?> parameterTargetType = method.getParameterTypes()[0];
-        final Class<?> parameterType = method.getParameterTypes()[1];
-        final Class<?> targetType = field.getDeclaringClass();
-        final Class<?> fieldType = field.getType();
+        final Class<?>[] parameterTypes = method.getParameterTypes();
+        final Class<?> targetType = parameterTypes[0];
+        final Class<?> valueType = parameterTypes[1];
 
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
@@ -504,38 +290,40 @@ final class InternalLambdaFactory {
                 new String[] { Type.getInternalName(functionalInterface.getFunctionClass())});
 
         // Add a empty constructor
-        BytecodeUtils.visitEmptyConstructor(ACC_PRIVATE, cw);
+        BytecodeUtils.visitPrivateEmptyConstructor(cw);
 
-        visitMethodHandleField(cw, internalClassName, "findSetter", field, void.class, targetType, fieldType);
+        visitMethodHandleField(cw, internalClassName, "findSetter", field, void.class, targetType, valueType);
         visitFunctionMethod(cw, method, mv -> {
             // Load the method handle to invoke
             mv.visitFieldInsn(GETSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;");
             // Load the target object
-            BytecodeUtils.visitLoad(mv, Type.getType(parameterType), 1);
-            // Convert the target object
-            BytecodeUtils.visitConversion(mv, parameterTargetType, targetType);
+            BytecodeUtils.visitLoad(mv, Type.getType(targetType), 1);
             // Load the value that will be put in the static field
-            BytecodeUtils.visitLoad(mv, Type.getType(parameterType), 2);
-            // Convert the parameter value so that we can put it in the field
-            BytecodeUtils.visitConversion(mv, parameterType, fieldType);
+            BytecodeUtils.visitLoad(mv, Type.getType(valueType), 2);
             // Invoke the method handle, the "invokeExact" method is polymorphic
             // so the descriptor will be different depending on the field type
             // This must match the signature provided by the constructed method handle
             mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
-                    "(" + Type.getDescriptor(targetType) + Type.getDescriptor(fieldType) + ")V", false);
+                    "(" + Type.getDescriptor(targetType) + Type.getDescriptor(valueType) + ")V", false);
             // Just return
             mv.visitInsn(RETURN);
         });
 
         cw.visitEnd();
-        return cw.toByteArray();
+        return new ClassData(cw.toByteArray(), className);
     }
 
-    private static byte[] createMethodHandleStaticFieldSetLambda(FunctionalInterface functionalInterface, Field field) {
+    private static ClassData createStaticFieldSetterLambda(FunctionalInterface functionalInterface, Field field) {
         final Method method = functionalInterface.getMethod();
-        validateStaticFieldSetLambdaMethod(method);
+        if (method.getParameterCount() != 1) {
+            throw new IllegalArgumentException("The functional interface requires exactly one parameter, "
+                    + "the value that will be put in the static field.");
+        }
+        if (method.getReturnType() != void.class) {
+            throw new IllegalArgumentException("The return type of the functional interface must be void.");
+        }
 
-        final Class<?> parameterType = method.getParameterTypes()[0];
+        final Class<?> valueType = method.getParameterTypes()[0];
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
         final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName() + "$" + setterCounter.incrementAndGet();
@@ -545,26 +333,24 @@ final class InternalLambdaFactory {
                 new String[] { Type.getInternalName(functionalInterface.getFunctionClass())});
 
         // Add a empty constructor
-        BytecodeUtils.visitEmptyConstructor(ACC_PRIVATE, cw);
+        BytecodeUtils.visitPrivateEmptyConstructor(cw);
 
-        visitMethodHandleField(cw, internalClassName, "findStaticSetter", field, void.class, field.getType());
+        visitMethodHandleField(cw, internalClassName, "findStaticSetter", field, void.class, valueType);
         visitFunctionMethod(cw, method, mv -> {
             mv.visitFieldInsn(GETSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;");
             // Load the value that will be put in the static field
-            BytecodeUtils.visitLoad(mv, Type.getType(parameterType), 1);
-            // Convert the parameter value so that we can put it in the method handle invocation
-            BytecodeUtils.visitConversion(mv, parameterType, field.getType());
+            BytecodeUtils.visitLoad(mv, Type.getType(valueType), 1);
             // Invoke the method handle, the "invokeExact" method is polymorphic
             // so the descriptor will be different depending on the field type
             // This must match the signature provided by the constructed method handle
             mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
-                    "(" + Type.getDescriptor(field.getType()) + ")V", false);
+                    "(" + Type.getDescriptor(valueType) + ")V", false);
             // Just return
             mv.visitInsn(RETURN);
         });
 
         cw.visitEnd();
-        return cw.toByteArray();
+        return new ClassData(cw.toByteArray(), className);
     }
 
     private static void visitFunctionMethod(ClassVisitor cv, Method functionMethod, Consumer<MethodVisitor> consumer) {
@@ -622,15 +408,5 @@ final class InternalLambdaFactory {
         mv.visitInsn(RETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
-    }
-
-    private static void validateStaticFieldSetLambdaMethod(Method method) {
-        if (method.getParameterCount() != 1) {
-            throw new IllegalArgumentException("The functional interface requires exactly one parameter, "
-                    + "the value that will be put in the static field.");
-        }
-        if (method.getReturnType() != void.class) {
-            throw new IllegalArgumentException("The return type of the functional interface must be void.");
-        }
     }
 }

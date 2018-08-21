@@ -24,8 +24,34 @@
  */
 package org.lanternpowered.lmbda;
 
-public class LambdaFactoryTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    // TODO: Proper testing
+import org.junit.jupiter.api.Test;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.util.function.IntSupplier;
+
+class LambdaStaticGetterTest {
+
+    @Test
+    void test() throws Exception {
+        final MethodHandles.Lookup lookup = MethodHandlesX.trustedLookup();
+        final MethodHandle methodHandle = lookup.findStaticGetter(TestObject.class, "data", int.class);
+
+        final IntSupplier getter = LambdaFactory.create(FunctionalInterface.of(IntSupplier.class), methodHandle);
+
+        assertEquals(100, getter.getAsInt());
+        TestObject.setData(10000);
+        assertEquals(10000, getter.getAsInt());
+    }
+
+    public static class TestObject {
+
+        private static int data = 100;
+
+        static void setData(int value) {
+            data = value;
+        }
+    }
 }
