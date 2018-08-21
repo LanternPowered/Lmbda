@@ -24,64 +24,8 @@
  */
 package org.lanternpowered.lmbda;
 
-import org.junit.Test;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Method;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-
 public class LambdaFactoryTest {
 
-    @Test
-    public void testIntConsumer1() throws NoSuchMethodException {
-        final Method method = Methods.class.getMethod("consumeInt", int.class);
-        final IntConsumer intConsumer = LambdaFactory.create(FunctionalInterface.of(IntConsumer.class), method);
-        intConsumer.accept(100);
-    }
+    // TODO: Proper testing
 
-    @Test
-    public void testIntConsumer2() throws NoSuchMethodException {
-        final Method method = Methods.class.getMethod("consumeByte", Byte.class);
-        final IntConsumer intConsumer = LambdaFactory.create(FunctionalInterface.of(IntConsumer.class), method);
-        intConsumer.accept(1000);
-    }
-
-    @Test
-    public void testIntConsumer3() throws NoSuchMethodException {
-        final Method method = Methods.class.getMethod("consumeDouble", double.class);
-        final IntConsumer intConsumer = LambdaFactory.create(FunctionalInterface.of(IntConsumer.class), method);
-        intConsumer.accept(1000);
-    }
-
-    @Test
-    public void testFieldSetter() throws NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
-        final MethodHandle setterHandle = MethodHandlesX.trustedLookup().findStaticSetter(Methods.class, "value", Integer.class);
-        final Consumer<Integer> setter = LambdaFactory.create(FunctionalInterface.of(Consumer.class), setterHandle);
-        System.out.println(setter.getClass().getName());
-        System.out.println(Methods.value);
-        setter.accept(1000);
-        System.out.println(Methods.value);
-    }
-
-    public static class Methods {
-
-        static final Integer value = 0;
-
-        public static void consumeInt(int i) {
-            System.out.println("consumeInt: " + i);
-        }
-
-        public static void consumeByte(Byte i) {
-            System.out.println("consumeByte: " + i);
-        }
-
-        public static void consumeDouble(double i) {
-            System.out.println("consumeDouble: " + i);
-        }
-
-        public static void consumeLong(long i) {
-            System.out.println("consumeLong: " + i);
-        }
-    }
 }
