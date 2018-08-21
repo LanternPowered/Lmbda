@@ -62,12 +62,16 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
  * Separated from {@link LambdaFactory} to keep it clean.
  */
 final class InternalLambdaFactory {
+
+    private static final AtomicInteger setterCounter = new AtomicInteger();
+    private static final AtomicInteger getterCounter = new AtomicInteger();
 
     static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, Executable executable) {
         requireNonNull(functionalInterface, "functionalInterface");
@@ -124,6 +128,7 @@ final class InternalLambdaFactory {
                         // Final fields cannot be accessed directly, so
                         // fall back to method handles in this case.
                         reflect = true;
+                        // reflectAs throws an exception for final fields
                         field = AccessController.doPrivileged((PrivilegedAction<Field>) () ->
                                 Arrays.stream(declaringClass.getDeclaredFields())
                                         .filter(field1 -> field1.getName().equals(info.getName()) &&
@@ -235,7 +240,7 @@ final class InternalLambdaFactory {
 
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName();
+        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName() + "$" + getterCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
@@ -275,7 +280,7 @@ final class InternalLambdaFactory {
 
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName();
+        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName() + "$" + getterCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
@@ -313,7 +318,7 @@ final class InternalLambdaFactory {
 
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName();
+        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName() + "$" + setterCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
@@ -349,7 +354,7 @@ final class InternalLambdaFactory {
 
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName();
+        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName() + "$" + setterCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
@@ -392,7 +397,7 @@ final class InternalLambdaFactory {
 
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName();
+        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName() + "$" + getterCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
@@ -438,7 +443,7 @@ final class InternalLambdaFactory {
 
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName();
+        final String className = field.getDeclaringClass().getName() + "$$Lmbda$get$" + field.getName() + "$" + getterCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
@@ -483,7 +488,7 @@ final class InternalLambdaFactory {
 
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName();
+        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName() + "$" + setterCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
@@ -524,7 +529,7 @@ final class InternalLambdaFactory {
         final Class<?> parameterType = method.getParameterTypes()[0];
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
-        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName();
+        final String className = field.getDeclaringClass().getName() + "$$Lmbda$set$" + field.getName() + "$" + setterCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
