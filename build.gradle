@@ -1,3 +1,67 @@
+plugins {
+    id 'net.minecrell.licenser' version '0.4'
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+// Basic project information
+group = 'org.lanterpowered'
+archivesBaseName = project.name.toLowerCase()
+version = 'dev-SNAPSHOT'
+
+defaultTasks 'licenseFormat', 'build'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.ow2.asm:asm:6.2.1'
+
+    testCompile 'junit:junit:4.12'
+}
+
+jar {
+    classifier = ''
+}
+
+// Process the resource files
+processResources {
+    // Include the license file
+    from 'LICENSE.txt'
+}
+
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+
+    // Include all the source
+    from sourceSets.main.allSource
+    // And the license file
+    from file('LICENSE.txt')
+}
+assemble.dependsOn sourceJar
+
+artifacts {
+    archives jar
+    archives sourceJar
+}
+
+license {
+    header file('HEADER.txt')
+    include '**/*.java'
+
+    newLine false
+    ignoreFailures false
+
+    ext {
+        name = project.name
+        url = 'https://www.lanternpowered.org'
+        organization = 'LanternPowered'
+    }
+}
+
 ////////////////////////////////////
 /// Gradle Wrapper update tasks. ///
 ////////////////////////////////////

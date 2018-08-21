@@ -22,38 +22,68 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.lanternpowered.lmbda.fields;
+package org.lanternpowered.lmbda;
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.BIPUSH;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.D2F;
 import static org.objectweb.asm.Opcodes.D2I;
 import static org.objectweb.asm.Opcodes.D2L;
+import static org.objectweb.asm.Opcodes.DLOAD;
+import static org.objectweb.asm.Opcodes.DRETURN;
+import static org.objectweb.asm.Opcodes.DSTORE;
 import static org.objectweb.asm.Opcodes.F2D;
 import static org.objectweb.asm.Opcodes.F2I;
 import static org.objectweb.asm.Opcodes.F2L;
+import static org.objectweb.asm.Opcodes.FLOAD;
+import static org.objectweb.asm.Opcodes.FRETURN;
+import static org.objectweb.asm.Opcodes.FSTORE;
 import static org.objectweb.asm.Opcodes.I2B;
 import static org.objectweb.asm.Opcodes.I2D;
 import static org.objectweb.asm.Opcodes.I2F;
 import static org.objectweb.asm.Opcodes.I2L;
 import static org.objectweb.asm.Opcodes.I2S;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.ICONST_2;
+import static org.objectweb.asm.Opcodes.ICONST_3;
+import static org.objectweb.asm.Opcodes.ICONST_4;
+import static org.objectweb.asm.Opcodes.ICONST_5;
+import static org.objectweb.asm.Opcodes.ICONST_M1;
+import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.ISTORE;
 import static org.objectweb.asm.Opcodes.L2D;
 import static org.objectweb.asm.Opcodes.L2F;
 import static org.objectweb.asm.Opcodes.L2I;
+import static org.objectweb.asm.Opcodes.LLOAD;
+import static org.objectweb.asm.Opcodes.LRETURN;
+import static org.objectweb.asm.Opcodes.LSTORE;
 import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.SIPUSH;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+/**
+ * A utility class for class generation.
+ */
 final class BytecodeUtils {
 
     static void visitEmptyConstructor(ClassVisitor cv) {
-        final MethodVisitor mv = cv.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+        visitEmptyConstructor(ACC_PUBLIC, cv);
+    }
+
+    static void visitEmptyConstructor(int access, ClassVisitor cv) {
+        final MethodVisitor mv = cv.visitMethod(access, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", "()V", false);
@@ -430,7 +460,7 @@ final class BytecodeUtils {
         return true;
     }
 
-    public static void visitConversion(MethodVisitor mv, Class<?> fromType, Class<?> toType) {
+    static void visitConversion(MethodVisitor mv, Class<?> fromType, Class<?> toType) {
         if (fromType == toType || toType.isAssignableFrom(fromType)) { // No need for conversion+
             return;
         }
@@ -464,6 +494,124 @@ final class BytecodeUtils {
         }
         if (!success) {
             throw new IllegalStateException("Cannot convert " + fromType.getName() + " to " + toType.getName());
+        }
+    }
+
+    /**
+     * Visits the {@link MethodVisitor} to apply the store
+     * operation for the given return {@link Type}
+     * and parameter index.
+     *
+     * @param mv The method visitor
+     * @param type The return type
+     */
+    static void visitStore(MethodVisitor mv, Type type, int parameter) {
+        final int sort = type.getSort();
+        if (sort == Type.BYTE ||
+                sort == Type.BOOLEAN ||
+                sort == Type.SHORT ||
+                sort == Type.CHAR ||
+                sort == Type.INT) {
+            mv.visitVarInsn(ISTORE, parameter);
+        } else if (sort == Type.DOUBLE) {
+            mv.visitVarInsn(DSTORE, parameter);
+        } else if (sort == Type.FLOAT) {
+            mv.visitVarInsn(FSTORE, parameter);
+        } else if (sort == Type.LONG) {
+            mv.visitVarInsn(LSTORE, parameter);
+        } else if (sort == Type.VOID) {
+            throw new IllegalStateException("Cannot load void parameter");
+        } else {
+            mv.visitVarInsn(ASTORE, parameter);
+        }
+    }
+
+    /**
+     * Visits the {@link MethodVisitor} to apply the load
+     * operation for the given return {@link Type}
+     * and parameter index.
+     *
+     * @param mv The method visitor
+     * @param type The return type
+     */
+    static void visitLoad(MethodVisitor mv, Type type, int parameter) {
+        final int sort = type.getSort();
+        if (sort == Type.BYTE ||
+                sort == Type.BOOLEAN ||
+                sort == Type.SHORT ||
+                sort == Type.CHAR ||
+                sort == Type.INT) {
+            mv.visitVarInsn(ILOAD, parameter);
+        } else if (sort == Type.DOUBLE) {
+            mv.visitVarInsn(DLOAD, parameter);
+        } else if (sort == Type.FLOAT) {
+            mv.visitVarInsn(FLOAD, parameter);
+        } else if (sort == Type.LONG) {
+            mv.visitVarInsn(LLOAD, parameter);
+        } else if (sort == Type.VOID) {
+            throw new IllegalStateException("Cannot load void parameter");
+        } else {
+            mv.visitVarInsn(ALOAD, parameter);
+        }
+    }
+
+    /**
+     * Visits the {@link MethodVisitor} to apply the return
+     * operation for the given return {@link Type}.
+     *
+     * @param mv The method visitor
+     * @param type The return type
+     */
+    static void visitReturn(MethodVisitor mv, Type type) {
+        final int sort = type.getSort();
+        if (sort == Type.BYTE ||
+                sort == Type.BOOLEAN ||
+                sort == Type.SHORT ||
+                sort == Type.CHAR ||
+                sort == Type.INT) {
+            mv.visitInsn(IRETURN);
+        } else if (sort == Type.DOUBLE) {
+            mv.visitInsn(DRETURN);
+        } else if (sort == Type.FLOAT) {
+            mv.visitInsn(FRETURN);
+        } else if (sort == Type.LONG) {
+            mv.visitInsn(LRETURN);
+        } else if (sort == Type.VOID) {
+            mv.visitInsn(RETURN);
+        } else {
+            mv.visitInsn(ARETURN);
+        }
+    }
+
+
+    /**
+     * Visits the {@link MethodVisitor} to push a
+     * constant integer value to the stack.
+     *
+     * @param mv The method visitor
+     * @param value The integer
+     */
+    public static void visitPushInt(MethodVisitor mv, int value) {
+        if (value == -1) {
+            mv.visitInsn(ICONST_M1);
+        } else if (value == 0) {
+            mv.visitInsn(ICONST_0);
+        } else if (value == 1) {
+            mv.visitInsn(ICONST_1);
+        } else if (value == 2) {
+            mv.visitInsn(ICONST_2);
+        } else if (value == 3) {
+            mv.visitInsn(ICONST_3);
+        } else if (value == 4) {
+            mv.visitInsn(ICONST_4);
+        } else if (value == 5) {
+            mv.visitInsn(ICONST_5);
+        } else if (value >= -128 && value <= 127) {
+            mv.visitIntInsn(BIPUSH, value);
+        } else if (value >= -32768 && value <= 32767) {
+            mv.visitIntInsn(SIPUSH, value);
+        } else {
+            mv.visitLdcInsn(value);
         }
     }
 }

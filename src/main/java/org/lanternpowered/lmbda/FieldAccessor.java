@@ -33,7 +33,7 @@ import java.security.PrivilegedAction;
  * A helper class to provide access to {@link Field}s.
  */
 @SuppressWarnings("unchecked")
-public final class FieldAccess {
+public final class FieldAccessor {
 
     /**
      * The modifiers field.
@@ -81,6 +81,6 @@ public final class FieldAccess {
         });
     }
 
-    private FieldAccess() {
+    private FieldAccessor() {
     }
 }

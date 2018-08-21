@@ -69,11 +69,11 @@ public final class FunctionalInterface<T> {
         }
         final MethodType classType = MethodType.methodType(functionalInterface);
         final MethodType methodType = MethodType.methodType(validMethod.getReturnType(), validMethod.getParameterTypes());
-        return new FunctionalInterface<>(functionalInterface, validMethod.getName(), classType, methodType);
+        return new FunctionalInterface<>(functionalInterface, validMethod, classType, methodType);
     }
 
     private final Class<T> functionClass;
-    final String methodName;
+    private final Method method;
 
     final MethodType classType;
     final MethodType methodType;
@@ -82,20 +82,28 @@ public final class FunctionalInterface<T> {
      * Constructs a new {@link FunctionalInterface} from the given arguments.
      *
      * @param functionClass The function class
-     * @param name The methodName of the function method
+     * @param method The function method
      * @param classType The function interface that will be implemented
      * @param methodType The function method signature that will be implemented
      */
-    private FunctionalInterface(Class<T> functionClass, String name, MethodType classType, MethodType methodType) {
+    private FunctionalInterface(Class<T> functionClass, Method method, MethodType classType, MethodType methodType) {
         this.functionClass = functionClass;
-        this.methodName = name;
+        this.method = method;
         this.classType = classType;
         this.methodType = methodType;
+    }
+
+    public Class<T> getFunctionClass() {
+        return this.functionClass;
+    }
+
+    public Method getMethod() {
+        return this.method;
     }
 
     @Override
     public String toString() {
         return String.format("FunctionalInterface[class=%s,method=%s]",
-                this.functionClass.getName(), this.methodName + this.methodType);
+                this.functionClass.getName(), this.method.getName() + this.methodType);
     }
 }

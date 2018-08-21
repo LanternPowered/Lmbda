@@ -26,11 +26,10 @@ package org.lanternpowered.lmbda;
 
 import org.junit.Test;
 
-import java.lang.reflect.Field;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
-import java.util.function.DoubleConsumer;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
 
 public class LambdaFactoryTest {
 
@@ -56,15 +55,18 @@ public class LambdaFactoryTest {
     }
 
     @Test
-    public void testLongConsumer1() throws NoSuchMethodException {
-        final Method method = Methods.class.getMethod("consumeInt", int.class);
-        final LongConsumer longConsumer = LambdaFactory.create(FunctionalInterface.of(LongConsumer.class), method);
-        longConsumer.accept(1000);
+    public void testFieldSetter() throws NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
+        final MethodHandle setterHandle = MethodHandlesX.trustedLookup().findStaticSetter(Methods.class, "value", Integer.class);
+        final Consumer<Integer> setter = LambdaFactory.create(FunctionalInterface.of(Consumer.class), setterHandle);
+        System.out.println(setter.getClass().getName());
+        System.out.println(Methods.value);
+        setter.accept(1000);
+        System.out.println(Methods.value);
     }
 
     public static class Methods {
 
-        static int value;
+        static final Integer value = 0;
 
         public static void consumeInt(int i) {
             System.out.println("consumeInt: " + i);

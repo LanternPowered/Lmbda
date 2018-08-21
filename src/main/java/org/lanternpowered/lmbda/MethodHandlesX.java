@@ -24,10 +24,14 @@
  */
 package org.lanternpowered.lmbda;
 
-import org.lanternpowered.lmbda.util.UncheckedThrowables;
+import static org.objectweb.asm.Opcodes.ASM5;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ReflectPermission;
@@ -38,10 +42,11 @@ import java.security.PrivilegedAction;
  * A utility class full of magic related to {@link MethodHandles}.
  */
 @SuppressWarnings("ThrowableNotThrown")
-public final class UnsafeMethodHandles {
+public final class MethodHandlesX {
 
     static final MethodHandles.Lookup trustedLookup = loadTrustedLookup();
-    private static final MethodHandlesLookupAccess methodHandlesLookupAccess = loadMethodHandlesLookupAccess();
+    private static final NestmateClassDefineSupport nestmateClassDefineSupport = loadNestmateClassDefineSupport();
+    private static final ProtectionDomainClassDefineSupport protectionDomainClassDefineSupport = loadProtectionDomainClassDefineSupport();
 
     /**
      * Gets a trusted {@link MethodHandles.Lookup} instance.
@@ -55,6 +60,16 @@ public final class UnsafeMethodHandles {
             securityManager.checkPermission(new ReflectPermission("trustedMethodHandlesLookup"));
         }
         return trustedLookup;
+    }
+
+    /**
+     * Whether the feature of defining nestmate classes through
+     * {@link #defineNestmateClass(MethodHandles.Lookup, byte[])} is available.
+     *
+     * @return Whether nestmate classes support is available
+     */
+    public static boolean isNestmateClassDefiningSupported() {
+        return nestmateClassDefineSupport != null;
     }
 
     /**
@@ -74,11 +89,26 @@ public final class UnsafeMethodHandles {
      * @throws IllegalAccessException If the lookup doesn't have private access in its target class
      */
     public static Class<?> defineNestmateClass(MethodHandles.Lookup lookup, byte[] byteCode) {
+        if (nestmateClassDefineSupport == null) {
+            throw new UnsupportedOperationException("Nestmate class defining isn't available.");
+        }
         if ((lookup.lookupModes() & MethodHandles.Lookup.PRIVATE) == 0) {
-            throw UncheckedThrowables.throwUnchecked(new IllegalAccessException(
+            throw throwUnchecked(new IllegalAccessException(
                     "The lookup doesn't have private access, which is required to define nestmate classes."));
         }
-        return methodHandlesLookupAccess.defineNestmate(lookup, byteCode);
+        return nestmateClassDefineSupport.defineNestmate(lookup, byteCode);
+    }
+
+    /**
+     * Defines a class the same protection domain of the {@link MethodHandles.Lookup} target (package private access).
+     *
+     * @param lookup The lookup of which the target class will be used to define the class in
+     * @param byteCode The byte code of the class to define
+     * @return The defined class
+     * @throws IllegalAccessException If the lookup doesn't have access in its target class
+     */
+    public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
+        return protectionDomainClassDefineSupport.defineClass(lookup, byteCode);
     }
 
     /**
@@ -101,7 +131,7 @@ public final class UnsafeMethodHandles {
                 try {
                     final Field field = MethodHandles.Lookup.class.getDeclaredField("allowedModes");
                     // Make the field accessible
-                    FieldAccess.makeAccessible(field);
+                    FieldAccessor.makeAccessible(field);
 
                     // The field that holds the trusted access mode
                     final Field trustedAccessModeField = MethodHandles.Lookup.class.getDeclaredField("TRUSTED");
@@ -120,21 +150,87 @@ public final class UnsafeMethodHandles {
         });
     }
 
+    private interface ProtectionDomainClassDefineSupport {
+
+        Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode);
+    }
+
+    private final static class StopVisiting extends RuntimeException {
+
+        final static StopVisiting INSTANCE = new StopVisiting(); // Internal access only
+
+        private StopVisiting() {
+        }
+
+        @Override
+        public Throwable fillInStackTrace() {
+            setStackTrace(new StackTraceElement[0]);
+            return this;
+        }
+    }
+
+    private static ProtectionDomainClassDefineSupport loadProtectionDomainClassDefineSupport() {
+        return AccessController.doPrivileged((PrivilegedAction<ProtectionDomainClassDefineSupport>) () -> {
+            try {
+                final MethodHandle methodHandle = MethodHandles.publicLookup().findVirtual(
+                        MethodHandles.Lookup.class, "defineClass", MethodType.methodType(Class.class, byte[].class));
+                return (ProtectionDomainClassDefineSupport) (lookup, byteCode) -> {
+                    try {
+                        return (Class<?>) methodHandle.invoke(lookup, byteCode);
+                    } catch (Throwable t) {
+                        throw throwUnchecked(t);
+                    }
+                };
+            } catch (NoSuchMethodException e) {
+                // Not found, most likely not java 9
+                try {
+                    final MethodHandle methodHandle = trustedLookup.findVirtual(ClassLoader.class, "defineClass",
+                            MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
+                    return (ProtectionDomainClassDefineSupport) (lookup, byteCode) -> {
+                        // Search for the class name
+                        final ClassReader reader = new ClassReader(byteCode);
+                        final String[] theName = new String[1];
+                        try {
+                            reader.accept(new ClassVisitor(ASM5) {
+                                @Override
+                                public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                                    theName[0] = name;
+                                    throw StopVisiting.INSTANCE;
+                                }
+                            }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                        } catch (StopVisiting ignored) {
+                        }
+                        try {
+                            return (Class<?>) methodHandle.invoke(lookup.lookupClass().getClassLoader(),
+                                    theName[0].replace('/', '.'), byteCode, 0, byteCode.length);
+                        } catch (Throwable t) {
+                            throw throwUnchecked(t);
+                        }
+                    };
+                } catch (Throwable t) {
+                    throw throwUnchecked(t);
+                }
+            } catch (IllegalAccessException e) {
+                throw throwUnchecked(e);
+            }
+        });
+    }
+
     /**
      * A internal access for defining "nest mate" classes.
      */
-    private interface MethodHandlesLookupAccess {
+    private interface NestmateClassDefineSupport {
 
         Class<?> defineNestmate(MethodHandles.Lookup lookup, byte[] byteCode);
     }
 
     /**
-     * Loads the {@link MethodHandlesLookupAccess} instance.
+     * Loads the {@link NestmateClassDefineSupport} instance.
      *
      * @return The method handles lookup access
      */
-    private static MethodHandlesLookupAccess loadMethodHandlesLookupAccess() {
-        return AccessController.doPrivileged((PrivilegedAction<MethodHandlesLookupAccess>) () -> {
+    private static NestmateClassDefineSupport loadNestmateClassDefineSupport() {
+        return AccessController.doPrivileged((PrivilegedAction<NestmateClassDefineSupport>) () -> {
             // Currently, only Unsafe provides access to defining nestmate classes,
             // this will most likely change in the future:
             // JDK-8171335
@@ -146,8 +242,11 @@ public final class UnsafeMethodHandles {
             } catch (ClassNotFoundException e) {
                 try {
                     unsafeClass = Class.forName("jdk.unsupported.misc.Unsafe");
-                } catch (ClassNotFoundException e1) {
-                    throw new IllegalStateException("Unable to find the Unsafe class.", e);
+                } catch (ClassNotFoundException ex) {
+                    // Print the error message
+                    new IllegalStateException("Unable to find the Unsafe class.", e).printStackTrace();
+                    // Just return null, nestmate classes aren't supported :(
+                    return null;
                 }
             }
             try {
@@ -165,7 +264,7 @@ public final class UnsafeMethodHandles {
                 final Object unsafe = field.get(null);
 
                 // Create the lookup access
-                return (MethodHandlesLookupAccess) (lookup, bytes) -> {
+                return (NestmateClassDefineSupport) (lookup, bytes) -> {
                     try {
                         return (Class<?>) methodHandle.invoke(unsafe, lookup.lookupClass(), bytes, null);
                     } catch (Throwable throwable) {
@@ -178,6 +277,22 @@ public final class UnsafeMethodHandles {
         });
     }
 
-    private UnsafeMethodHandles() {
+    /**
+     * Throws the {@link Throwable} as an unchecked exception.
+     *
+     * @param t The throwable to throw
+     * @return A runtime exception
+     */
+    static RuntimeException throwUnchecked(Throwable t) {
+        throwUnchecked0(t);
+        throw new AssertionError("Unreachable.");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void throwUnchecked0(Throwable t) throws T {
+        throw (T) t;
+    }
+
+    private MethodHandlesX() {
     }
 }

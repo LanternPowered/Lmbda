@@ -1,7 +1,1 @@
 rootProject.name = 'Lmbda'
-
-include 'lmbda-core'
-include 'lmbda-fields'
-
-project(':lmbda-core').projectDir = new File('core')
-project(':lmbda-fields').projectDir = new File('fields')

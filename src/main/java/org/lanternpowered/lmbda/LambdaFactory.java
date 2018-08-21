@@ -24,14 +24,8 @@
  */
 package org.lanternpowered.lmbda;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandleInfo;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -75,6 +69,19 @@ public final class LambdaFactory {
     }
 
     /**
+     * Attempts to create a {@link Predicate} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The first input type of the predicate
+     * @param <U> The second input type of the predicate
+     * @return The created bi predicate
+     * @see #create(FunctionalInterface, Executable)
+     */
+    public static <T, U> BiPredicate<T, U> createBiPredicate(MethodHandle methodHandle) {
+        return create(biPredicateInterface, methodHandle);
+    }
+
+    /**
      * Attempts to create a {@link Predicate} for the given {@link Executable}.
      *
      * @param executable The executable
@@ -84,6 +91,18 @@ public final class LambdaFactory {
      */
     public static <T> Predicate<T> createPredicate(Executable executable) {
         return create(predicateInterface, executable);
+    }
+
+    /**
+     * Attempts to create a {@link Predicate} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The input type of the predicate
+     * @return The created predicate
+     * @see #create(FunctionalInterface, Executable)
+     */
+    public static <T> Predicate<T> createPredicate(MethodHandle methodHandle) {
+        return create(predicateInterface, methodHandle);
     }
 
     /**
@@ -100,6 +119,19 @@ public final class LambdaFactory {
     }
 
     /**
+     * Attempts to create a {@link BiConsumer} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The first input type of the consumer
+     * @param <U> The second input type of the consumer
+     * @return The created bi consumer
+     * @see #create(FunctionalInterface, Executable)
+     */
+    public static <T, U> BiConsumer<T, U> createBiConsumer(MethodHandle methodHandle) {
+        return create(biConsumerInterface, methodHandle);
+    }
+
+    /**
      * Attempts to create a {@link Consumer} for the given {@link Executable}.
      *
      * @param executable The executable
@@ -112,6 +144,18 @@ public final class LambdaFactory {
     }
 
     /**
+     * Attempts to create a {@link Consumer} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The input type of the consumer
+     * @return The created consumer
+     * @see #create(FunctionalInterface, Executable)
+     */
+    public static <T> Consumer<T> createConsumer(MethodHandle methodHandle) {
+        return create(consumerInterface, methodHandle);
+    }
+
+    /**
      * Attempts to create a {@link Supplier} for the given {@link Executable}.
      *
      * @param executable The executable
@@ -121,6 +165,18 @@ public final class LambdaFactory {
      */
     public static <T> Supplier<T> createSupplier(Executable executable) {
         return create(supplierInterface, executable);
+    }
+
+    /**
+     * Attempts to create a {@link Supplier} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The result type of the supplier
+     * @return The created supplier
+     * @see #create(FunctionalInterface, Executable)
+     */
+    public static <T> Supplier<T> createSupplier(MethodHandle methodHandle) {
+        return create(supplierInterface, methodHandle);
     }
 
     /**
@@ -138,6 +194,20 @@ public final class LambdaFactory {
     }
 
     /**
+     * Attempts to create a {@link BiFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The first input type of the function
+     * @param <U> The second input type of the function
+     * @param <R> The result type of the function
+     * @return The created bi function
+     * @see #create(FunctionalInterface, Executable)
+     */
+    public static <T, U, R> BiFunction<T, U, R> createBiFunction(MethodHandle methodHandle) {
+        return create(biFunctionInterface, methodHandle);
+    }
+
+    /**
      * Attempts to create a {@link Function} for the given {@link Executable}.
      *
      * @param executable The executable
@@ -148,6 +218,19 @@ public final class LambdaFactory {
      */
     public static <T, R> Function<T, R> createFunction(Executable executable) {
         return create(functionInterface, executable);
+    }
+
+    /**
+     * Attempts to create a {@link Function} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The input type of the function
+     * @param <R> The result type of the function
+     * @return The created function
+     * @see #create(FunctionalInterface, Executable)
+     */
+    public static <T, R> Function<T, R> createFunction(MethodHandle methodHandle) {
+        return create(functionInterface, methodHandle);
     }
 
     /**
@@ -165,29 +248,7 @@ public final class LambdaFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, Executable executable) {
-        try {
-            // The trusted lookup can be used here, because the privileges are already
-            // required to make the executable accessible. This unreflect methods will
-            // fail if this isn't the case.
-
-            final MethodHandles.Lookup lookup = UnsafeMethodHandles.trustedLookup.in(executable.getDeclaringClass());
-            final MethodHandle methodHandle;
-            if (executable instanceof Constructor) {
-                methodHandle = lookup.unreflectConstructor((Constructor<?>) executable);
-            } else {
-                methodHandle = lookup.unreflect((Method) executable);
-            }
-
-            // Generate the lambda class
-            final CallSite callSite = LambdaMetafactory.metafactory(lookup, functionalInterface.methodName,
-                    functionalInterface.classType, functionalInterface.methodType, methodHandle, methodHandle.type());
-
-            // Create the function
-            return (F) callSite.getTarget().invoke();
-        } catch (Throwable e) {
-            throw new IllegalStateException("Couldn't create lambda for: \"" + executable + "\". "
-                    + "Failed to implement: " + functionalInterface, e);
-        }
+        return InternalLambdaFactory.create(functionalInterface, executable);
     }
 
     /**
@@ -198,24 +259,11 @@ public final class LambdaFactory {
      * @param methodHandle The method handle that will be executed by the functional interface
      * @param <T> The functional interface type
      * @param <F> The function type
-     * @return The function
+     * @return The constructed function
      */
     @SuppressWarnings("unchecked")
     public static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle) {
-        try {
-            final MethodHandleInfo info = UnsafeMethodHandles.trustedLookup.revealDirect(methodHandle);
-            final MethodHandles.Lookup lookup = UnsafeMethodHandles.trustedLookup.in(info.getDeclaringClass());
-
-            // Generate the lambda class
-            final CallSite callSite = LambdaMetafactory.metafactory(lookup, functionalInterface.methodName,
-                    functionalInterface.classType, functionalInterface.methodType, methodHandle, methodHandle.type());
-
-            // Create the function
-            return (F) callSite.getTarget().invoke();
-        } catch (Throwable e) {
-            throw new IllegalStateException("Couldn't create lambda for: \"" + methodHandle + "\". "
-                    + "Failed to implement: " + functionalInterface, e);
-        }
+        return InternalLambdaFactory.create(functionalInterface, methodHandle);
     }
 
     private LambdaFactory() {
