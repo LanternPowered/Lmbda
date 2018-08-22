@@ -38,7 +38,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
-import java.util.function.ToIntFunction;
 
 /**
  * Based on the original benchmark found on the stack overflow post:
@@ -51,96 +50,118 @@ import java.util.function.ToIntFunction;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-public class LambdaFactoryGetterBenchmark {
+public class LambdaFactoryIntSetterBenchmark {
 
     private int value = 42;
 
-    private static final MethodHandle staticMethodHandle;
-    private static final Field staticReflective;
+    private static final Field static_reflective;
+    private static final MethodHandle static_unreflect;
+    private static final MethodHandle static_mh;
 
-    private static MethodHandle methodHandle;
     private static Field reflective;
+    private static MethodHandle unreflect;
+    private static MethodHandle mh;
 
-    private static ToIntFunction<LambdaFactoryGetterBenchmark> plainFunction;
-    private static ToIntFunction<LambdaFactoryGetterBenchmark> staticMethodHandleFunction;
-    private static ToIntFunction<LambdaFactoryGetterBenchmark> staticReflectiveFunction;
-    private static ToIntFunction<LambdaFactoryGetterBenchmark> methodHandleFunction;
-    private static ToIntFunction<LambdaFactoryGetterBenchmark> reflectiveFunction;
-    private static ToIntFunction<LambdaFactoryGetterBenchmark> lmbdaFunction;
+    private static IntSetFunction<LambdaFactoryIntSetterBenchmark> mh_function;
+
+    private static IntSetFunction<LambdaFactoryIntSetterBenchmark> lmbda;
+
+    interface IntSetFunction<T> {
+
+        void apply(T target, int value);
+    }
 
     // We would normally use @Setup, but we need to initialize "static final" fields here...
     static {
         try {
-            // Access method handles, etc.
-            reflective = LambdaFactoryGetterBenchmark.class.getDeclaredField("value");
-            methodHandle = MethodHandles.lookup().findGetter(LambdaFactoryGetterBenchmark.class, "value", int.class);
-            staticReflective = reflective;
-            staticMethodHandle = methodHandle;
-
-            // Generate functions
-            plainFunction = object -> object.value;
-            staticMethodHandleFunction = object -> {
+            reflective = LambdaFactoryIntSetterBenchmark.class.getDeclaredField("value");
+            unreflect = MethodHandles.lookup().unreflectSetter(reflective);
+            mh = MethodHandles.lookup().findSetter(LambdaFactoryIntSetterBenchmark.class, "value", int.class);
+            static_reflective = reflective;
+            static_unreflect = unreflect;
+            static_mh = mh;
+            // Create a manually implemented lambda to compare performance with generated ones.
+            mh_function = (object, value) -> {
                 try {
-                    return (int) staticMethodHandle.invokeExact(object);
+                    static_unreflect.invokeExact(object, value);
                 } catch (Throwable t) {
                     throw MethodHandlesX.throwUnchecked(t);
                 }
             };
-            staticReflectiveFunction = object -> {
-                try {
-                    return staticReflective.getInt(object);
-                } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
-                }
-            };
-            methodHandleFunction = object -> {
-                try {
-                    return (int) methodHandle.invokeExact(object);
-                } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
-                }
-            };
-            reflectiveFunction = object -> {
-                try {
-                    return reflective.getInt(object);
-                } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
-                }
-            };
-            lmbdaFunction = LambdaFactory.create(
-                    FunctionalInterface.of(ToIntFunction.class), MethodHandles.lookup(), methodHandle);
+            lmbda = LambdaFactory.create(FunctionalInterface.of(IntSetFunction.class), MethodHandles.lookup(), mh);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalStateException(e);
         }
     }
 
     @Benchmark
-    public int plain() {
-        return plainFunction.applyAsInt(this);
+    public void plain(Data data) {
+        this.value = data.value++;
     }
 
     @Benchmark
-    public int static_mh() {
-        return staticMethodHandleFunction.applyAsInt(this);
+    public void dynamic_reflect(Data data) throws IllegalAccessException {
+        reflective.set(this, data.value++);
     }
 
     @Benchmark
-    public int static_reflect() {
-        return staticReflectiveFunction.applyAsInt(this);
+    public void dynamic_unreflect_invoke(Data data) throws Throwable {
+        unreflect.invoke(this, data.value++);
     }
 
     @Benchmark
-    public int dynamic_mh() {
-        return methodHandleFunction.applyAsInt(this);
+    public void dynamic_unreflect_invokeExact(Data data) throws Throwable {
+        unreflect.invokeExact(this, data.value++);
     }
 
     @Benchmark
-    public int dynamic_reflect() {
-        return reflectiveFunction.applyAsInt(this);
+    public void dynamic_mh_invoke(Data data) throws Throwable {
+        mh.invoke(this, data.value++);
     }
 
     @Benchmark
-    public int lmbda() {
-        return lmbdaFunction.applyAsInt(this);
+    public void dynamic_mh_invokeExact(Data data) throws Throwable {
+        mh.invokeExact(this, data.value++);
+    }
+
+    @Benchmark
+    public void static_reflect(Data data) throws IllegalAccessException {
+        static_reflective.set(this, data.value++);
+    }
+
+    @Benchmark
+    public void static_unreflect_invoke(Data data) throws Throwable {
+        static_unreflect.invoke(this, data.value++);
+    }
+
+    @Benchmark
+    public void static_unreflect_invokeExact(Data data) throws Throwable {
+        static_unreflect.invokeExact(this, data.value++);
+    }
+
+    @Benchmark
+    public void static_mh_invoke(Data data) throws Throwable {
+        static_mh.invoke(this, data.value++);
+    }
+
+    @Benchmark
+    public void static_mh_invokeExact(Data data) throws Throwable {
+        static_mh.invokeExact(this, data.value++);
+    }
+
+    @Benchmark
+    public void static_mh_function(Data data) {
+        mh_function.apply(this, data.value++);
+    }
+
+    @Benchmark
+    public void lmbda_function(Data data) {
+        lmbda.apply(this, data.value++);
+    }
+
+    @State(Scope.Benchmark)
+    public static class Data {
+
+        public int value = 0;
     }
 }
