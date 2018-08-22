@@ -36,7 +36,7 @@ class LambdaGetterTest {
 
     @Test
     void test() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandlesX.trustedLookup();
+        final MethodHandles.Lookup lookup = MethodHandles.lookup();
         final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
         final ToIntFunction<TestObject> getter = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), lookup, methodHandle);

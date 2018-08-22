@@ -37,7 +37,6 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToIntFunction;
 
@@ -56,38 +55,60 @@ public class LambdaFactoryGetterBenchmark {
 
     private int value = 42;
 
-    private static final Field static_reflective;
-    private static final MethodHandle static_unreflect;
-    private static final MethodHandle static_mh;
+    private static final MethodHandle staticMethodHandle;
+    private static final Field staticReflective;
 
+    private static MethodHandle methodHandle;
     private static Field reflective;
-    private static MethodHandle unreflect;
-    private static MethodHandle mh;
 
-    private static ToIntFunction<LambdaFactoryGetterBenchmark> mh_function;
-    private static ToIntFunction<LambdaFactoryGetterBenchmark> lmbda;
-
-    private static ToIntFunction<LambdaFactoryGetterBenchmark> function_plain;
+    private static ToIntFunction<LambdaFactoryGetterBenchmark> plainFunction;
+    private static ToIntFunction<LambdaFactoryGetterBenchmark> staticMethodHandleFunction;
+    private static ToIntFunction<LambdaFactoryGetterBenchmark> staticReflectiveFunction;
+    private static ToIntFunction<LambdaFactoryGetterBenchmark> methodHandleFunction;
+    private static ToIntFunction<LambdaFactoryGetterBenchmark> reflectiveFunction;
+    private static ToIntFunction<LambdaFactoryGetterBenchmark> lmbdaFunction;
 
     // We would normally use @Setup, but we need to initialize "static final" fields here...
     static {
         try {
+            // Access method handles, etc.
             reflective = LambdaFactoryGetterBenchmark.class.getDeclaredField("value");
-            unreflect = MethodHandles.lookup().unreflectGetter(reflective);
-            mh = MethodHandles.lookup().findGetter(LambdaFactoryGetterBenchmark.class, "value", int.class);
-            static_reflective = reflective;
-            static_unreflect = unreflect;
-            static_mh = mh;
-            function_plain = object -> object.value;
-            // Create a manually implemented lambda to compare performance with generated ones.
-            mh_function = object -> {
+            methodHandle = MethodHandles.lookup().findGetter(LambdaFactoryGetterBenchmark.class, "value", int.class);
+            staticReflective = reflective;
+            staticMethodHandle = methodHandle;
+
+            // Generate functions
+            plainFunction = object -> object.value;
+            staticMethodHandleFunction = object -> {
                 try {
-                    return (int) static_unreflect.invokeExact(object);
+                    return (int) staticMethodHandle.invokeExact(object);
                 } catch (Throwable t) {
                     throw MethodHandlesX.throwUnchecked(t);
                 }
             };
-            lmbda = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), MethodHandles.lookup(), mh);
+            staticReflectiveFunction = object -> {
+                try {
+                    return staticReflective.getInt(object);
+                } catch (Throwable t) {
+                    throw MethodHandlesX.throwUnchecked(t);
+                }
+            };
+            methodHandleFunction = object -> {
+                try {
+                    return (int) methodHandle.invokeExact(object);
+                } catch (Throwable t) {
+                    throw MethodHandlesX.throwUnchecked(t);
+                }
+            };
+            reflectiveFunction = object -> {
+                try {
+                    return reflective.getInt(object);
+                } catch (Throwable t) {
+                    throw MethodHandlesX.throwUnchecked(t);
+                }
+            };
+            lmbdaFunction = LambdaFactory.create(
+                    FunctionalInterface.of(ToIntFunction.class), MethodHandles.lookup(), methodHandle);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalStateException(e);
         }
@@ -95,71 +116,31 @@ public class LambdaFactoryGetterBenchmark {
 
     @Benchmark
     public int plain() {
-        return value;
+        return plainFunction.applyAsInt(this);
     }
 
     @Benchmark
-    public int dynamic_reflect() throws IllegalAccessException {
-        return (int) reflective.get(this);
+    public int static_mh() {
+        return staticMethodHandleFunction.applyAsInt(this);
     }
 
     @Benchmark
-    public int dynamic_unreflect_invoke() throws Throwable {
-        return (int) unreflect.invoke(this);
+    public int static_reflect() {
+        return staticReflectiveFunction.applyAsInt(this);
     }
 
     @Benchmark
-    public int dynamic_unreflect_invokeExact() throws Throwable {
-        return (int) unreflect.invokeExact(this);
+    public int dynamic_mh() {
+        return methodHandleFunction.applyAsInt(this);
     }
 
     @Benchmark
-    public int dynamic_mh_invoke() throws Throwable {
-        return (int) mh.invoke(this);
+    public int dynamic_reflect() {
+        return reflectiveFunction.applyAsInt(this);
     }
 
     @Benchmark
-    public int dynamic_mh_invokeExact() throws Throwable {
-        return (int) mh.invokeExact(this);
-    }
-
-    @Benchmark
-    public int static_reflect() throws InvocationTargetException, IllegalAccessException {
-        return (int) static_reflective.get(this);
-    }
-
-    @Benchmark
-    public int static_unreflect_invoke() throws Throwable {
-        return (int) static_unreflect.invoke(this);
-    }
-
-    @Benchmark
-    public int static_unreflect_invokeExact() throws Throwable {
-        return (int) static_unreflect.invokeExact(this);
-    }
-
-    @Benchmark
-    public int static_mh_invoke() throws Throwable {
-        return (int) static_mh.invoke(this);
-    }
-
-    @Benchmark
-    public int static_mh_invokeExact() throws Throwable {
-        return (int) static_mh.invokeExact(this);
-    }
-
-    @Benchmark
-    public int static_mh_function() {
-        return mh_function.applyAsInt(this);
-    }
-
-    @Benchmark
-    public int function_plain_0() {
-        return function_plain.applyAsInt(this);
-    }
-
-    @Benchmark
-    public int lmbda_function() {
-        return lmbda.applyAsInt(this);
+    public int lmbda() {
+        return lmbdaFunction.applyAsInt(this);
     }
 }

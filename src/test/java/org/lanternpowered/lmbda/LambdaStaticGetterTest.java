@@ -36,7 +36,7 @@ class LambdaStaticGetterTest {
 
     @Test
     void test() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandlesX.trustedLookup();
+        final MethodHandles.Lookup lookup = MethodHandles.lookup();
         final MethodHandle methodHandle = lookup.findStaticGetter(TestObject.class, "data", int.class);
 
         final IntSupplier getter = LambdaFactory.create(FunctionalInterface.of(IntSupplier.class), lookup, methodHandle);

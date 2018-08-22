@@ -24,6 +24,8 @@
  */
 package org.lanternpowered.lmbda;
 
+import static java.util.Objects.requireNonNull;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -38,21 +40,27 @@ import java.security.PrivilegedAction;
 @SuppressWarnings("ThrowableNotThrown")
 public final class MethodHandlesX {
 
-    private static final MethodHandles.Lookup trustedLookup = loadTrustedLookup();
+    private static final PrivateLookupProvider privateLookupProvider = loadPrivateLookupProvider();
     private static final ProtectionDomainClassDefineSupport protectionDomainClassDefineSupport = loadProtectionDomainClassDefineSupport();
 
     /**
-     * Gets a trusted {@link MethodHandles.Lookup} instance.
+     * Gets a lookup object with full capabilities to emulate all supported bytecode
+     * behaviors, including private access, on a target class.
      *
-     * @return The trusted method handles lookup
-     * @throws SecurityException If the caller isn't allowed to access to trusted method handles lookup
+     * <p> If there is a security manager, its checkPermission method is called
+     * to check ReflectPermission("suppressAccessChecks").</p>
+     *
+     * <p>When using java 9+, see
+     * https://docs.oracle.com/javase/9/docs/api/java/lang/invoke/MethodHandles.html#privateLookupIn-java.lang.Class-java.lang.invoke.MethodHandles.Lookup-</p>
+     *
+     * @param targetClass
+     * @param lookup The caller lookup object
+     * @return A lookup object for the target class, with private access
      */
-    public static MethodHandles.Lookup trustedLookup() {
-        final SecurityManager securityManager = System.getSecurityManager();
-        if (securityManager != null) {
-            securityManager.checkPermission(new ReflectPermission("trustedMethodHandlesLookup"));
-        }
-        return trustedLookup;
+    public static MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) {
+        requireNonNull(targetClass, "targetClass");
+        requireNonNull(lookup, "lookup");
+        return privateLookupProvider.privateLookupIn(targetClass, lookup);
     }
 
     /**
@@ -64,16 +72,35 @@ public final class MethodHandlesX {
      * @throws IllegalAccessException If the lookup doesn't have access in its target class
      */
     public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
+        requireNonNull(lookup, "lookup");
+        requireNonNull(byteCode, "byteCode");
         return protectionDomainClassDefineSupport.defineClass(lookup, byteCode);
     }
 
+    private interface PrivateLookupProvider {
+
+        MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup);
+    }
+
     /**
-     * Loads the trusted {@link MethodHandles.Lookup} instance.
+     * Loads the {@link PrivateLookupProvider}.
      *
-     * @return The trusted method handles lookup
+     * @return The private lookup provider
      */
-    private static MethodHandles.Lookup loadTrustedLookup() {
-        return AccessController.doPrivileged((PrivilegedAction<MethodHandles.Lookup>) () -> {
+    private static PrivateLookupProvider loadPrivateLookupProvider() {
+        return AccessController.doPrivileged((PrivilegedAction<PrivateLookupProvider>) () -> {
+            if (DirectPrivateLookupProvider.findMethodHandle() != null) {
+                return new DirectPrivateLookupProvider();
+            }
+            return new TrustedPrivateLookupProvider();
+        });
+    }
+
+    static final class TrustedPrivateLookupProvider implements PrivateLookupProvider {
+
+        final MethodHandles.Lookup trustedLookup = loadTrustedLookup();
+
+        private static MethodHandles.Lookup loadTrustedLookup() {
             try {
                 // See if we can find the trusted lookup field directly
                 final Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
@@ -87,7 +114,7 @@ public final class MethodHandlesX {
                 try {
                     final Field field = MethodHandles.Lookup.class.getDeclaredField("allowedModes");
                     // Make the field accessible
-                    FieldAccessor.makeAccessible(field);
+                    FieldAccess.makeAccessible(field);
 
                     // The field that holds the trusted access mode
                     final Field trustedAccessModeField = MethodHandles.Lookup.class.getDeclaredField("TRUSTED");
@@ -103,7 +130,39 @@ public final class MethodHandlesX {
             } catch (IllegalAccessException e) {
                 throw new IllegalStateException("Unable to create a trusted method handles lookup", e);
             }
-        });
+        }
+
+        @Override
+        public MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) {
+            final SecurityManager securityManager = System.getSecurityManager();
+            if (securityManager != null) {
+                securityManager.checkPermission(new ReflectPermission("suppressAccessChecks"));
+            }
+            return this.trustedLookup.in(targetClass);
+        }
+    }
+
+    static final class DirectPrivateLookupProvider implements PrivateLookupProvider {
+
+        private static final MethodHandle methodHandle = findMethodHandle();
+
+        static MethodHandle findMethodHandle() {
+            try {
+                return MethodHandles.publicLookup().findVirtual(MethodHandles.class, "privateLookupIn",
+                        MethodType.methodType(MethodHandles.Lookup.class, Class.class, MethodHandles.Lookup.class));
+            } catch (NoSuchMethodException | IllegalAccessException e) {
+                return null;
+            }
+        }
+
+        @Override
+        public MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) {
+            try {
+                return (MethodHandles.Lookup) methodHandle.invoke(targetClass, lookup);
+            } catch (Throwable t) {
+                throw throwUnchecked(t);
+            }
+        }
     }
 
     private interface ProtectionDomainClassDefineSupport {
@@ -124,10 +183,10 @@ public final class MethodHandlesX {
                     }
                 };
             } catch (NoSuchMethodException e) {
-                // Not found, most likely not java 9
                 try {
-                    final MethodHandle methodHandle = trustedLookup.findVirtual(ClassLoader.class, "defineClass",
-                            MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
+                    final MethodHandle methodHandle = ((TrustedPrivateLookupProvider) privateLookupProvider).trustedLookup
+                            .findVirtual(ClassLoader.class, "defineClass",
+                                    MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
                     return (ProtectionDomainClassDefineSupport) (lookup, byteCode) -> {
                         try {
                             return (Class<?>) methodHandle.invoke(lookup.lookupClass().getClassLoader(),

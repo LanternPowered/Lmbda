@@ -32,7 +32,7 @@ import java.lang.reflect.Modifier;
 
 /**
  * Represents a {@link java.lang.FunctionalInterface}
- * that can be be implemented by a lambda.
+ * that can be be implemented by a generated function.
  */
 public final class FunctionalInterface<T> {
 
@@ -93,10 +93,21 @@ public final class FunctionalInterface<T> {
         this.methodType = methodType;
     }
 
+    /**
+     * Gets the function class that will be implemented.
+     *
+     * @return The function class
+     */
     public Class<T> getFunctionClass() {
         return this.functionClass;
     }
 
+    /**
+     * Gets the {@link Method} that will be implemented when
+     * generating a function for this {@link FunctionalInterface}.
+     *
+     * @return The method
+     */
     public Method getMethod() {
         return this.method;
     }

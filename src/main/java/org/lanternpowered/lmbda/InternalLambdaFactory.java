@@ -31,10 +31,19 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.DLOAD;
+import static org.objectweb.asm.Opcodes.DRETURN;
+import static org.objectweb.asm.Opcodes.FLOAD;
+import static org.objectweb.asm.Opcodes.FRETURN;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
+import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.LLOAD;
+import static org.objectweb.asm.Opcodes.LRETURN;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
@@ -75,14 +84,18 @@ final class InternalLambdaFactory {
      * A thread local which temporarily holds the {@link MethodHandle}
      * that will be injected into the generated class.
      */
+    @SuppressWarnings("WeakerAccess") // Must be package private! Is accessed by generated classes.
     static final ThreadLocal<MethodHandle> currentMethodHandle = new ThreadLocal<>();
+
+    /**
+     * A counter to make sure that lambda names don't conflict.
+     */
+    private static final AtomicInteger lambdaCounter = new AtomicInteger();
 
     static {
         final String name = InternalLambdaFactory.class.getName();
         packageName = name.substring(0, name.lastIndexOf('.'));
     }
-
-    private static final AtomicInteger lambdaCounter = new AtomicInteger();
 
     @SuppressWarnings("unchecked")
     static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandles.Lookup lookup, MethodHandle methodHandle) {
@@ -184,12 +197,12 @@ final class InternalLambdaFactory {
         // Load all the parameters
         final Class<?>[] parameters = method.getParameterTypes();
         for (int i = 0; i < parameters.length; i++) {
-            BytecodeUtils.visitLoad(mv, Type.getType(parameters[i]), 1 + i);
+            visitLoad(mv, Type.getType(parameters[i]), 1 + i);
         }
         // Invoke the method
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact", descriptor, false);
         // Return
-        BytecodeUtils.visitReturn(mv, Type.getType(method.getReturnType()));
+        visitReturn(mv, Type.getType(method.getReturnType()));
         // End body
         mv.visitMaxs(0, 0);
         mv.visitEnd();
@@ -213,6 +226,63 @@ final class InternalLambdaFactory {
         } finally {
             // Cleanup
             currentMethodHandle.remove();
+        }
+    }
+
+    /**
+     * Visits the {@link MethodVisitor} to apply the load
+     * operation for the given return {@link Type}
+     * and parameter index.
+     *
+     * @param mv The method visitor
+     * @param type The return type
+     */
+    private static void visitLoad(MethodVisitor mv, Type type, int parameter) {
+        final int sort = type.getSort();
+        if (sort == Type.BYTE ||
+                sort == Type.BOOLEAN ||
+                sort == Type.SHORT ||
+                sort == Type.CHAR ||
+                sort == Type.INT) {
+            mv.visitVarInsn(ILOAD, parameter);
+        } else if (sort == Type.DOUBLE) {
+            mv.visitVarInsn(DLOAD, parameter);
+        } else if (sort == Type.FLOAT) {
+            mv.visitVarInsn(FLOAD, parameter);
+        } else if (sort == Type.LONG) {
+            mv.visitVarInsn(LLOAD, parameter);
+        } else if (sort == Type.VOID) {
+            throw new IllegalStateException("Cannot load void parameter");
+        } else {
+            mv.visitVarInsn(ALOAD, parameter);
+        }
+    }
+
+    /**
+     * Visits the {@link MethodVisitor} to apply the return
+     * operation for the given return {@link Type}.
+     *
+     * @param mv The method visitor
+     * @param type The return type
+     */
+    private static void visitReturn(MethodVisitor mv, Type type) {
+        final int sort = type.getSort();
+        if (sort == Type.BYTE ||
+                sort == Type.BOOLEAN ||
+                sort == Type.SHORT ||
+                sort == Type.CHAR ||
+                sort == Type.INT) {
+            mv.visitInsn(IRETURN);
+        } else if (sort == Type.DOUBLE) {
+            mv.visitInsn(DRETURN);
+        } else if (sort == Type.FLOAT) {
+            mv.visitInsn(FRETURN);
+        } else if (sort == Type.LONG) {
+            mv.visitInsn(LRETURN);
+        } else if (sort == Type.VOID) {
+            mv.visitInsn(RETURN);
+        } else {
+            mv.visitInsn(ARETURN);
         }
     }
 }
