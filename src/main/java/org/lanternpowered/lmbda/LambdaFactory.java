@@ -25,7 +25,7 @@
 package org.lanternpowered.lmbda;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Executable;
+import java.lang.invoke.MethodHandles;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -56,41 +56,16 @@ public final class LambdaFactory {
     private static final FunctionalInterface<BiPredicate> biPredicateInterface = FunctionalInterface.of(BiPredicate.class);
 
     /**
-     * Attempts to create a {@link Predicate} for the given {@link Executable}.
-     *
-     * @param executable The executable
-     * @param <T> The first input type of the predicate
-     * @param <U> The second input type of the predicate
-     * @return The created bi predicate
-     * @see #create(FunctionalInterface, Executable)
-     */
-    public static <T, U> BiPredicate<T, U> createBiPredicate(Executable executable) {
-        return create(biPredicateInterface, executable);
-    }
-
-    /**
      * Attempts to create a {@link Predicate} for the given {@link MethodHandle}.
      *
      * @param methodHandle The method handle
      * @param <T> The first input type of the predicate
      * @param <U> The second input type of the predicate
      * @return The created bi predicate
-     * @see #create(FunctionalInterface, Executable)
+     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
      */
-    public static <T, U> BiPredicate<T, U> createBiPredicate(MethodHandle methodHandle) {
-        return create(biPredicateInterface, methodHandle);
-    }
-
-    /**
-     * Attempts to create a {@link Predicate} for the given {@link Executable}.
-     *
-     * @param executable The executable
-     * @param <T> The input type of the predicate
-     * @return The created predicate
-     * @see #create(FunctionalInterface, Executable)
-     */
-    public static <T> Predicate<T> createPredicate(Executable executable) {
-        return create(predicateInterface, executable);
+    public static <T, U> BiPredicate<T, U> createBiPredicate(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
+        return create(biPredicateInterface, lookup, methodHandle);
     }
 
     /**
@@ -99,23 +74,10 @@ public final class LambdaFactory {
      * @param methodHandle The method handle
      * @param <T> The input type of the predicate
      * @return The created predicate
-     * @see #create(FunctionalInterface, Executable)
+     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
      */
-    public static <T> Predicate<T> createPredicate(MethodHandle methodHandle) {
-        return create(predicateInterface, methodHandle);
-    }
-
-    /**
-     * Attempts to create a {@link BiConsumer} for the given {@link Executable}.
-     *
-     * @param executable The executable
-     * @param <T> The first input type of the consumer
-     * @param <U> The second input type of the consumer
-     * @return The created bi consumer
-     * @see #create(FunctionalInterface, Executable)
-     */
-    public static <T, U> BiConsumer<T, U> createBiConsumer(Executable executable) {
-        return create(biConsumerInterface, executable);
+    public static <T> Predicate<T> createPredicate(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
+        return create(predicateInterface, lookup, methodHandle);
     }
 
     /**
@@ -125,22 +87,10 @@ public final class LambdaFactory {
      * @param <T> The first input type of the consumer
      * @param <U> The second input type of the consumer
      * @return The created bi consumer
-     * @see #create(FunctionalInterface, Executable)
+     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
      */
-    public static <T, U> BiConsumer<T, U> createBiConsumer(MethodHandle methodHandle) {
-        return create(biConsumerInterface, methodHandle);
-    }
-
-    /**
-     * Attempts to create a {@link Consumer} for the given {@link Executable}.
-     *
-     * @param executable The executable
-     * @param <T> The input type of the consumer
-     * @return The created consumer
-     * @see #create(FunctionalInterface, Executable)
-     */
-    public static <T> Consumer<T> createConsumer(Executable executable) {
-        return create(consumerInterface, executable);
+    public static <T, U> BiConsumer<T, U> createBiConsumer(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
+        return create(biConsumerInterface, lookup, methodHandle);
     }
 
     /**
@@ -149,22 +99,10 @@ public final class LambdaFactory {
      * @param methodHandle The method handle
      * @param <T> The input type of the consumer
      * @return The created consumer
-     * @see #create(FunctionalInterface, Executable)
+     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
      */
-    public static <T> Consumer<T> createConsumer(MethodHandle methodHandle) {
-        return create(consumerInterface, methodHandle);
-    }
-
-    /**
-     * Attempts to create a {@link Supplier} for the given {@link Executable}.
-     *
-     * @param executable The executable
-     * @param <T> The result type of the supplier
-     * @return The created supplier
-     * @see #create(FunctionalInterface, Executable)
-     */
-    public static <T> Supplier<T> createSupplier(Executable executable) {
-        return create(supplierInterface, executable);
+    public static <T> Consumer<T> createConsumer(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
+        return create(consumerInterface, lookup, methodHandle);
     }
 
     /**
@@ -173,24 +111,10 @@ public final class LambdaFactory {
      * @param methodHandle The method handle
      * @param <T> The result type of the supplier
      * @return The created supplier
-     * @see #create(FunctionalInterface, Executable)
+     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
      */
-    public static <T> Supplier<T> createSupplier(MethodHandle methodHandle) {
-        return create(supplierInterface, methodHandle);
-    }
-
-    /**
-     * Attempts to create a {@link BiFunction} for the given {@link Executable}.
-     *
-     * @param executable The executable
-     * @param <T> The first input type of the function
-     * @param <U> The second input type of the function
-     * @param <R> The result type of the function
-     * @return The created bi function
-     * @see #create(FunctionalInterface, Executable)
-     */
-    public static <T, U, R> BiFunction<T, U, R> createBiFunction(Executable executable) {
-        return create(biFunctionInterface, executable);
+    public static <T> Supplier<T> createSupplier(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
+        return create(supplierInterface, lookup, methodHandle);
     }
 
     /**
@@ -201,23 +125,10 @@ public final class LambdaFactory {
      * @param <U> The second input type of the function
      * @param <R> The result type of the function
      * @return The created bi function
-     * @see #create(FunctionalInterface, Executable)
+     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
      */
-    public static <T, U, R> BiFunction<T, U, R> createBiFunction(MethodHandle methodHandle) {
-        return create(biFunctionInterface, methodHandle);
-    }
-
-    /**
-     * Attempts to create a {@link Function} for the given {@link Executable}.
-     *
-     * @param executable The executable
-     * @param <T> The input type of the function
-     * @param <R> The result type of the function
-     * @return The created function
-     * @see #create(FunctionalInterface, Executable)
-     */
-    public static <T, R> Function<T, R> createFunction(Executable executable) {
-        return create(functionInterface, executable);
+    public static <T, U, R> BiFunction<T, U, R> createBiFunction(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
+        return create(biFunctionInterface, lookup, methodHandle);
     }
 
     /**
@@ -227,28 +138,10 @@ public final class LambdaFactory {
      * @param <T> The input type of the function
      * @param <R> The result type of the function
      * @return The created function
-     * @see #create(FunctionalInterface, Executable)
+     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
      */
-    public static <T, R> Function<T, R> createFunction(MethodHandle methodHandle) {
-        return create(functionInterface, methodHandle);
-    }
-
-    /**
-     * Attempts to create a lambda for the given {@link Executable}
-     * implementing the {@link FunctionalInterface}.
-     *
-     * <p>The provided {@link Executable} must be accessible before
-     * the functional interface can be implemented.</p>
-     *
-     * @param functionalInterface The functional interface to implement
-     * @param executable The executable to call
-     * @param <T> The functional interface type
-     * @param <F> The function type
-     * @return The function
-     */
-    @SuppressWarnings("unchecked")
-    public static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, Executable executable) {
-        return InternalLambdaFactory.create(functionalInterface, executable);
+    public static <T, R> Function<T, R> createFunction(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
+        return create(functionInterface, lookup, methodHandle);
     }
 
     /**
@@ -262,8 +155,8 @@ public final class LambdaFactory {
      * @return The constructed function
      */
     @SuppressWarnings("unchecked")
-    public static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle) {
-        return InternalLambdaFactory.create(functionalInterface, methodHandle);
+    public static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandles.Lookup lookup, MethodHandle methodHandle) {
+        return InternalLambdaFactory.create(functionalInterface, lookup, methodHandle);
     }
 
     private LambdaFactory() {

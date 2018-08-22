@@ -67,6 +67,8 @@ public class LambdaFactoryGetterBenchmark {
     private static ToIntFunction<LambdaFactoryGetterBenchmark> mh_function;
     private static ToIntFunction<LambdaFactoryGetterBenchmark> lmbda;
 
+    private static ToIntFunction<LambdaFactoryGetterBenchmark> function_plain;
+
     // We would normally use @Setup, but we need to initialize "static final" fields here...
     static {
         try {
@@ -76,6 +78,7 @@ public class LambdaFactoryGetterBenchmark {
             static_reflective = reflective;
             static_unreflect = unreflect;
             static_mh = mh;
+            function_plain = object -> object.value;
             // Create a manually implemented lambda to compare performance with generated ones.
             mh_function = object -> {
                 try {
@@ -84,7 +87,7 @@ public class LambdaFactoryGetterBenchmark {
                     throw MethodHandlesX.throwUnchecked(t);
                 }
             };
-            lmbda = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), mh);
+            lmbda = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), MethodHandles.lookup(), mh);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalStateException(e);
         }
@@ -148,6 +151,11 @@ public class LambdaFactoryGetterBenchmark {
     @Benchmark
     public int static_mh_function() {
         return mh_function.applyAsInt(this);
+    }
+
+    @Benchmark
+    public int function_plain_0() {
+        return function_plain.applyAsInt(this);
     }
 
     @Benchmark

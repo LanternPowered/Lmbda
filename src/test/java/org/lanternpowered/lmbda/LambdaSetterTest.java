@@ -39,7 +39,7 @@ class LambdaSetterTest {
         final MethodHandles.Lookup lookup = MethodHandlesX.trustedLookup();
         final MethodHandle methodHandle = lookup.findSetter(TestObject.class, "data", int.class);
 
-        final ObjIntConsumer<TestObject> setter = LambdaFactory.create(FunctionalInterface.of(ObjIntConsumer.class), methodHandle);
+        final ObjIntConsumer<TestObject> setter = LambdaFactory.create(FunctionalInterface.of(ObjIntConsumer.class), lookup, methodHandle);
 
         final TestObject object = new TestObject();
         assertEquals(100, object.getData());

@@ -24,31 +24,18 @@
  */
 package org.lanternpowered.lmbda;
 
-import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
-import static org.objectweb.asm.Opcodes.BIPUSH;
 import static org.objectweb.asm.Opcodes.DLOAD;
 import static org.objectweb.asm.Opcodes.DRETURN;
 import static org.objectweb.asm.Opcodes.FLOAD;
 import static org.objectweb.asm.Opcodes.FRETURN;
-import static org.objectweb.asm.Opcodes.GETSTATIC;
-import static org.objectweb.asm.Opcodes.ICONST_0;
-import static org.objectweb.asm.Opcodes.ICONST_1;
-import static org.objectweb.asm.Opcodes.ICONST_2;
-import static org.objectweb.asm.Opcodes.ICONST_3;
-import static org.objectweb.asm.Opcodes.ICONST_4;
-import static org.objectweb.asm.Opcodes.ICONST_5;
-import static org.objectweb.asm.Opcodes.ICONST_M1;
 import static org.objectweb.asm.Opcodes.ILOAD;
-import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.LLOAD;
 import static org.objectweb.asm.Opcodes.LRETURN;
 import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Opcodes.SIPUSH;
 
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
@@ -56,16 +43,6 @@ import org.objectweb.asm.Type;
  * A utility class for class generation.
  */
 final class BytecodeUtils {
-
-    static void visitPrivateEmptyConstructor(ClassVisitor cv) {
-        final MethodVisitor mv = cv.visitMethod(ACC_PRIVATE, "<init>", "()V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-    }
 
     /**
      * Visits the {@link MethodVisitor} to apply the load
@@ -122,66 +99,5 @@ final class BytecodeUtils {
         } else {
             mv.visitInsn(ARETURN);
         }
-    }
-
-
-    /**
-     * Visits the {@link MethodVisitor} to push a
-     * constant integer value to the stack.
-     *
-     * @param mv The method visitor
-     * @param value The integer
-     */
-    static void visitPushInt(MethodVisitor mv, int value) {
-        if (value == -1) {
-            mv.visitInsn(ICONST_M1);
-        } else if (value == 0) {
-            mv.visitInsn(ICONST_0);
-        } else if (value == 1) {
-            mv.visitInsn(ICONST_1);
-        } else if (value == 2) {
-            mv.visitInsn(ICONST_2);
-        } else if (value == 3) {
-            mv.visitInsn(ICONST_3);
-        } else if (value == 4) {
-            mv.visitInsn(ICONST_4);
-        } else if (value == 5) {
-            mv.visitInsn(ICONST_5);
-        } else if (value >= -128 && value <= 127) {
-            mv.visitIntInsn(BIPUSH, value);
-        } else if (value >= -32768 && value <= 32767) {
-            mv.visitIntInsn(SIPUSH, value);
-        } else {
-            mv.visitLdcInsn(value);
-        }
-    }
-
-    static void visitLoadType(MethodVisitor mv, Type type) {
-        final int sort = type.getSort();
-        if (sort == Type.INT) {
-            visitLoadType(mv, "Integer");
-        } else if (sort == Type.BYTE) {
-            visitLoadType(mv, "Byte");
-        } else if (sort == Type.BOOLEAN) {
-            visitLoadType(mv, "Boolean");
-        } else if (sort == Type.SHORT) {
-            visitLoadType(mv, "Short");
-        } else if (sort == Type.CHAR) {
-            visitLoadType(mv, "Character");
-        } else if (sort == Type.DOUBLE) {
-            visitLoadType(mv, "Double");
-        } else if (sort == Type.FLOAT) {
-            visitLoadType(mv, "Float");
-        } else if (sort == Type.LONG) {
-            visitLoadType(mv, "Long");
-        } else if (sort == Type.VOID) {
-            visitLoadType(mv, "Void");
-        } else {
-            mv.visitLdcInsn(type);
-        }
-    }
-
-    private static void visitLoadType(MethodVisitor mv, String name) {
-        mv.visitFieldInsn(GETSTATIC, "java/lang/" + name, "TYPE", "Ljava/lang/Class;");
     }
 }

@@ -24,11 +24,6 @@
  */
 package org.lanternpowered.lmbda;
 
-import static org.objectweb.asm.Opcodes.ASM5;
-
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -43,7 +38,7 @@ import java.security.PrivilegedAction;
 @SuppressWarnings("ThrowableNotThrown")
 public final class MethodHandlesX {
 
-    static final MethodHandles.Lookup trustedLookup = loadTrustedLookup();
+    private static final MethodHandles.Lookup trustedLookup = loadTrustedLookup();
     private static final ProtectionDomainClassDefineSupport protectionDomainClassDefineSupport = loadProtectionDomainClassDefineSupport();
 
     /**
@@ -69,12 +64,7 @@ public final class MethodHandlesX {
      * @throws IllegalAccessException If the lookup doesn't have access in its target class
      */
     public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
-        return defineClass(lookup, null, byteCode);
-    }
-
-    // TODO: Use this to
-    static Class<?> defineClass(MethodHandles.Lookup lookup, String className, byte[] byteCode) {
-        return protectionDomainClassDefineSupport.defineClass(lookup, className, byteCode);
+        return protectionDomainClassDefineSupport.defineClass(lookup, byteCode);
     }
 
     /**
@@ -118,21 +108,7 @@ public final class MethodHandlesX {
 
     private interface ProtectionDomainClassDefineSupport {
 
-        Class<?> defineClass(MethodHandles.Lookup lookup, String className, byte[] byteCode);
-    }
-
-    private final static class StopVisiting extends RuntimeException {
-
-        final static StopVisiting INSTANCE = new StopVisiting(); // Internal access only
-
-        private StopVisiting() {
-        }
-
-        @Override
-        public Throwable fillInStackTrace() {
-            setStackTrace(new StackTraceElement[0]);
-            return this;
-        }
+        Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode);
     }
 
     private static ProtectionDomainClassDefineSupport loadProtectionDomainClassDefineSupport() {
@@ -140,7 +116,7 @@ public final class MethodHandlesX {
             try {
                 final MethodHandle methodHandle = MethodHandles.publicLookup().findVirtual(
                         MethodHandles.Lookup.class, "defineClass", MethodType.methodType(Class.class, byte[].class));
-                return (ProtectionDomainClassDefineSupport) (lookup, className, byteCode) -> {
+                return (ProtectionDomainClassDefineSupport) (lookup, byteCode) -> {
                     try {
                         return (Class<?>) methodHandle.invoke(lookup, byteCode);
                     } catch (Throwable t) {
@@ -152,27 +128,10 @@ public final class MethodHandlesX {
                 try {
                     final MethodHandle methodHandle = trustedLookup.findVirtual(ClassLoader.class, "defineClass",
                             MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
-                    return (ProtectionDomainClassDefineSupport) (lookup, className, byteCode) -> {
-                        // Search for the class name
-                        final ClassReader reader = new ClassReader(byteCode);
-                        if (className == null) {
-                            final String[] theName = new String[1];
-                            try {
-                                reader.accept(new ClassVisitor(ASM5) {
-                                    @Override
-                                    public void visit(int version, int access, String name,
-                                            String signature, String superName, String[] interfaces) {
-                                        theName[0] = name;
-                                        throw StopVisiting.INSTANCE;
-                                    }
-                                }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                            } catch (StopVisiting ignored) {
-                            }
-                            className = theName[0];
-                        }
+                    return (ProtectionDomainClassDefineSupport) (lookup, byteCode) -> {
                         try {
                             return (Class<?>) methodHandle.invoke(lookup.lookupClass().getClassLoader(),
-                                    className.replace('/', '.'), byteCode, 0, byteCode.length);
+                                    null, byteCode, 0, byteCode.length);
                         } catch (Throwable t) {
                             throw throwUnchecked(t);
                         }

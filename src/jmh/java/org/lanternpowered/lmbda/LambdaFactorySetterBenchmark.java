@@ -88,7 +88,7 @@ public class LambdaFactorySetterBenchmark {
                     throw MethodHandlesX.throwUnchecked(t);
                 }
             };
-            lmbda = LambdaFactory.create(FunctionalInterface.of(IntSetFunction.class), mh);
+            lmbda = LambdaFactory.create(FunctionalInterface.of(IntSetFunction.class), MethodHandles.lookup(), mh);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalStateException(e);
         }

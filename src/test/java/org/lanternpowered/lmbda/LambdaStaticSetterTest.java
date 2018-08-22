@@ -39,7 +39,7 @@ class LambdaStaticSetterTest {
         final MethodHandles.Lookup lookup = MethodHandlesX.trustedLookup();
         final MethodHandle methodHandle = lookup.findStaticSetter(TestObject.class, "data", int.class);
 
-        final IntConsumer setter = LambdaFactory.create(FunctionalInterface.of(IntConsumer.class), methodHandle);
+        final IntConsumer setter = LambdaFactory.create(FunctionalInterface.of(IntConsumer.class), lookup, methodHandle);
 
         assertEquals(100, TestObject.getData());
         setter.accept(10000);

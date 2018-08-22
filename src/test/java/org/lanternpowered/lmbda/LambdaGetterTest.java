@@ -30,8 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.util.function.IntFunction;
-import java.util.function.ObjIntConsumer;
 import java.util.function.ToIntFunction;
 
 class LambdaGetterTest {
@@ -41,7 +39,7 @@ class LambdaGetterTest {
         final MethodHandles.Lookup lookup = MethodHandlesX.trustedLookup();
         final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
-        final ToIntFunction<TestObject> getter = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), methodHandle);
+        final ToIntFunction<TestObject> getter = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), lookup, methodHandle);
 
         final TestObject object = new TestObject();
         assertEquals(100, getter.applyAsInt(object));
