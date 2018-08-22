@@ -25,7 +25,6 @@
 package org.lanternpowered.lmbda;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -62,10 +61,10 @@ public final class LambdaFactory {
      * @param <T> The first input type of the predicate
      * @param <U> The second input type of the predicate
      * @return The created bi predicate
-     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
+     * @see #create(FunctionalInterface, MethodHandle)
      */
-    public static <T, U> BiPredicate<T, U> createBiPredicate(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
-        return create(biPredicateInterface, lookup, methodHandle);
+    public static <T, U> BiPredicate<T, U> createBiPredicate(MethodHandle methodHandle) {
+        return create(biPredicateInterface, methodHandle);
     }
 
     /**
@@ -74,10 +73,10 @@ public final class LambdaFactory {
      * @param methodHandle The method handle
      * @param <T> The input type of the predicate
      * @return The created predicate
-     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
+     * @see #create(FunctionalInterface, MethodHandle)
      */
-    public static <T> Predicate<T> createPredicate(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
-        return create(predicateInterface, lookup, methodHandle);
+    public static <T> Predicate<T> createPredicate(MethodHandle methodHandle) {
+        return create(predicateInterface, methodHandle);
     }
 
     /**
@@ -87,10 +86,10 @@ public final class LambdaFactory {
      * @param <T> The first input type of the consumer
      * @param <U> The second input type of the consumer
      * @return The created bi consumer
-     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
+     * @see #create(FunctionalInterface, MethodHandle)
      */
-    public static <T, U> BiConsumer<T, U> createBiConsumer(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
-        return create(biConsumerInterface, lookup, methodHandle);
+    public static <T, U> BiConsumer<T, U> createBiConsumer(MethodHandle methodHandle) {
+        return create(biConsumerInterface, methodHandle);
     }
 
     /**
@@ -99,10 +98,10 @@ public final class LambdaFactory {
      * @param methodHandle The method handle
      * @param <T> The input type of the consumer
      * @return The created consumer
-     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
+     * @see #create(FunctionalInterface, MethodHandle)
      */
-    public static <T> Consumer<T> createConsumer(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
-        return create(consumerInterface, lookup, methodHandle);
+    public static <T> Consumer<T> createConsumer(MethodHandle methodHandle) {
+        return create(consumerInterface, methodHandle);
     }
 
     /**
@@ -111,10 +110,10 @@ public final class LambdaFactory {
      * @param methodHandle The method handle
      * @param <T> The result type of the supplier
      * @return The created supplier
-     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
+     * @see #create(FunctionalInterface, MethodHandle)
      */
-    public static <T> Supplier<T> createSupplier(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
-        return create(supplierInterface, lookup, methodHandle);
+    public static <T> Supplier<T> createSupplier(MethodHandle methodHandle) {
+        return create(supplierInterface, methodHandle);
     }
 
     /**
@@ -125,10 +124,10 @@ public final class LambdaFactory {
      * @param <U> The second input type of the function
      * @param <R> The result type of the function
      * @return The created bi function
-     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
+     * @see #create(FunctionalInterface, MethodHandle)
      */
-    public static <T, U, R> BiFunction<T, U, R> createBiFunction(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
-        return create(biFunctionInterface, lookup, methodHandle);
+    public static <T, U, R> BiFunction<T, U, R> createBiFunction(MethodHandle methodHandle) {
+        return create(biFunctionInterface, methodHandle);
     }
 
     /**
@@ -138,10 +137,10 @@ public final class LambdaFactory {
      * @param <T> The input type of the function
      * @param <R> The result type of the function
      * @return The created function
-     * @see #create(FunctionalInterface, MethodHandles.Lookup, MethodHandle)
+     * @see #create(FunctionalInterface, MethodHandle), MethodHandle)
      */
-    public static <T, R> Function<T, R> createFunction(MethodHandles.Lookup lookup, MethodHandle methodHandle) {
-        return create(functionInterface, lookup, methodHandle);
+    public static <T, R> Function<T, R> createFunction(MethodHandle methodHandle) {
+        return create(functionInterface, methodHandle);
     }
 
     /**
@@ -155,8 +154,8 @@ public final class LambdaFactory {
      * @return The constructed function
      */
     @SuppressWarnings("unchecked")
-    public static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandles.Lookup lookup, MethodHandle methodHandle) {
-        return InternalLambdaFactory.create(functionalInterface, lookup, methodHandle);
+    public static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle) {
+        return InternalLambdaFactory.create(functionalInterface, methodHandle);
     }
 
     private LambdaFactory() {

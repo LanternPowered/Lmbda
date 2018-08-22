@@ -58,7 +58,6 @@ import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -98,44 +97,27 @@ final class InternalLambdaFactory {
     }
 
     @SuppressWarnings("unchecked")
-    static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandles.Lookup lookup, MethodHandle methodHandle) {
+    static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle) {
         requireNonNull(functionalInterface, "functionalInterface");
         requireNonNull(methodHandle, "methodHandle");
 
         try {
-            // A direct method can be implemented through the lambda meta factory,
-            // all the other ones we create ourselves
-            boolean directMethod = false;
-
-            try {
-                MethodHandles.reflectAs(Field.class, methodHandle);
-            } catch (ClassCastException e) { // If a field wasn't expected
-                try {
-                    MethodHandles.reflectAs(Method.class, methodHandle);
-                    // Cast didn't fail, so direct field found
-                    directMethod = true;
-                } catch (ClassCastException ex) { // If a method wasn't expected
-                }
-            }
-
-            // Implement our own function
-            if (!directMethod) {
-                // Check access rights of the lookup to the given method handle
-                // TODO: Better way to check?
-                lookup.revealDirect(methodHandle);
-                return createGeneratedFunction(functionalInterface, methodHandle);
-            }
-
-            // Generate the lambda class
-            final CallSite callSite = LambdaMetafactory.metafactory(lookup, functionalInterface.getMethod().getName(),
-                    functionalInterface.classType, functionalInterface.methodType, methodHandle, methodHandle.type());
-
-            // Create the function
-            return (F) callSite.getTarget().invoke();
+            return createGeneratedFunction(functionalInterface, methodHandle);
         } catch (Throwable e) {
             throw new IllegalStateException("Couldn't create lambda for: \"" + methodHandle + "\". "
                     + "Failed to implement: " + functionalInterface, e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T, F extends T> F createLambda(FunctionalInterface<T> functionalInterface,
+            MethodHandles.Lookup lookup, MethodHandle methodHandle) throws Throwable {
+        // Generate the lambda class
+        final CallSite callSite = LambdaMetafactory.metafactory(lookup, functionalInterface.getMethod().getName(),
+                functionalInterface.classType, functionalInterface.methodType, methodHandle, methodHandle.type());
+
+        // Create the function
+        return (F) callSite.getTarget().invoke();
     }
 
     private static final String METHOD_HANDLE_FIELD_NAME = "methodHandle";
@@ -221,7 +203,7 @@ final class InternalLambdaFactory {
             try {
                 return (F) internalLookup.in(theClass).findConstructor(theClass, MethodType.methodType(void.class)).invoke();
             } catch (Throwable t) {
-                throw new IllegalStateException(t);
+                throw MethodHandlesX.throwUnchecked(t);
             }
         } finally {
             // Cleanup

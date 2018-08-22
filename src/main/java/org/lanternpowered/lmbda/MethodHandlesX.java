@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ReflectPermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -64,7 +65,7 @@ public final class MethodHandlesX {
     }
 
     /**
-     * Defines a class the same protection domain of the {@link MethodHandles.Lookup} target (package private access).
+     * Defines a class in the same protection domain of the {@link MethodHandles.Lookup} target (package private access).
      *
      * @param lookup The lookup of which the target class will be used to define the class in
      * @param byteCode The byte code of the class to define
@@ -113,8 +114,11 @@ public final class MethodHandlesX {
 
                 try {
                     final Field field = MethodHandles.Lookup.class.getDeclaredField("allowedModes");
-                    // Make the field accessible
-                    FieldAccess.makeAccessible(field);
+                    field.setAccessible(true);
+
+                    final Field mField = Field.class.getDeclaredField("modifiers");
+                    mField.setAccessible(true);
+                    mField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
 
                     // The field that holds the trusted access mode
                     final Field trustedAccessModeField = MethodHandles.Lookup.class.getDeclaredField("TRUSTED");
