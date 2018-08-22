@@ -36,9 +36,8 @@ class MyClass {
     void test() throws Exception {
         final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(MyObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = lookup.findStatic(MyObject.class, "set", MethodType.methodType(void.class, int.class));
-        
-        // Create the setter function, the lookup needs to have access to the given method handle
-        final IntConsumer setter = LambdaFactory.create(intConsumerInterface, lookup, methodHandle);
+
+        final IntConsumer setter = LambdaFactory.create(intConsumerInterface, methodHandle);
         setter.accept(1000);
     }
 }
