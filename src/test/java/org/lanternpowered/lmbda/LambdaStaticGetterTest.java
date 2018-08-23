@@ -36,10 +36,10 @@ class LambdaStaticGetterTest {
 
     @Test
     void test() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandles.lookup();
+        final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(TestObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = lookup.findStaticGetter(TestObject.class, "data", int.class);
 
-        final IntSupplier getter = LambdaFactory.create(FunctionalInterface.of(IntSupplier.class), methodHandle);
+        final IntSupplier getter = LmbdaFactory.create(LmbdaType.of(IntSupplier.class), methodHandle);
 
         assertEquals(100, getter.getAsInt());
         TestObject.setData(10000);

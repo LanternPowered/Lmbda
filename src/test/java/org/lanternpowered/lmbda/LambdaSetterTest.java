@@ -36,10 +36,10 @@ class LambdaSetterTest {
 
     @Test
     void test() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandles.lookup();
+        final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(TestObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = lookup.findSetter(TestObject.class, "data", int.class);
 
-        final ObjIntConsumer<TestObject> setter = LambdaFactory.create(FunctionalInterface.of(ObjIntConsumer.class), methodHandle);
+        final ObjIntConsumer<TestObject> setter = LmbdaFactory.create(new LmbdaType<ObjIntConsumer<TestObject>>() {}, methodHandle);
 
         final TestObject object = new TestObject();
         assertEquals(100, object.getData());

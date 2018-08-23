@@ -36,10 +36,10 @@ class LambdaGetterTest {
 
     @Test
     void test() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandles.lookup();
+        final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(TestObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
-        final ToIntFunction<TestObject> getter = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), methodHandle);
+        final ToIntFunction<TestObject> getter = LmbdaFactory.create(new LmbdaType<ToIntFunction<TestObject>>() {}, methodHandle);
 
         final TestObject object = new TestObject();
         assertEquals(100, getter.applyAsInt(object));

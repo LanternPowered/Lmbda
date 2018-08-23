@@ -46,7 +46,7 @@ class MyClass {
         final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(MyObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = lookup.findStatic(MyObject.class, "set", MethodType.methodType(void.class, int.class));
 
-        final IntConsumer setter = LambdaFactory.create(FunctionalInterface.of(IntConsumer.class), methodHandle);
+        final IntConsumer setter = LmbdaFactory.create(LmbdaType.of(IntConsumer.class), methodHandle);
         setter.accept(1000);
     }
 }
@@ -80,7 +80,7 @@ class MyClass {
         final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(MyObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = lookup.findVirtual(MyObject.class, "set", MethodType.methodType(void.class, int.class));
 
-        final ObjIntConsumer<MyObject> setter = LambdaFactory.create(new FunctionalInterface<ObjIntConsumer<MyObject>>, methodHandle);
+        final ObjIntConsumer<MyObject> setter = LmbdaFactory.create(new LmbdaType<ObjIntConsumer<MyObject>>() {}, methodHandle);
         
         final MyObject myObject = new MyObject();
         setter.accept(myObject, 1000);

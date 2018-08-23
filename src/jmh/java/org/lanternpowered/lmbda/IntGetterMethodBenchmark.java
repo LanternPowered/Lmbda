@@ -115,8 +115,8 @@ public class IntGetterMethodBenchmark {
             //noinspection unchecked
             proxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, methodHandle);
             lambdaFunction = InternalLambdaFactory.createLambda(
-                    FunctionalInterface.of(ToIntFunction.class), MethodHandles.lookup(), methodHandle);
-            lmbdaFunction = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), methodHandle);
+                    LmbdaType.of(ToIntFunction.class), MethodHandles.lookup(), methodHandle);
+            lmbdaFunction = LmbdaFactory.create(LmbdaType.of(ToIntFunction.class), methodHandle);
         } catch (Throwable e) {
             throw new IllegalStateException(e);
         }

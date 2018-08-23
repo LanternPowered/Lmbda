@@ -27,19 +27,22 @@ package org.lanternpowered.lmbda;
 import static java.util.Objects.requireNonNull;
 
 import java.lang.invoke.MethodType;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 /**
  * Represents a {@link java.lang.FunctionalInterface}
  * that can be be implemented by a generated function.
  */
-public final class FunctionalInterface<T> {
+public abstract class LmbdaType<T> {
 
     /**
      * Attempts to find a function method in the given functional interface class.
      * <p>A functional interface doesn't need to be annotated with
-     * {@link FunctionalInterface}, but only one non default method may
+     * {@link LmbdaType}, but only one non default method may
      * be present.
      *
      * @param functionalInterface The functional interface
@@ -47,7 +50,62 @@ public final class FunctionalInterface<T> {
      * @return The functional method
      * @throws IllegalArgumentException If no valid functional method could be found
      */
-    public static <T> FunctionalInterface<T> of(Class<T> functionalInterface) {
+    public static <T> LmbdaType<T> of(Class<T> functionalInterface) {
+        return new LmbdaType.FromClass<>(functionalInterface);
+    }
+
+    private Class<T> functionClass;
+    private Method method;
+
+    MethodType classType;
+    MethodType methodType;
+
+    private static final class FromClass<T> extends LmbdaType<T> {
+
+        private FromClass(Class<T> functionalInterface) {
+            super(functionalInterface);
+        }
+    }
+
+    /**
+     * Constructs a new {@link LmbdaType}.
+     *
+     * <p>The generic signature from the extended class will be
+     * used to determine the functional interface to implement.
+     * If it's not resolved, a {@link IllegalStateException} can
+     * be expected.</p>
+     */
+    @SuppressWarnings("unchecked")
+    public LmbdaType() {
+        final Class<?> theClass = getClass();
+        final Class<?> superClass = theClass.getSuperclass();
+        if (superClass != LmbdaType.class) {
+            throw new IllegalStateException("Only direct subclasses of FunctionalInterface are allowed.");
+        }
+        final Type superType = theClass.getGenericSuperclass();
+        if (!(superType instanceof ParameterizedType)) {
+            throw new IllegalStateException("Direct subclasses of FunctionalInterface must be a parameterized type.");
+        }
+        final ParameterizedType parameterizedType = (ParameterizedType) superType;
+        final Type interfType = parameterizedType.getActualTypeArguments()[0];
+        final Class<T> interfClass;
+        if (interfType instanceof Class<?>) {
+            interfClass = (Class<T>) interfType;
+        } else if (interfType instanceof ParameterizedType) {
+            interfClass = (Class<T>) ((ParameterizedType) interfType).getRawType();
+        } else if (interfType instanceof GenericArrayType) {
+            throw new IllegalStateException("The FunctionalInterface type cannot be a GenericArrayType.");
+        } else {
+            throw new IllegalStateException("The FunctionalInterface type may not be a TypeVariable.");
+        }
+        init(interfClass);
+    }
+
+    private LmbdaType(Class<T> functionalInterface) {
+        init(functionalInterface);
+    }
+
+    private void init(Class<T> functionalInterface) {
         requireNonNull(functionalInterface, "functionalInterface");
         if (!functionalInterface.isInterface()) throw new IllegalStateException("functionalInterface must be a interface");
         Method validMethod = null;
@@ -67,30 +125,10 @@ public final class FunctionalInterface<T> {
             throw new IllegalStateException("Couldn't find a non-default method in: " +
                     functionalInterface.getClass().getName());
         }
-        final MethodType classType = MethodType.methodType(functionalInterface);
-        final MethodType methodType = MethodType.methodType(validMethod.getReturnType(), validMethod.getParameterTypes());
-        return new FunctionalInterface<>(functionalInterface, validMethod, classType, methodType);
-    }
-
-    private final Class<T> functionClass;
-    private final Method method;
-
-    final MethodType classType;
-    final MethodType methodType;
-
-    /**
-     * Constructs a new {@link FunctionalInterface} from the given arguments.
-     *
-     * @param functionClass The function class
-     * @param method The function method
-     * @param classType The function interface that will be implemented
-     * @param methodType The function method signature that will be implemented
-     */
-    private FunctionalInterface(Class<T> functionClass, Method method, MethodType classType, MethodType methodType) {
-        this.functionClass = functionClass;
-        this.method = method;
-        this.classType = classType;
-        this.methodType = methodType;
+        this.functionClass = functionalInterface;
+        this.classType = MethodType.methodType(functionalInterface);
+        this.method = validMethod;
+        this.methodType = MethodType.methodType(validMethod.getReturnType(), validMethod.getParameterTypes());
     }
 
     /**
@@ -104,7 +142,7 @@ public final class FunctionalInterface<T> {
 
     /**
      * Gets the {@link Method} that will be implemented when
-     * generating a function for this {@link FunctionalInterface}.
+     * generating a function for this {@link LmbdaType}.
      *
      * @return The method
      */
@@ -114,7 +152,7 @@ public final class FunctionalInterface<T> {
 
     @Override
     public String toString() {
-        return String.format("FunctionalInterface[class=%s,method=%s]",
+        return String.format("LmbdaType[class=%s,method=%s]",
                 this.functionClass.getName(), this.method.getName() + this.methodType);
     }
 }

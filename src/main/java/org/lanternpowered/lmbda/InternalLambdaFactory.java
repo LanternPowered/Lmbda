@@ -64,7 +64,7 @@ import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Separated from {@link LambdaFactory} to keep it clean.
+ * Separated from {@link LmbdaFactory} to keep it clean.
  */
 final class InternalLambdaFactory {
 
@@ -97,41 +97,41 @@ final class InternalLambdaFactory {
     }
 
     @SuppressWarnings("unchecked")
-    static <T, F extends T> F create(FunctionalInterface<T> functionalInterface, MethodHandle methodHandle) {
-        requireNonNull(functionalInterface, "functionalInterface");
+    static <T, F extends T> F create(LmbdaType<T> lmbdaType, MethodHandle methodHandle) {
+        requireNonNull(lmbdaType, "lmbdaType");
         requireNonNull(methodHandle, "methodHandle");
 
         try {
-            return createGeneratedFunction(functionalInterface, methodHandle);
+            return createGeneratedFunction(lmbdaType, methodHandle);
         } catch (Throwable e) {
             throw new IllegalStateException("Couldn't create lambda for: \"" + methodHandle + "\". "
-                    + "Failed to implement: " + functionalInterface, e);
+                    + "Failed to implement: " + lmbdaType, e);
         }
     }
 
     @SuppressWarnings("unchecked")
-    static <T, F extends T> F createLambda(FunctionalInterface<T> functionalInterface,
+    static <T> T createLambda(LmbdaType<T> lmbdaType,
             MethodHandles.Lookup lookup, MethodHandle methodHandle) throws Throwable {
         // Generate the lambda class
-        final CallSite callSite = LambdaMetafactory.metafactory(lookup, functionalInterface.getMethod().getName(),
-                functionalInterface.classType, functionalInterface.methodType, methodHandle, methodHandle.type());
+        final CallSite callSite = LambdaMetafactory.metafactory(lookup, lmbdaType.getMethod().getName(),
+                lmbdaType.classType, lmbdaType.methodType, methodHandle, methodHandle.type());
 
         // Create the function
-        return (F) callSite.getTarget().invoke();
+        return (T) callSite.getTarget().invoke();
     }
 
     private static final String METHOD_HANDLE_FIELD_NAME = "methodHandle";
 
     @SuppressWarnings("unchecked")
-    private static <T, F extends T> F createGeneratedFunction(FunctionalInterface functionalInterface, MethodHandle methodHandle) {
+    private static <T> T createGeneratedFunction(LmbdaType lmbdaType, MethodHandle methodHandle) {
         // Convert the method handle types to match the functional method signature,
         // this will make sure that all the objects are converted accordingly so
         // we don't have to do it ourselves with asm.
         // This will also throw an exception if the functional interface cannot be
         // implemented by the given method handle
-        methodHandle = methodHandle.asType(functionalInterface.methodType);
+        methodHandle = methodHandle.asType(lmbdaType.methodType);
 
-        final Method method = functionalInterface.getMethod();
+        final Method method = lmbdaType.getMethod();
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
         // The function class will be defined in the package of this library to have
@@ -141,7 +141,7 @@ final class InternalLambdaFactory {
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
-                new String[] { Type.getInternalName(functionalInterface.getFunctionClass())});
+                new String[] { Type.getInternalName(lmbdaType.getFunctionClass())});
 
         final FieldVisitor fv = cw.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC,
                 METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;", null, null);
@@ -201,7 +201,7 @@ final class InternalLambdaFactory {
 
             // Instantiate the function object
             try {
-                return (F) internalLookup.in(theClass).findConstructor(theClass, MethodType.methodType(void.class)).invoke();
+                return (T) internalLookup.in(theClass).findConstructor(theClass, MethodType.methodType(void.class)).invoke();
             } catch (Throwable t) {
                 throw MethodHandlesX.throwUnchecked(t);
             }
