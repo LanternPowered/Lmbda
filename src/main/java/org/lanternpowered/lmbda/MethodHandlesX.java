@@ -34,6 +34,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ReflectPermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 
 /**
  * A utility class full of magic related to {@link MethodHandles}.
@@ -76,6 +77,60 @@ public final class MethodHandlesX {
         requireNonNull(lookup, "lookup");
         requireNonNull(byteCode, "byteCode");
         return defineClassFunction.defineClass(lookup, byteCode);
+    }
+
+    /**
+     * Similar to {@link MethodHandles.Lookup#findStaticSetter(Class, String, Class)}
+     * but allows modifications to final fields.
+     *
+     * @param lookup The lookup
+     * @param target The target class to find the class within
+     * @param fieldName The field name
+     * @param type The field type
+     * @return The method handle
+     * @throws IllegalAccessException
+     * @throws NoSuchFieldException
+     */
+    public static MethodHandle findStaticSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> type) throws
+            IllegalAccessException, NoSuchFieldException {
+        final Field field = AccessController.doPrivileged((PrivilegedAction<Field>) () -> Arrays.stream(target.getDeclaredFields())
+                .filter(f -> Modifier.isStatic(f.getModifiers()) && f.getName().equals(fieldName) && f.getType() == type)
+                .findFirst().orElse(null));
+        if (field == null) {
+            throw new NoSuchFieldException("no such field: " + target.getName() + "." + fieldName + "/" + type + "/putStatic");
+        }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            FieldAccess.makeAccessible(field);
+            return null;
+        });
+        return lookup.unreflectSetter(field);
+    }
+
+    /**
+     * Similar to {@link MethodHandles.Lookup#findSetter(Class, String, Class)}
+     * but allows modifications to final fields.
+     *
+     * @param lookup The lookup
+     * @param target The target class to find the class within
+     * @param fieldName The field name
+     * @param type The field type
+     * @return The method handle
+     * @throws IllegalAccessException
+     * @throws NoSuchFieldException
+     */
+    public static MethodHandle findSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> type) throws
+            IllegalAccessException, NoSuchFieldException {
+        final Field field = AccessController.doPrivileged((PrivilegedAction<Field>) () -> Arrays.stream(target.getDeclaredFields())
+                .filter(f -> !Modifier.isStatic(f.getModifiers()) && f.getName().equals(fieldName) && f.getType() == type)
+                .findFirst().orElse(null));
+        if (field == null) {
+            throw new NoSuchFieldException("no such field: " + target.getName() + "." + fieldName + "/" + type + "/putField");
+        }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            FieldAccess.makeAccessible(field);
+            return null;
+        });
+        return lookup.unreflectSetter(field);
     }
 
     private interface PrivateLookupProvider {
