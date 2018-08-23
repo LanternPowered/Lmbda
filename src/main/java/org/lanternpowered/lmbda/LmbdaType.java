@@ -51,7 +51,7 @@ public abstract class LmbdaType<T> {
      * @throws IllegalArgumentException If no valid functional method could be found
      */
     public static <T> LmbdaType<T> of(Class<T> functionalInterface) {
-        return new LmbdaType.FromClass<>(functionalInterface);
+        return new LmbdaType<T>(functionalInterface) {};
     }
 
     private Class<T> functionClass;
@@ -59,13 +59,6 @@ public abstract class LmbdaType<T> {
 
     MethodType classType;
     MethodType methodType;
-
-    private static final class FromClass<T> extends LmbdaType<T> {
-
-        private FromClass(Class<T> functionalInterface) {
-            super(functionalInterface);
-        }
-    }
 
     /**
      * Constructs a new {@link LmbdaType}.
