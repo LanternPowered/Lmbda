@@ -42,7 +42,7 @@ import java.security.PrivilegedAction;
 public final class MethodHandlesX {
 
     private static final PrivateLookupProvider privateLookupProvider = loadPrivateLookupProvider();
-    private static final ProtectionDomainClassDefineSupport protectionDomainClassDefineSupport = loadProtectionDomainClassDefineSupport();
+    private static final DefineClass defineClassFunction = loadDefineClass();
 
     /**
      * Gets a lookup object with full capabilities to emulate all supported bytecode
@@ -75,7 +75,7 @@ public final class MethodHandlesX {
     public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
         requireNonNull(lookup, "lookup");
         requireNonNull(byteCode, "byteCode");
-        return protectionDomainClassDefineSupport.defineClass(lookup, byteCode);
+        return defineClassFunction.defineClass(lookup, byteCode);
     }
 
     private interface PrivateLookupProvider {
@@ -146,7 +146,7 @@ public final class MethodHandlesX {
         }
     }
 
-    static final class DirectPrivateLookupProvider implements PrivateLookupProvider {
+    private static final class DirectPrivateLookupProvider implements PrivateLookupProvider {
 
         private static final MethodHandle methodHandle = findMethodHandle();
 
@@ -161,51 +161,70 @@ public final class MethodHandlesX {
 
         @Override
         public MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) {
-            try {
-                return (MethodHandles.Lookup) methodHandle.invoke(targetClass, lookup);
-            } catch (Throwable t) {
-                throw throwUnchecked(t);
-            }
+            return doUnchecked(() -> (MethodHandles.Lookup) requireNonNull(methodHandle).invoke(targetClass, lookup));
         }
     }
 
-    private interface ProtectionDomainClassDefineSupport {
+    private interface DefineClass {
 
         Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode);
     }
 
-    private static ProtectionDomainClassDefineSupport loadProtectionDomainClassDefineSupport() {
-        return AccessController.doPrivileged((PrivilegedAction<ProtectionDomainClassDefineSupport>) () -> {
-            try {
-                final MethodHandle methodHandle = MethodHandles.publicLookup().findVirtual(
-                        MethodHandles.Lookup.class, "defineClass", MethodType.methodType(Class.class, byte[].class));
-                return (ProtectionDomainClassDefineSupport) (lookup, byteCode) -> {
-                    try {
-                        return (Class<?>) methodHandle.invoke(lookup, byteCode);
-                    } catch (Throwable t) {
-                        throw throwUnchecked(t);
-                    }
-                };
-            } catch (NoSuchMethodException e) {
-                try {
-                    final MethodHandle methodHandle = ((TrustedPrivateLookupProvider) privateLookupProvider).trustedLookup
-                            .findVirtual(ClassLoader.class, "defineClass",
-                                    MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
-                    return (ProtectionDomainClassDefineSupport) (lookup, byteCode) -> {
-                        try {
-                            return (Class<?>) methodHandle.invoke(lookup.lookupClass().getClassLoader(),
-                                    null, byteCode, 0, byteCode.length);
-                        } catch (Throwable t) {
-                            throw throwUnchecked(t);
-                        }
-                    };
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            } catch (IllegalAccessException e) {
-                throw throwUnchecked(e);
+    private static DefineClass loadDefineClass() {
+        return AccessController.doPrivileged((PrivilegedAction<DefineClass>) () -> {
+            final MethodHandle methodHandle = Java9DefineClass.findMethodHandle();
+            if (methodHandle != null) {
+                return new Java9DefineClass();
             }
+            return new ReflectClassLoaderDefineClass();
         });
+    }
+
+    /**
+     * This {@link DefineClass} will be used in Java 9+
+     */
+    private static final class Java9DefineClass implements DefineClass {
+
+        private static final MethodHandle methodHandle = findMethodHandle();
+
+        static MethodHandle findMethodHandle() {
+            try {
+                return MethodHandles.publicLookup().findVirtual(MethodHandles.Lookup.class, "defineClass",
+                        MethodType.methodType(Class.class, byte[].class));
+            } catch (NoSuchMethodException | IllegalAccessException e) {
+                return null;
+            }
+        }
+
+        @Override
+        public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
+            return doUnchecked(() -> (Class<?>) requireNonNull(methodHandle).invoke(lookup, byteCode));
+        }
+    }
+
+    private static final class ReflectClassLoaderDefineClass implements DefineClass {
+
+        private static final MethodHandle methodHandle = doUnchecked(() ->
+                ((TrustedPrivateLookupProvider) privateLookupProvider).trustedLookup.findVirtual(ClassLoader.class, "defineClass",
+                        MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class)));
+
+        @Override
+        public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
+            return doUnchecked(() -> (Class<?>) methodHandle.invoke(lookup.lookupClass().getClassLoader(), null, byteCode, 0, byteCode.length));
+        }
+    }
+
+    static <T> T doUnchecked(ThrowableSupplier<T> supplier) {
+        try {
+            return supplier.get();
+        } catch (Throwable t) {
+            throw throwUnchecked(t);
+        }
+    }
+
+    interface ThrowableSupplier<T> {
+
+        T get() throws Throwable;
     }
 
     /**

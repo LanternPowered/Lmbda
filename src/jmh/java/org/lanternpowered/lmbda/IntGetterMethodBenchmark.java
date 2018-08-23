@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
@@ -67,6 +68,7 @@ public class IntGetterMethodBenchmark {
     private static ToIntFunction<IntGetterMethodBenchmark> staticReflectiveFunction;
     private static ToIntFunction<IntGetterMethodBenchmark> methodHandleFunction;
     private static ToIntFunction<IntGetterMethodBenchmark> reflectiveFunction;
+    private static ToIntFunction<IntGetterMethodBenchmark> proxyFunction;
     private static ToIntFunction<IntGetterMethodBenchmark> lambdaFunction;
     private static ToIntFunction<IntGetterMethodBenchmark> lmbdaFunction;
 
@@ -110,6 +112,8 @@ public class IntGetterMethodBenchmark {
                     throw MethodHandlesX.throwUnchecked(t);
                 }
             };
+            //noinspection unchecked
+            proxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, methodHandle);
             lambdaFunction = InternalLambdaFactory.createLambda(
                     FunctionalInterface.of(ToIntFunction.class), MethodHandles.lookup(), methodHandle);
             lmbdaFunction = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), methodHandle);
@@ -145,6 +149,11 @@ public class IntGetterMethodBenchmark {
     @Benchmark
     public int dynamic_reflect() {
         return reflectiveFunction.applyAsInt(this);
+    }
+
+    @Benchmark
+    public int proxy() {
+        return proxyFunction.applyAsInt(this);
     }
 
     @Benchmark

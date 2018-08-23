@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
@@ -67,6 +68,7 @@ public class IntGetterFieldBenchmark {
     private static ToIntFunction<IntGetterFieldBenchmark> methodHandleFunction;
     private static ToIntFunction<IntGetterFieldBenchmark> reflectiveFunction;
     private static ToIntFunction<IntGetterFieldBenchmark> lmbdaFunction;
+    private static ToIntFunction<IntGetterFieldBenchmark> proxyFunction;
 
     // We would normally use @Setup, but we need to initialize "static final" fields here...
     static {
@@ -107,6 +109,8 @@ public class IntGetterFieldBenchmark {
                     throw MethodHandlesX.throwUnchecked(t);
                 }
             };
+            //noinspection unchecked
+            proxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, methodHandle);
             lmbdaFunction = LambdaFactory.create(FunctionalInterface.of(ToIntFunction.class), methodHandle);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalStateException(e);
@@ -136,6 +140,11 @@ public class IntGetterFieldBenchmark {
     @Benchmark
     public int dynamic_reflect() {
         return reflectiveFunction.applyAsInt(this);
+    }
+
+    @Benchmark
+    public int proxy() {
+        return proxyFunction.applyAsInt(this);
     }
 
     @Benchmark
