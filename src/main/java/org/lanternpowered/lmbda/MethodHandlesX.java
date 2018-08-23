@@ -210,6 +210,10 @@ public final class MethodHandlesX {
 
         @Override
         public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
+            final SecurityManager securityManager = System.getSecurityManager();
+            if (securityManager != null) {
+                securityManager.checkPermission(new ReflectPermission("defineClass"));
+            }
             return doUnchecked(() -> (Class<?>) methodHandle.invoke(lookup.lookupClass().getClassLoader(), null, byteCode, 0, byteCode.length));
         }
     }

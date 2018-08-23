@@ -197,14 +197,12 @@ final class InternalLambdaFactory {
             currentMethodHandle.set(methodHandle);
 
             // Define the class within this package
-            final Class<?> theClass = MethodHandlesX.defineClass(internalLookup, cw.toByteArray());
+            final Class<?> theClass = AccessController.doPrivileged(
+                    (PrivilegedAction<Class<?>>) () -> MethodHandlesX.defineClass(internalLookup, cw.toByteArray()));
 
             // Instantiate the function object
-            try {
-                return (T) internalLookup.in(theClass).findConstructor(theClass, MethodType.methodType(void.class)).invoke();
-            } catch (Throwable t) {
-                throw MethodHandlesX.throwUnchecked(t);
-            }
+            return MethodHandlesX.doUnchecked(
+                    () -> (T) internalLookup.in(theClass).findConstructor(theClass, MethodType.methodType(void.class)).invoke());
         } finally {
             // Cleanup
             currentMethodHandle.remove();
