@@ -86,18 +86,22 @@ public final class MethodHandlesX {
      * @param lookup The lookup
      * @param target The target class to find the class within
      * @param fieldName The field name
-     * @param type The field type
+     * @param fieldType The field type
      * @return The method handle
      * @throws IllegalAccessException
      * @throws NoSuchFieldException
      */
-    public static MethodHandle findStaticSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> type) throws
-            IllegalAccessException, NoSuchFieldException {
+    public static MethodHandle findFinalStaticSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> fieldType)
+            throws IllegalAccessException, NoSuchFieldException {
+        requireNonNull(lookup, "lookup");
+        requireNonNull(target, "target");
+        requireNonNull(fieldName, "fieldName");
+        requireNonNull(fieldType, "fieldType");
         final Field field = AccessController.doPrivileged((PrivilegedAction<Field>) () -> Arrays.stream(target.getDeclaredFields())
-                .filter(f -> Modifier.isStatic(f.getModifiers()) && f.getName().equals(fieldName) && f.getType() == type)
+                .filter(f -> Modifier.isStatic(f.getModifiers()) && f.getName().equals(fieldName) && f.getType() == fieldType)
                 .findFirst().orElse(null));
         if (field == null) {
-            throw new NoSuchFieldException("no such field: " + target.getName() + "." + fieldName + "/" + type + "/putStatic");
+            throw new NoSuchFieldException("no such field: " + target.getName() + "." + fieldName + "/" + fieldType.getName() + "/putStatic");
         }
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             FieldAccess.makeAccessible(field);
@@ -113,21 +117,55 @@ public final class MethodHandlesX {
      * @param lookup The lookup
      * @param target The target class to find the class within
      * @param fieldName The field name
-     * @param type The field type
+     * @param fieldType The field type
      * @return The method handle
      * @throws IllegalAccessException
      * @throws NoSuchFieldException
      */
-    public static MethodHandle findSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> type) throws
-            IllegalAccessException, NoSuchFieldException {
+    public static MethodHandle findFinalSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> fieldType)
+            throws IllegalAccessException, NoSuchFieldException {
+        requireNonNull(lookup, "lookup");
+        requireNonNull(target, "target");
+        requireNonNull(fieldName, "fieldName");
+        requireNonNull(fieldType, "fieldType");
         final Field field = AccessController.doPrivileged((PrivilegedAction<Field>) () -> Arrays.stream(target.getDeclaredFields())
-                .filter(f -> !Modifier.isStatic(f.getModifiers()) && f.getName().equals(fieldName) && f.getType() == type)
+                .filter(f -> !Modifier.isStatic(f.getModifiers()) && f.getName().equals(fieldName) && f.getType() == fieldType)
                 .findFirst().orElse(null));
         if (field == null) {
-            throw new NoSuchFieldException("no such field: " + target.getName() + "." + fieldName + "/" + type + "/putField");
+            throw new NoSuchFieldException("no such field: " + target.getName() + "." + fieldName + "/" + fieldType.getName() + "/putField");
         }
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             FieldAccess.makeAccessible(field);
+            return null;
+        });
+        return lookup.unreflectSetter(field);
+    }
+
+    /**
+     * Similar to {@link MethodHandles.Lookup#unreflectSetter(Field)}
+     * but allows modifications to final fields.
+     *
+     * @param lookup The lookup
+     * @param field The field to unreflect
+     * @return The method handle
+     * @throws IllegalAccessException
+     */
+    public static MethodHandle unreflectFinalSetter(MethodHandles.Lookup lookup, Field field) throws IllegalAccessException {
+        requireNonNull(lookup, "lookup");
+        requireNonNull(field, "field");
+        if (!field.isAccessible()) {
+            throw new IllegalAccessException("no access to field: " + field.getDeclaringClass().getName()
+                    + "." + field.getName() + "/" + field.getType().getName());
+        }
+        final Field newField = AccessController.doPrivileged((PrivilegedAction<Field>) () ->
+                Arrays.stream(field.getDeclaringClass().getDeclaredFields())
+                        .filter(f -> f.getName().equals(field.getName()) && f.getType() == field.getType())
+                        .findFirst().orElse(null));
+        if (newField == null) {
+            throw new IllegalStateException(field.toString());
+        }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            FieldAccess.makeAccessible(newField);
             return null;
         });
         return lookup.unreflectSetter(field);
