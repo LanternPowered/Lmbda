@@ -64,7 +64,7 @@ import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Separated from {@link LmbdaFactory} to keep it clean.
+ * Separated from {@link LambdaFactory} to keep it clean.
  */
 final class InternalLambdaFactory {
 
@@ -97,8 +97,8 @@ final class InternalLambdaFactory {
     }
 
     @SuppressWarnings("unchecked")
-    static <T, F extends T> F create(LmbdaType<T> lmbdaType, MethodHandle methodHandle) {
-        requireNonNull(lmbdaType, "lmbdaType");
+    static <T, F extends T> F create(LambdaType<T> lmbdaType, MethodHandle methodHandle) {
+        requireNonNull(lmbdaType, "lambdaType");
         requireNonNull(methodHandle, "methodHandle");
 
         try {
@@ -110,7 +110,7 @@ final class InternalLambdaFactory {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> T createLambda(LmbdaType<T> lmbdaType,
+    static <T> T createLambda(LambdaType<T> lmbdaType,
             MethodHandles.Lookup lookup, MethodHandle methodHandle) throws Throwable {
         // Generate the lambda class
         final CallSite callSite = LambdaMetafactory.metafactory(lookup, lmbdaType.getMethod().getName(),
@@ -123,7 +123,7 @@ final class InternalLambdaFactory {
     private static final String METHOD_HANDLE_FIELD_NAME = "methodHandle";
 
     @SuppressWarnings("unchecked")
-    private static <T> T createGeneratedFunction(LmbdaType lmbdaType, MethodHandle methodHandle) {
+    private static <T> T createGeneratedFunction(LambdaType lmbdaType, MethodHandle methodHandle) {
         // Convert the method handle types to match the functional method signature,
         // this will make sure that all the objects are converted accordingly so
         // we don't have to do it ourselves with asm.
@@ -132,7 +132,7 @@ final class InternalLambdaFactory {
         methodHandle = methodHandle.asType(lmbdaType.methodType);
 
         final Method method = lmbdaType.getMethod();
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        final ClassWriter cw = new ClassWriter(0);
 
         // The function class will be defined in the package of this library to have
         // access to package private fields, in java 9 this is also the package we
@@ -153,7 +153,7 @@ final class InternalLambdaFactory {
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", "()V", false);
         mv.visitInsn(RETURN);
-        mv.visitMaxs(0, 0);
+        mv.visitMaxs(1, 1);
         mv.visitEnd();
 
         // Add the method handle field
@@ -165,7 +165,7 @@ final class InternalLambdaFactory {
         mv.visitTypeInsn(CHECKCAST, "java/lang/invoke/MethodHandle");
         mv.visitFieldInsn(PUTSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;");
         mv.visitInsn(RETURN);
-        mv.visitMaxs(0, 0);
+        mv.visitMaxs(1, 0);
         mv.visitEnd();
 
         // Write the function method
@@ -186,7 +186,8 @@ final class InternalLambdaFactory {
         // Return
         visitReturn(mv, Type.getType(method.getReturnType()));
         // End body
-        mv.visitMaxs(0, 0);
+        final int maxs = parameters.length;
+        mv.visitMaxs(maxs, maxs);
         mv.visitEnd();
 
         cw.visitEnd();

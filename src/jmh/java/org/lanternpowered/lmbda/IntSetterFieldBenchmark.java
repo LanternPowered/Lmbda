@@ -88,7 +88,7 @@ public class IntSetterFieldBenchmark {
                     throw MethodHandlesX.throwUnchecked(t);
                 }
             };
-            lmbda = LmbdaFactory.create(LmbdaType.of(IntSetFunction.class), mh);
+            lmbda = LambdaFactory.create(LambdaType.of(IntSetFunction.class), mh);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalStateException(e);
         }

@@ -39,7 +39,7 @@ class LambdaFinalStaticSetterTest {
         final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(TestObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = MethodHandlesX.findFinalStaticSetter(lookup, TestObject.class, "data", Integer.class);
 
-        final IntConsumer setter = LmbdaFactory.create(LmbdaType.of(IntConsumer.class), methodHandle);
+        final IntConsumer setter = LambdaFactory.create(LambdaType.of(IntConsumer.class), methodHandle);
 
         assertEquals(100, TestObject.getData());
         setter.accept(10000);

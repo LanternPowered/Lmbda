@@ -37,26 +37,26 @@ import java.util.function.Supplier;
  * A factory to create lambda functions from a given {@link MethodHandle}.
  */
 @SuppressWarnings("unchecked")
-public final class LmbdaFactory {
+public final class LambdaFactory {
 
     // Supplier
 
-    private static final LmbdaType<Supplier> supplierInterface = LmbdaType.of(Supplier.class);
+    private static final LambdaType<Supplier> supplierInterface = LambdaType.of(Supplier.class);
 
     // Functions
 
-    private static final LmbdaType<Function> functionInterface = LmbdaType.of(Function.class);
-    private static final LmbdaType<BiFunction> biFunctionInterface = LmbdaType.of(BiFunction.class);
+    private static final LambdaType<Function> functionInterface = LambdaType.of(Function.class);
+    private static final LambdaType<BiFunction> biFunctionInterface = LambdaType.of(BiFunction.class);
 
     // Consumers
 
-    private static final LmbdaType<Consumer> consumerInterface = LmbdaType.of(Consumer.class);
-    private static final LmbdaType<BiConsumer> biConsumerInterface = LmbdaType.of(BiConsumer.class);
+    private static final LambdaType<Consumer> consumerInterface = LambdaType.of(Consumer.class);
+    private static final LambdaType<BiConsumer> biConsumerInterface = LambdaType.of(BiConsumer.class);
 
     // Predicates
 
-    private static final LmbdaType<Predicate> predicateInterface = LmbdaType.of(Predicate.class);
-    private static final LmbdaType<BiPredicate> biPredicateInterface = LmbdaType.of(BiPredicate.class);
+    private static final LambdaType<Predicate> predicateInterface = LambdaType.of(Predicate.class);
+    private static final LambdaType<BiPredicate> biPredicateInterface = LambdaType.of(BiPredicate.class);
 
     /**
      * Attempts to create a {@link Predicate} for the given {@link MethodHandle}.
@@ -65,7 +65,7 @@ public final class LmbdaFactory {
      * @param <T> The first input type of the predicate
      * @param <U> The second input type of the predicate
      * @return The created bi predicate
-     * @see #create(LmbdaType, MethodHandle)
+     * @see #create(LambdaType, MethodHandle)
      */
     public static <T, U> BiPredicate<T, U> createBiPredicate(MethodHandle methodHandle) {
         return create(biPredicateInterface, methodHandle);
@@ -77,7 +77,7 @@ public final class LmbdaFactory {
      * @param methodHandle The method handle
      * @param <T> The input type of the predicate
      * @return The created predicate
-     * @see #create(LmbdaType, MethodHandle)
+     * @see #create(LambdaType, MethodHandle)
      */
     public static <T> Predicate<T> createPredicate(MethodHandle methodHandle) {
         return create(predicateInterface, methodHandle);
@@ -90,7 +90,7 @@ public final class LmbdaFactory {
      * @param <T> The first input type of the consumer
      * @param <U> The second input type of the consumer
      * @return The created bi consumer
-     * @see #create(LmbdaType, MethodHandle)
+     * @see #create(LambdaType, MethodHandle)
      */
     public static <T, U> BiConsumer<T, U> createBiConsumer(MethodHandle methodHandle) {
         return create(biConsumerInterface, methodHandle);
@@ -102,7 +102,7 @@ public final class LmbdaFactory {
      * @param methodHandle The method handle
      * @param <T> The input type of the consumer
      * @return The created consumer
-     * @see #create(LmbdaType, MethodHandle)
+     * @see #create(LambdaType, MethodHandle)
      */
     public static <T> Consumer<T> createConsumer(MethodHandle methodHandle) {
         return create(consumerInterface, methodHandle);
@@ -114,7 +114,7 @@ public final class LmbdaFactory {
      * @param methodHandle The method handle
      * @param <T> The result type of the supplier
      * @return The created supplier
-     * @see #create(LmbdaType, MethodHandle)
+     * @see #create(LambdaType, MethodHandle)
      */
     public static <T> Supplier<T> createSupplier(MethodHandle methodHandle) {
         return create(supplierInterface, methodHandle);
@@ -128,7 +128,7 @@ public final class LmbdaFactory {
      * @param <U> The second input type of the function
      * @param <R> The result type of the function
      * @return The created bi function
-     * @see #create(LmbdaType, MethodHandle)
+     * @see #create(LambdaType, MethodHandle)
      */
     public static <T, U, R> BiFunction<T, U, R> createBiFunction(MethodHandle methodHandle) {
         return create(biFunctionInterface, methodHandle);
@@ -141,7 +141,7 @@ public final class LmbdaFactory {
      * @param <T> The input type of the function
      * @param <R> The result type of the function
      * @return The created function
-     * @see #create(LmbdaType, MethodHandle), MethodHandle)
+     * @see #create(LambdaType, MethodHandle), MethodHandle)
      */
     public static <T, R> Function<T, R> createFunction(MethodHandle methodHandle) {
         return create(functionInterface, methodHandle);
@@ -149,17 +149,17 @@ public final class LmbdaFactory {
 
     /**
      * Attempts to create a lambda for the given {@link MethodHandle}
-     * implementing the {@link LmbdaType}.
+     * implementing the {@link LambdaType}.
      *
      * @param lmbdaType The lmbda type to implement
      * @param methodHandle The method handle that will be executed by the functional interface
      * @param <T> The functional interface type
      * @return The constructed function
      */
-    public static <T> T create(LmbdaType<T> lmbdaType, MethodHandle methodHandle) {
+    public static <T> T create(LambdaType<T> lmbdaType, MethodHandle methodHandle) {
         return InternalLambdaFactory.create(lmbdaType, methodHandle);
     }
 
-    private LmbdaFactory() {
+    private LambdaFactory() {
     }
 }

@@ -37,12 +37,12 @@ import java.lang.reflect.Type;
  * Represents a {@link java.lang.FunctionalInterface}
  * that can be be implemented by a generated function.
  */
-public abstract class LmbdaType<T> {
+public abstract class LambdaType<T> {
 
     /**
      * Attempts to find a function method in the given functional interface class.
      * <p>A functional interface doesn't need to be annotated with
-     * {@link LmbdaType}, but only one non default method may
+     * {@link LambdaType}, but only one non default method may
      * be present.
      *
      * @param functionalInterface The functional interface
@@ -50,8 +50,8 @@ public abstract class LmbdaType<T> {
      * @return The functional method
      * @throws IllegalArgumentException If no valid functional method could be found
      */
-    public static <T> LmbdaType<T> of(Class<T> functionalInterface) {
-        return new LmbdaType<T>(functionalInterface) {};
+    public static <T> LambdaType<T> of(Class<T> functionalInterface) {
+        return new LambdaType<T>(functionalInterface) {};
     }
 
     private Class<T> functionClass;
@@ -61,7 +61,7 @@ public abstract class LmbdaType<T> {
     MethodType methodType;
 
     /**
-     * Constructs a new {@link LmbdaType}.
+     * Constructs a new {@link LambdaType}.
      *
      * <p>The generic signature from the extended class will be
      * used to determine the functional interface to implement.
@@ -69,10 +69,10 @@ public abstract class LmbdaType<T> {
      * be expected.</p>
      */
     @SuppressWarnings("unchecked")
-    public LmbdaType() {
+    public LambdaType() {
         final Class<?> theClass = getClass();
         final Class<?> superClass = theClass.getSuperclass();
-        if (superClass != LmbdaType.class) {
+        if (superClass != LambdaType.class) {
             throw new IllegalStateException("Only direct subclasses of FunctionalInterface are allowed.");
         }
         final Type superType = theClass.getGenericSuperclass();
@@ -94,7 +94,7 @@ public abstract class LmbdaType<T> {
         init(interfClass);
     }
 
-    private LmbdaType(Class<T> functionalInterface) {
+    private LambdaType(Class<T> functionalInterface) {
         init(functionalInterface);
     }
 
@@ -135,7 +135,7 @@ public abstract class LmbdaType<T> {
 
     /**
      * Gets the {@link Method} that will be implemented when
-     * generating a function for this {@link LmbdaType}.
+     * generating a function for this {@link LambdaType}.
      *
      * @return The method
      */

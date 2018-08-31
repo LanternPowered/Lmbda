@@ -22,19 +22,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+@file:Suppress("unused", "NOTHING_TO_INLINE")
+
 package org.lanternpowered.lmbda.kt
 
-import org.lanternpowered.lmbda.LmbdaFactory
-import org.lanternpowered.lmbda.LmbdaType
+import org.lanternpowered.lmbda.LambdaFactory
+import org.lanternpowered.lmbda.LambdaType
 import org.lanternpowered.lmbda.MethodHandlesX
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Field
 
 /**
- * Constructs a new [LmbdaType].
+ * Constructs a new [LambdaType].
  */
-inline fun <reified T> lmbdaType() = object: LmbdaType<T>() {}
+inline fun <reified T> lambdaType() = object: LambdaType<T>() {}
 
 /**
  * See [MethodHandlesX.findFinalStaticSetter].
@@ -57,21 +59,21 @@ inline fun MethodHandles.Lookup.unreflectFinalSetter(field: Field): MethodHandle
 /**
  * See [MethodHandlesX.defineClass].
  */
-inline fun MethodHandles.Lookup.defineClass(bytecode: ByteArray)
+inline fun MethodHandles.Lookup.defineClass(bytecode: ByteArray): Class<*>
         = MethodHandlesX.defineClass(this, bytecode)
 
 /**
  * See [MethodHandlesX.privateLookupIn].
  */
-inline fun MethodHandles.Lookup.privateLookupIn(target: Class<*>)
+inline fun MethodHandles.Lookup.privateLookupIn(target: Class<*>): MethodHandles.Lookup
         = MethodHandlesX.privateLookupIn(target, this)
 
 /**
- * Constructs a lambda for for the target [MethodHandle] and [LmbdaType].
+ * Constructs a lambda for for the target [MethodHandle] and [LambdaType].
  */
-inline fun <T> MethodHandle.createLmbda(lmbdaType: LmbdaType<T>): T = LmbdaFactory.create(lmbdaType, this)
+inline fun <T> MethodHandle.createLambda(lambdaType: LambdaType<T>): T = LambdaFactory.create(lambdaType, this)
 
 /**
- * Constructs a lambda for for the target [MethodHandle] and [LmbdaType].
+ * Constructs a lambda for for the target [MethodHandle] and [LambdaType].
  */
-inline fun <reified T> MethodHandle.createLmbda(): T = LmbdaFactory.create(lmbdaType<T>(), this)
+inline fun <reified T> MethodHandle.createLambda(): T = LambdaFactory.create(lambdaType<T>(), this)

@@ -39,7 +39,7 @@ class LambdaFinalSetterTest {
         final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(TestObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = MethodHandlesX.findFinalSetter(lookup, TestObject.class, "data", Integer.class);
 
-        final ObjIntConsumer<TestObject> setter = LmbdaFactory.create(new LmbdaType<ObjIntConsumer<TestObject>>() {}, methodHandle);
+        final ObjIntConsumer<TestObject> setter = LambdaFactory.create(new LambdaType<ObjIntConsumer<TestObject>>() {}, methodHandle);
 
         final TestObject object = new TestObject();
         assertEquals(100, object.getData());
