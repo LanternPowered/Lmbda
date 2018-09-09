@@ -151,13 +151,13 @@ public final class LambdaFactory {
      * Attempts to create a lambda for the given {@link MethodHandle}
      * implementing the {@link LambdaType}.
      *
-     * @param lmbdaType The lmbda type to implement
+     * @param lambdaType The lambda type to implement
      * @param methodHandle The method handle that will be executed by the functional interface
      * @param <T> The functional interface type
      * @return The constructed function
      */
-    public static <T> T create(LambdaType<T> lmbdaType, MethodHandle methodHandle) {
-        return InternalLambdaFactory.create(lmbdaType, methodHandle);
+    public static <T> T create(LambdaType<T> lambdaType, MethodHandle methodHandle) {
+        return InternalLambdaFactory.create(lambdaType, methodHandle);
     }
 
     private LambdaFactory() {

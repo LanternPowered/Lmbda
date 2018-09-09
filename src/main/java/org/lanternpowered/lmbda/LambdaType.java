@@ -168,7 +168,7 @@ public abstract class LambdaType<T> {
 
     @Override
     public String toString() {
-        return String.format("LmbdaType[class=%s,method=%s]",
+        return String.format("LambdaType[class=%s,method=%s]",
                 this.functionClass.getName(), this.method.getName() + this.methodType);
     }
 }

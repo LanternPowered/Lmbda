@@ -97,15 +97,15 @@ final class InternalLambdaFactory {
     }
 
     @SuppressWarnings("unchecked")
-    static <T, F extends T> F create(LambdaType<T> lmbdaType, MethodHandle methodHandle) {
-        requireNonNull(lmbdaType, "lambdaType");
+    static <T, F extends T> F create(LambdaType<T> lambdaType, MethodHandle methodHandle) {
+        requireNonNull(lambdaType, "lambdaType");
         requireNonNull(methodHandle, "methodHandle");
 
         try {
-            return createGeneratedFunction(lmbdaType, methodHandle);
+            return createGeneratedFunction(lambdaType, methodHandle);
         } catch (Throwable e) {
             throw new IllegalStateException("Couldn't create lambda for: \"" + methodHandle + "\". "
-                    + "Failed to implement: " + lmbdaType, e);
+                    + "Failed to implement: " + lambdaType, e);
         }
     }
 
@@ -141,7 +141,7 @@ final class InternalLambdaFactory {
         final String internalClassName = className.replace('.', '/');
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
-                new String[] { Type.getInternalName(lmbdaType.getFunctionClass())});
+                new String[] { Type.getInternalName(lmbdaType.getFunctionClass()) });
 
         final FieldVisitor fv = cw.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC,
                 METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;", null, null);
@@ -151,7 +151,7 @@ final class InternalLambdaFactory {
         MethodVisitor mv = cw.visitMethod(0, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", "()V", false);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
@@ -172,7 +172,7 @@ final class InternalLambdaFactory {
         final String descriptor = Type.getMethodDescriptor(method);
         mv = cw.visitMethod(ACC_PUBLIC, method.getName(), descriptor, null, null);
         // Hide the lambda from the stack trace
-        mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
+        mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true).visitEnd();
         mv.visitCode();
         // Start body
         mv.visitFieldInsn(GETSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;");
