@@ -34,7 +34,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
- * Represents a {@link java.lang.FunctionalInterface}
+ * Represents a {@link FunctionalInterface}
  * that can be be implemented by a generated function.
  */
 public abstract class LambdaType<T> {
@@ -42,7 +42,7 @@ public abstract class LambdaType<T> {
     /**
      * Attempts to find a function method in the given functional interface class.
      * <p>A functional interface doesn't need to be annotated with
-     * {@link LambdaType}, but only one non default method may
+     * {@link FunctionalInterface}, but only one non default method may
      * be present.
      *
      * @param functionalInterface The functional interface
@@ -52,6 +52,21 @@ public abstract class LambdaType<T> {
      */
     public static <T> LambdaType<T> of(Class<T> functionalInterface) {
         return new LambdaType<T>(functionalInterface) {};
+    }
+
+    /**
+     * Attempts to find a function method in the given functional interface type.
+     * <p>A functional interface doesn't need to be annotated with
+     * {@link FunctionalInterface}, but only one non default method may
+     * be present.
+     *
+     * @param functionalInterfaceType The functional interface type
+     * @param <T> The type of the functional interface
+     * @return The functional method
+     * @throws IllegalArgumentException If no valid functional method could be found
+     */
+    public static <T> LambdaType<T> of(Type functionalInterfaceType) {
+        return new LambdaType<T>(functionalInterfaceType) {};
     }
 
     private Class<T> functionClass;
@@ -73,29 +88,37 @@ public abstract class LambdaType<T> {
         final Class<?> theClass = getClass();
         final Class<?> superClass = theClass.getSuperclass();
         if (superClass != LambdaType.class) {
-            throw new IllegalStateException("Only direct subclasses of FunctionalInterface are allowed.");
+            throw new IllegalStateException("Only direct subclasses of LambdaType are allowed.");
         }
         final Type superType = theClass.getGenericSuperclass();
         if (!(superType instanceof ParameterizedType)) {
-            throw new IllegalStateException("Direct subclasses of FunctionalInterface must be a parameterized type.");
+            throw new IllegalStateException("Direct subclasses of LambdaType must be a parameterized type.");
         }
         final ParameterizedType parameterizedType = (ParameterizedType) superType;
-        final Type interfType = parameterizedType.getActualTypeArguments()[0];
-        final Class<T> interfClass;
-        if (interfType instanceof Class<?>) {
-            interfClass = (Class<T>) interfType;
-        } else if (interfType instanceof ParameterizedType) {
-            interfClass = (Class<T>) ((ParameterizedType) interfType).getRawType();
-        } else if (interfType instanceof GenericArrayType) {
-            throw new IllegalStateException("The FunctionalInterface type cannot be a GenericArrayType.");
-        } else {
-            throw new IllegalStateException("The FunctionalInterface type may not be a TypeVariable.");
-        }
-        init(interfClass);
+        init(parameterizedType.getActualTypeArguments()[0]);
     }
 
     private LambdaType(Class<T> functionalInterface) {
         init(functionalInterface);
+    }
+
+    private LambdaType(Type functionalInterfaceType) {
+        init(functionalInterfaceType);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void init(Type type) {
+        final Class<T> interfClass;
+        if (type instanceof Class<?>) {
+            interfClass = (Class<T>) type;
+        } else if (type instanceof ParameterizedType) {
+            interfClass = (Class<T>) ((ParameterizedType) type).getRawType();
+        } else if (type instanceof GenericArrayType) {
+            throw new IllegalStateException("The FunctionalInterface type cannot be a GenericArrayType.");
+        } else {
+            throw new IllegalStateException("The FunctionalInterface type cannot be a TypeVariable.");
+        }
+        init(interfClass);
     }
 
     private void init(Class<T> functionalInterface) {
