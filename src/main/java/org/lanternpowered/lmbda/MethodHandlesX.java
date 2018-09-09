@@ -58,8 +58,9 @@ public final class MethodHandlesX {
      * @param targetClass
      * @param lookup The caller lookup object
      * @return A lookup object for the target class, with private access
+     * @throws IllegalAccessException If the lookup doesn't have private access to the target class
      */
-    public static MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) {
+    public static MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) throws IllegalAccessException {
         requireNonNull(targetClass, "targetClass");
         requireNonNull(lookup, "lookup");
         return privateLookupProvider.privateLookupIn(targetClass, lookup);
@@ -71,9 +72,9 @@ public final class MethodHandlesX {
      * @param lookup The lookup of which the target class will be used to define the class in
      * @param byteCode The byte code of the class to define
      * @return The defined class
-     * @throws IllegalAccessException If the lookup doesn't have access in its target class
+     * @throws IllegalAccessException If the lookup doesn't have package private access in its target class
      */
-    public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
+    public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) throws IllegalAccessException {
         requireNonNull(lookup, "lookup");
         requireNonNull(byteCode, "byteCode");
         return defineClassFunction.defineClass(lookup, byteCode);
@@ -173,7 +174,7 @@ public final class MethodHandlesX {
 
     private interface PrivateLookupProvider {
 
-        MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup);
+        MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) throws IllegalAccessException;
     }
 
     /**
@@ -260,7 +261,7 @@ public final class MethodHandlesX {
 
     private interface DefineClass {
 
-        Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode);
+        Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) throws IllegalAccessException;
     }
 
     private static DefineClass loadDefineClass() {

@@ -89,9 +89,9 @@ inline fun <reified T> MethodHandle.createLambda(): T = LambdaFactory.create(lam
 inline fun <T> Type.toLambdaType(): LambdaType<T> = LambdaType.of(this)
 
 @Deprecated(message = "GenericArrayType isn't supported.")
-inline fun <T> GenericArrayType.toLambdaType(): LambdaType<T> =
-        throw UnsupportedOperationException("The FunctionalInterface type cannot be a GenericArrayType.")
+inline fun <T> GenericArrayType.toLambdaType(): LambdaType<T>
+        = throw UnsupportedOperationException("The FunctionalInterface type cannot be a GenericArrayType.")
 
 @Deprecated(message = "TypeVariable isn't supported.")
-inline fun <T> TypeVariable<*>.toLambdaType(): LambdaType<T> =
-        throw UnsupportedOperationException("The FunctionalInterface type cannot be a TypeVariable.")
+inline fun <T> TypeVariable<*>.toLambdaType(): LambdaType<T>
+        = throw UnsupportedOperationException("The FunctionalInterface type cannot be a TypeVariable.")
