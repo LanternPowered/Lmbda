@@ -44,30 +44,35 @@ inline fun <reified T> lambdaType() = object: LambdaType<T>() {}
 /**
  * See [MethodHandlesX.findFinalStaticSetter].
  */
+@Throws(IllegalAccessException::class, NoSuchFieldException::class)
 inline fun MethodHandles.Lookup.findFinalStaticSetter(target: Class<*>, fieldName: String, fieldType: Class<*>): MethodHandle
         = MethodHandlesX.findFinalStaticSetter(this, target, fieldName, fieldType)
 
 /**
  * See [MethodHandlesX.findFinalSetter].
  */
+@Throws(IllegalAccessException::class, NoSuchFieldException::class)
 inline fun MethodHandles.Lookup.findFinalSetter(target: Class<*>, fieldName: String, fieldType: Class<*>): MethodHandle
         = MethodHandlesX.findFinalSetter(this, target, fieldName, fieldType)
 
 /**
  * See [MethodHandlesX.unreflectFinalSetter].
  */
+@Throws(IllegalAccessException::class)
 inline fun MethodHandles.Lookup.unreflectFinalSetter(field: Field): MethodHandle
         = MethodHandlesX.unreflectFinalSetter(this, field)
 
 /**
  * See [MethodHandlesX.defineClass].
  */
+@Throws(IllegalAccessException::class)
 inline fun MethodHandles.Lookup.defineClass(bytecode: ByteArray): Class<*>
         = MethodHandlesX.defineClass(this, bytecode)
 
 /**
  * See [MethodHandlesX.privateLookupIn].
  */
+@Throws(IllegalAccessException::class)
 inline fun MethodHandles.Lookup.privateLookupIn(target: Class<*>): MethodHandles.Lookup
         = MethodHandlesX.privateLookupIn(target, this)
 
