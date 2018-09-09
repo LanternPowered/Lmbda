@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-@file:Suppress("unused", "NOTHING_TO_INLINE")
+@file:Suppress("unused", "NOTHING_TO_INLINE", "DeprecatedCallableAddReplaceWith")
 
 package org.lanternpowered.lmbda.kt
 
@@ -32,6 +32,9 @@ import org.lanternpowered.lmbda.MethodHandlesX
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Field
+import java.lang.reflect.GenericArrayType
+import java.lang.reflect.Type
+import java.lang.reflect.TypeVariable
 
 /**
  * Constructs a new [LambdaType].
@@ -77,3 +80,18 @@ inline fun <T> MethodHandle.createLambda(lambdaType: LambdaType<T>): T = LambdaF
  * Constructs a lambda for for the target [MethodHandle] and [LambdaType].
  */
 inline fun <reified T> MethodHandle.createLambda(): T = LambdaFactory.create(lambdaType<T>(), this)
+
+/**
+ * Attempts to convert this [Type] into [LambdaType].
+ *
+ * @see LambdaType.of
+ */
+inline fun <T> Type.toLambdaType(): LambdaType<T> = LambdaType.of(this)
+
+@Deprecated(message = "GenericArrayType isn't supported.")
+inline fun <T> GenericArrayType.toLambdaType(): LambdaType<T> =
+        throw UnsupportedOperationException("The FunctionalInterface type cannot be a GenericArrayType.")
+
+@Deprecated(message = "TypeVariable isn't supported.")
+inline fun <T> TypeVariable<*>.toLambdaType(): LambdaType<T> =
+        throw UnsupportedOperationException("The FunctionalInterface type cannot be a TypeVariable.")

@@ -22,7 +22,10 @@ repositories {
 dependencies {
     // Compile dependencies
     compile 'org.ow2.asm:asm:6.2.1'
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    // Optional dependencies
+    compileOnly 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+    compileOnly 'com.google.guava:guava:26.0-jre'
 
     // Testing
     testCompile 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
