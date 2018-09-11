@@ -34,6 +34,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Objects;
 
 /**
  * Represents a {@link FunctionalInterface}
@@ -53,6 +54,7 @@ public abstract class LambdaType<T> {
      * @throws IllegalArgumentException If no valid functional method could be found
      */
     public static <T> LambdaType<T> of(Class<T> functionalInterface) {
+        requireNonNull(functionalInterface, "functionalInterface");
         return new LambdaType<T>(functionalInterface) {};
     }
 
@@ -68,6 +70,7 @@ public abstract class LambdaType<T> {
      * @throws IllegalArgumentException If no valid functional method could be found
      */
     public static <T> LambdaType<T> of(Type functionalInterfaceType) {
+        requireNonNull(functionalInterfaceType, "functionalInterfaceType");
         return new LambdaType<T>(functionalInterfaceType) {};
     }
 
@@ -180,5 +183,19 @@ public abstract class LambdaType<T> {
     public String toString() {
         return String.format("LambdaType[class=%s,method=%s]",
                 this.functionClass.getName(), this.method.getName() + this.methodType);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof LambdaType)) {
+            return false;
+        }
+        final LambdaType<?> that = (LambdaType<?>) obj;
+        return that.method.equals(this.method) && that.functionClass == this.functionClass;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.functionClass, this.method);
     }
 }
