@@ -32,6 +32,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 
 /**
  * Represents a {@link FunctionalInterface}
@@ -113,10 +115,18 @@ public abstract class LambdaType<T> {
             interfClass = (Class<T>) type;
         } else if (type instanceof ParameterizedType) {
             interfClass = (Class<T>) ((ParameterizedType) type).getRawType();
-        } else if (type instanceof GenericArrayType) {
-            throw new IllegalStateException("The FunctionalInterface type cannot be a GenericArrayType.");
         } else {
-            throw new IllegalStateException("The FunctionalInterface type cannot be a TypeVariable.");
+            final String name;
+            if (type instanceof GenericArrayType) {
+                name = "GenericArrayType";
+            } else if (type instanceof WildcardType) {
+                name = "WildcardType";
+            } else if (type instanceof TypeVariable) {
+                name = "TypeVariable";
+            } else {
+                name = type.getClass().getName();
+            }
+            throw new IllegalStateException("The FunctionalInterface type cannot be a " + name + ".");
         }
         init(interfClass);
     }

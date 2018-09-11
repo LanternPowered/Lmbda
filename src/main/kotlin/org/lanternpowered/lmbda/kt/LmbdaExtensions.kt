@@ -35,6 +35,7 @@ import java.lang.reflect.Field
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Type
 import java.lang.reflect.TypeVariable
+import java.lang.reflect.WildcardType
 
 /**
  * Constructs a new [LambdaType].
@@ -96,6 +97,10 @@ inline fun <T> Type.toLambdaType(): LambdaType<T> = LambdaType.of(this)
 @Deprecated(message = "GenericArrayType isn't supported.")
 inline fun <T> GenericArrayType.toLambdaType(): LambdaType<T>
         = throw UnsupportedOperationException("The FunctionalInterface type cannot be a GenericArrayType.")
+
+@Deprecated(message = "WildcardType isn't supported.")
+inline fun <T> WildcardType.toLambdaType(): LambdaType<T>
+        = throw UnsupportedOperationException("The FunctionalInterface type cannot be a WildcardType.")
 
 @Deprecated(message = "TypeVariable isn't supported.")
 inline fun <T> TypeVariable<*>.toLambdaType(): LambdaType<T>
