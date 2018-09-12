@@ -67,7 +67,8 @@ public final class MethodHandlesX {
     }
 
     /**
-     * Defines a class in the same protection domain of the {@link MethodHandles.Lookup} target (package private access).
+     * Defines a class in the same protection domain of the
+     * {@link java.lang.invoke.MethodHandles.Lookup} target (package private access).
      *
      * @param lookup The lookup of which the target class will be used to define the class in
      * @param byteCode The byte code of the class to define
@@ -81,7 +82,7 @@ public final class MethodHandlesX {
     }
 
     /**
-     * Similar to {@link MethodHandles.Lookup#findStaticSetter(Class, String, Class)}
+     * Similar to {@link java.lang.invoke.MethodHandles.Lookup#findStaticSetter(Class, String, Class)}
      * but allows modifications to final fields.
      *
      * @param lookup The caller lookup object that has access to the target field
@@ -112,7 +113,7 @@ public final class MethodHandlesX {
     }
 
     /**
-     * Similar to {@link MethodHandles.Lookup#findSetter(Class, String, Class)}
+     * Similar to {@link java.lang.invoke.MethodHandles.Lookup#findSetter(Class, String, Class)}
      * but allows modifications to final fields.
      *
      * @param lookup The caller lookup object that has access to the target field
@@ -143,7 +144,7 @@ public final class MethodHandlesX {
     }
 
     /**
-     * Similar to {@link MethodHandles.Lookup#unreflectSetter(Field)}
+     * Similar to {@link java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field)}
      * but allows modifications to final fields.
      *
      * @param lookup The caller lookup object that has access to the given field
