@@ -9,9 +9,9 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 // Basic project information
-group = 'org.lanterpowered'
+group = 'org.lanternpowered'
 archivesBaseName = project.name.toLowerCase()
-version = 'dev-SNAPSHOT'
+version = '1.0.0-SNAPSHOT'
 
 defaultTasks 'licenseFormat', 'build'
 
@@ -44,27 +44,31 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile)*.kotlinOptions {
 
 jar {
     classifier = ''
+    exclude '**/*.java'
 }
 
-// Process the resource files
-processResources {
-    // Include the license file
-    from 'LICENSE.txt'
+task javadocJar(type: Jar) {
+    classifier 'javadoc'
+    from javadoc
 }
 
 task sourceJar(type: Jar) {
     classifier = 'sources'
-
-    // Include all the source
     from sourceSets.main.allSource
-    // And the license file
-    from file('LICENSE.txt')
 }
+
+// Add the license file to all the jars
+[jar, javadocJar, sourceJar].each {
+    it.from file('LICENSE.txt')
+}
+
 assemble.dependsOn sourceJar
+assemble.dependsOn javadocJar
 
 artifacts {
     archives jar
     archives sourceJar
+    archives javadocJar
 }
 
 license {

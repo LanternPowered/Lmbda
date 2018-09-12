@@ -13,7 +13,6 @@ lib
 out
 target
 *.com
-*.class
 *.dll
 *.exe
 *.o

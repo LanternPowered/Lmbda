@@ -55,7 +55,7 @@ public final class MethodHandlesX {
      * <p>When using java 9+, see
      * https://docs.oracle.com/javase/9/docs/api/java/lang/invoke/MethodHandles.html#privateLookupIn-java.lang.Class-java.lang.invoke.MethodHandles.Lookup-</p>
      *
-     * @param targetClass
+     * @param targetClass The target class for which private access should be acquired
      * @param lookup The caller lookup object
      * @return A lookup object for the target class, with private access
      * @throws IllegalAccessException If the lookup doesn't have private access to the target class
@@ -72,7 +72,7 @@ public final class MethodHandlesX {
      * @param lookup The lookup of which the target class will be used to define the class in
      * @param byteCode The byte code of the class to define
      * @return The defined class
-     * @throws IllegalAccessException If the lookup doesn't have package private access in its target class
+     * @throws IllegalAccessException If the lookup doesn't have package private access to the target package
      */
     public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) throws IllegalAccessException {
         requireNonNull(lookup, "lookup");
@@ -84,13 +84,13 @@ public final class MethodHandlesX {
      * Similar to {@link MethodHandles.Lookup#findStaticSetter(Class, String, Class)}
      * but allows modifications to final fields.
      *
-     * @param lookup The lookup
-     * @param target The target class to find the class within
+     * @param lookup The caller lookup object that has access to the target field
+     * @param target The target class where the field is located
      * @param fieldName The field name
      * @param fieldType The field type
-     * @return The method handle
-     * @throws IllegalAccessException
-     * @throws NoSuchFieldException
+     * @return The static setter method handle
+     * @throws IllegalAccessException If the given lookup doesn't have access to the target field
+     * @throws NoSuchFieldException If the field couldn't be found
      */
     public static MethodHandle findFinalStaticSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> fieldType)
             throws IllegalAccessException, NoSuchFieldException {
@@ -115,13 +115,13 @@ public final class MethodHandlesX {
      * Similar to {@link MethodHandles.Lookup#findSetter(Class, String, Class)}
      * but allows modifications to final fields.
      *
-     * @param lookup The lookup
-     * @param target The target class to find the class within
+     * @param lookup The caller lookup object that has access to the target field
+     * @param target The target class where the field is located
      * @param fieldName The field name
      * @param fieldType The field type
-     * @return The method handle
-     * @throws IllegalAccessException
-     * @throws NoSuchFieldException
+     * @return The setter method handle
+     * @throws IllegalAccessException If the given lookup doesn't have access to the target field
+     * @throws NoSuchFieldException If the field couldn't be found
      */
     public static MethodHandle findFinalSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> fieldType)
             throws IllegalAccessException, NoSuchFieldException {
@@ -146,10 +146,10 @@ public final class MethodHandlesX {
      * Similar to {@link MethodHandles.Lookup#unreflectSetter(Field)}
      * but allows modifications to final fields.
      *
-     * @param lookup The lookup
+     * @param lookup The caller lookup object that has access to the given field
      * @param field The field to unreflect
-     * @return The method handle
-     * @throws IllegalAccessException
+     * @return The (static) setter method handle
+     * @throws IllegalAccessException If the given lookup doesn't have access to the target field
      */
     public static MethodHandle unreflectFinalSetter(MethodHandles.Lookup lookup, Field field) throws IllegalAccessException {
         requireNonNull(lookup, "lookup");

@@ -141,7 +141,7 @@ public final class LambdaFactory {
      * @param <T> The input type of the function
      * @param <R> The result type of the function
      * @return The created function
-     * @see #create(LambdaType, MethodHandle), MethodHandle)
+     * @see #create(LambdaType, MethodHandle)
      */
     public static <T, R> Function<T, R> createFunction(MethodHandle methodHandle) {
         return create(functionInterface, methodHandle);
