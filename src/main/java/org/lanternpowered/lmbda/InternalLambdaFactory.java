@@ -186,7 +186,7 @@ final class InternalLambdaFactory {
         // Return
         visitReturn(mv, Type.getType(method.getReturnType()));
         // End body
-        final int maxs = parameters.length;
+        final int maxs = parameters.length + 1;
         mv.visitMaxs(maxs, maxs);
         mv.visitEnd();
 

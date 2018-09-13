@@ -10,10 +10,10 @@ matrix:
       script: ./.travis_build_publish.sh
     - os: linux
       jdk: openjdk10
-      script: ./gradlew build
+      script: ./gradlew build test
     - os: linux
       jdk: openjdk11
-      script: ./gradlew build
+      script: ./gradlew build test
   allow_failures:
     - jdk: openjdk11
 
