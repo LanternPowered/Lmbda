@@ -1,17 +1,21 @@
 plugins {
+    id 'java'
+    id 'idea'
+    id 'eclipse'
+    id 'maven'
+    id 'signing'
     id 'net.minecrell.licenser' version '0.4'
     id 'me.champeau.gradle.jmh' version '0.4.7'
     id 'org.jetbrains.kotlin.jvm' version '1.2.61'
 }
 
-apply plugin: 'java'
-apply plugin: 'idea'
-apply plugin: 'eclipse'
-
 // Basic project information
 group = 'org.lanternpowered'
 archivesBaseName = project.name.toLowerCase()
 version = '1.0.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 defaultTasks 'licenseFormat', 'build'
 
@@ -35,7 +39,7 @@ dependencies {
 }
 
 jmh {
-    duplicateClassesStrategy = 'warn'
+    duplicateClassesStrategy 'warn'
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile)*.kotlinOptions {
@@ -44,7 +48,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile)*.kotlinOptions {
 
 jar {
     classifier = ''
-    exclude '**/*.java'
+    exclude '**/*.java' // For module-info.java
 }
 
 task javadocJar(type: Jar) {
@@ -57,11 +61,6 @@ task sourceJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
-// Add the license file to all the jars
-[jar, javadocJar, sourceJar].each {
-    it.from file('LICENSE.txt')
-}
-
 assemble.dependsOn sourceJar
 assemble.dependsOn javadocJar
 
@@ -71,6 +70,14 @@ artifacts {
     archives javadocJar
 }
 
+////////////////////////////
+/// License and headers. ///
+////////////////////////////
+
+// Add the license file to all the jars
+[jar, javadocJar, sourceJar]*.from file('LICENSE.txt')
+
+// License header plugin
 license {
     header file('HEADER.txt')
     include '**/*.java'
@@ -83,6 +90,67 @@ license {
         name = project.name
         url = 'https://www.lanternpowered.org'
         organization = 'LanternPowered'
+    }
+}
+
+def snapshot = project.version.endsWith('-SNAPSHOT')
+
+signing {
+    required { !snapshot && gradle.taskGraph.hasTask(':uploadArchives') && project.hasProperty('signing.keyId') }
+    sign configurations.archives
+}
+
+if (project.hasProperty('sonatypeUsername') &&
+        project.hasProperty('sonatypePassword')) {
+    uploadArchives {
+        enabled = System.getenv('TRAVIS') == null || snapshot
+
+        repositories {
+            mavenDeployer {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+                repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2/') {
+                    authentication(userName: sonatypeUsername, password: sonatypePassword)
+                }
+
+                snapshotRepository(url: 'https://oss.sonatype.org/content/repositories/snapshots/') {
+                    authentication(userName: sonatypeUsername, password: sonatypePassword)
+                }
+
+                pom.project {
+                    description 'A lambda generation library'
+                    name project.name
+                    url 'https://github.com/LanternPowered/Lmbda'
+                    inceptionYear '2018'
+
+                    developers {
+                        developer {
+                            id 'Cybermaxke'
+                            name 'Seppe Volkaerts'
+                            email 'contact@seppevolkaerts.be'
+                        }
+                    }
+
+                    issueManagement {
+                        system 'GitHub Issues'
+                        url 'https://github.com/LanternPowered/Lmbda/issues'
+                    }
+
+                    licenses {
+                        license {
+                            name 'MIT License'
+                            url 'https://opensource.org/licenses/MIT'
+                        }
+                    }
+
+                    scm {
+                        connection 'scm:git@github.com:LanternPowered/Lmbda.git'
+                        developerConnection 'scm:git@github.com:LanternPowered/Lmbda.git'
+                        url 'https://github.com/LanternPowered/Lmbda'
+                    }
+                }
+            }
+        }
     }
 }
 
