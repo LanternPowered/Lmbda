@@ -7,16 +7,22 @@ matrix:
   include:
     - os: linux
       jdk: openjdk8
+      script: ./.travis_build_publish.sh
     - os: linux
       jdk: openjdk10
+      script: ./gradlew build
     - os: linux
       jdk: openjdk11
+      script: ./gradlew build
   allow_failures:
     - jdk: openjdk11
 
-env: GRADLE_OPTS="-Xms1g -Xmx3g"
+env:
+  global:
+    - secure: "hqAt+7U1gDwQZzO+l8LYnaFKeIrN1u5xwAU6xOFREi6Yjtu0KKZK2WYcaItkufOeFV3KJwwoJgeFn5l/RPAEOFAelumTU9reQxremlVHVUMNl8DNyeZHe6+vIB6/cEsPGbbif1bn5mRnB4YY0iHat+W+8XNt3ssAv91zDJyaf+L5ipztr9WHpL+RUNYW4z0723Z+YvI2T55rfjhPkhSKg6D9Zu21ukkPeHxyRVu1y0QwO75Z/X/GijDKKmOeNp6tzsIsUJ0axg06phddFeH8TbFSfZKh4aeaEEWQZQ8+tApPn1IFol7G/8ls2Y7MTVfjizvHO5fiut8imAtsFRnCZoc/et6DHcLR3DqjQJF07ZQkrj46OTlKuQoZx3Bf9qAH/eH3w3LH29Hejy1GRTWqynkTFdKt6lG0VIsNJvutLyxIRjpKx9b97JQBo+PSqBUY70dOo0KC8bgce3ZY91hZSPwV3AfSTvWUvDknkRD7qdM0ne7QjlxsBqYc0sYS3ZCNkVMeW9TBlWIVJkvKl+hxqhza+qnt3If/LGbHgxnyvBbwjlQ5mevWwURy0MSkhUNwsilQWI2YIcGv9TZyMmJ7d1e4Zo6f8rwVvAD9oyLywWOfyCNZyNHcNkz8fmFn5Qi+Xl0IjqE6D/9HPfhy304E/jmw0KgLLiJ1xrrGVkuU4hA="
+    - secure: "LkQInvOYY3YwxhetBAeGLjynhiVfEDq2VhrTx2bfe2wSTWhsLejVziv8pnGNZndvenDFi+wRz8aPSd9rJ1+l5UGx3zHgoj9txHRTdRtZpZ5n+pQaTeVWuEhc60pIDvYyuD8f0rZOdREgwEpKH3g3bQUxiaGYffG2ey3Mci0KSBCvMNN5I+OWi/NDavW5D6pXTqVFjZ4cAHgAzCr4914L5MHujhrmsQ1h8SL8jov0zToposGPHYPyauyhyG0y7o3T/2ZAKg/wUyVhWEwvwSB9QTrV3+aVrsjf5E2ddEQml9msxcw7j7g7SWskND0JXU4v8Q/M19VJYTFU0nNQ1RmtgiqeNF0gLA9iukb76i17QrzfqvIX9RlrvjEpItTwW1BA7XSO4aVlwGdAWKf6sp5jJV1kRDh3tX+kdkNdijBdOMqlcXsA7UEHLklc/lstdNYElHLWtGOSqGJ7kSuL6sqAYkytSPxG00FaZa2TAIMAlIvHXiXEqgGZnNydOZBSVtMKBidLChc+FwtmuOT7sY7ZS4BkNCMHfb20AQOic15XNwIdIskOWEVRtKXIlfnxG4ECKZQenUrtpayHgFfaDytHf1OM9PiHYTzyJw4S4VFqge2IKTJm39uu30rSDI111lfthx5i+86AKB+cWR/0qmUAg2Bju1ZnSaw7lNhnHw4pkHs="
+
 install: true
-script: ./gradlew build
 
 notifications:
   email: false
