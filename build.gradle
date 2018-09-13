@@ -59,6 +59,7 @@ task javadocJar(type: Jar) {
 task sourceJar(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allSource
+    exclude '**/*.class' // For module-info.class
 }
 
 assemble.dependsOn sourceJar
