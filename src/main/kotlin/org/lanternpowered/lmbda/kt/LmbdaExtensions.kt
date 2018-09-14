@@ -36,6 +36,7 @@ import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Type
 import java.lang.reflect.TypeVariable
 import java.lang.reflect.WildcardType
+import kotlin.reflect.KClass
 
 /**
  * Constructs a new [LambdaType].
@@ -93,6 +94,20 @@ inline fun <reified T> MethodHandle.createLambda(): T = LambdaFactory.create(lam
  * @see LambdaType.of
  */
 inline fun <T> Type.toLambdaType(): LambdaType<T> = LambdaType.of(this)
+
+/**
+ * Attempts to convert this [Class] into [LambdaType].
+ *
+ * @see LambdaType.of
+ */
+inline fun <T> Class<T>.toLambdaType(): LambdaType<T> = LambdaType.of(this)
+
+/**
+ * Attempts to convert this [KClass] into [LambdaType].
+ *
+ * @see LambdaType.of
+ */
+inline fun <T : Any> KClass<T>.toLambdaType(): LambdaType<T> = LambdaType.of(this.java)
 
 @Deprecated(message = "GenericArrayType isn't supported.")
 inline fun <T> GenericArrayType.toLambdaType(): LambdaType<T>
