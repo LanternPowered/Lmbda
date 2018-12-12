@@ -58,10 +58,19 @@ import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.annotation.Nullable;
 
 /**
  * Separated from {@link LambdaFactory} to keep it clean.
@@ -120,6 +129,98 @@ final class InternalLambdaFactory {
         return (T) callSite.getTarget().invoke();
     }
 
+    private static String toGenericDescriptor(Class<?> superClass, ParameterizedType genericType) {
+        final Map<String, TypeVariable<?>> typeVariables = new HashMap<>();
+
+        final StringBuilder signatureBuilder = new StringBuilder();
+        toGenericSignature(signatureBuilder, genericType, typeVariables);
+
+        final StringBuilder descriptorBuilder = new StringBuilder();
+
+        if (!typeVariables.isEmpty()) {
+            descriptorBuilder.append('<');
+            for (TypeVariable typeVariable : typeVariables.values()) {
+                descriptorBuilder.append(typeVariable.getName());
+                for (java.lang.reflect.Type bound : typeVariable.getBounds()) {
+                    final boolean isFinal;
+                    if (bound instanceof Class) {
+                        isFinal = Modifier.isFinal(((Class) bound).getModifiers());
+                    } else if (bound instanceof GenericArrayType) {
+                        throw new IllegalStateException(); // Should never happen
+                    } else if (bound instanceof ParameterizedType) {
+                        isFinal = Modifier.isFinal(((Class) ((ParameterizedType) bound).getRawType()).getModifiers());
+                    } else {
+                        isFinal = false;
+                    }
+                    if (isFinal) {
+                        descriptorBuilder.append(':');
+                    }
+                    descriptorBuilder.append(':');
+                    toGenericSignature(descriptorBuilder, bound, null);
+                }
+            }
+            descriptorBuilder.append('>');
+        }
+
+        descriptorBuilder.append(Type.getDescriptor(superClass));
+        descriptorBuilder.append(signatureBuilder.toString());
+
+        return descriptorBuilder.toString();
+    }
+
+    private static void toGenericSignature(StringBuilder builder, java.lang.reflect.Type type, @Nullable Map<String, TypeVariable<?>> typeVariables) {
+        if (type instanceof Class) {
+            builder.append(Type.getDescriptor((Class) type));
+        } else if (type instanceof GenericArrayType) {
+            final GenericArrayType arrayType = (GenericArrayType) type;
+            builder.append('[');
+            toGenericSignature(builder, arrayType.getGenericComponentType(), typeVariables);
+        } else if (type instanceof ParameterizedType) {
+            final ParameterizedType parameterizedType = (ParameterizedType) type;
+            builder.append('L');
+            builder.append(Type.getInternalName((Class) parameterizedType.getRawType()));
+            builder.append('<');
+            for (java.lang.reflect.Type parameter : parameterizedType.getActualTypeArguments()) {
+                toGenericSignature(builder, parameter, typeVariables);
+            }
+            builder.append('>').append(';');
+        } else if (type instanceof TypeVariable) {
+            final TypeVariable typeVariable = (TypeVariable) type;
+            builder.append('T').append(typeVariable.getName()).append(';');
+            if (typeVariables != null) {
+                typeVariables.put(typeVariable.getName(), typeVariable);
+            }
+        } else if (type instanceof WildcardType) {
+            final WildcardType wildcardType = (WildcardType) type;
+
+            final java.lang.reflect.Type[] lowerBounds = wildcardType.getLowerBounds();
+            final java.lang.reflect.Type[] upperBounds = wildcardType.getUpperBounds();
+
+            final boolean hasLower = lowerBounds != null && lowerBounds.length > 0;
+            final boolean hasUpper = upperBounds != null && upperBounds.length > 0;
+
+            if (hasUpper && hasLower && Object.class.equals(lowerBounds[0]) && Object.class.equals(upperBounds[0])) {
+                builder.append('*');
+            } else if (hasLower) {
+                builder.append('-');
+                for (java.lang.reflect.Type lower : lowerBounds) {
+                    toGenericSignature(builder, lower, typeVariables);
+                }
+            } else if (hasUpper) {
+                if (upperBounds.length == 1 && Object.class.equals(upperBounds[0])) {
+                    builder.append('*');
+                } else {
+                    builder.append('+');
+                    for (java.lang.reflect.Type upper : upperBounds) {
+                        toGenericSignature(builder, upper, typeVariables);
+                    }
+                }
+            } else {
+                builder.append('*');
+            }
+        }
+    }
+
     private static final String METHOD_HANDLE_FIELD_NAME = "methodHandle";
 
     @SuppressWarnings("unchecked")
@@ -140,7 +241,13 @@ final class InternalLambdaFactory {
         final String className = packageName + ".Lmbda$" + lambdaCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
-        cw.visit(V1_8, ACC_SUPER, internalClassName, null, "java/lang/Object",
+        final Class<?> superClass = Object.class;
+        String genericDescriptor = null;
+        if (lmbdaType.genericType != null) {
+            genericDescriptor = toGenericDescriptor(superClass, lmbdaType.genericType);
+        }
+
+        cw.visit(V1_8, ACC_SUPER, internalClassName, genericDescriptor, Type.getInternalName(superClass),
                 new String[] { Type.getInternalName(lmbdaType.getFunctionClass()) });
 
         final FieldVisitor fv = cw.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC,

@@ -27,7 +27,9 @@
 package org.lanternpowered.lmbda.kt
 
 import com.google.common.reflect.TypeToken
+import org.lanternpowered.lmbda.LambdaFactory
 import org.lanternpowered.lmbda.LambdaType
+import java.lang.invoke.MethodHandle
 
 /**
  * Attempts to convert this [TypeToken] into [LambdaType].
@@ -35,3 +37,8 @@ import org.lanternpowered.lmbda.LambdaType
  * @see LambdaType.of
  */
 inline fun <T> TypeToken<T>.toLambdaType(): LambdaType<T> = LambdaType.of(this.type)
+
+/**
+ * Constructs a lambda for for the target [MethodHandle] and [TypeToken].
+ */
+inline fun <T> MethodHandle.createLambda(typeToken: TypeToken<T>): T = LambdaFactory.create(typeToken.toLambdaType(), this)

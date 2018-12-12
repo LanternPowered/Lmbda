@@ -36,6 +36,8 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Objects;
 
+import javax.annotation.Nullable;
+
 /**
  * Represents a {@link FunctionalInterface}
  * that can be be implemented by a generated function.
@@ -76,6 +78,7 @@ public abstract class LambdaType<T> {
 
     private Class<T> functionClass;
     private Method method;
+    @Nullable ParameterizedType genericType;
 
     MethodType classType;
     MethodType methodType;
@@ -114,10 +117,13 @@ public abstract class LambdaType<T> {
     @SuppressWarnings("unchecked")
     private void init(Type type) {
         final Class<T> interfClass;
+        final ParameterizedType genericType;
         if (type instanceof Class<?>) {
+            genericType = null;
             interfClass = (Class<T>) type;
         } else if (type instanceof ParameterizedType) {
-            interfClass = (Class<T>) ((ParameterizedType) type).getRawType();
+            genericType = (ParameterizedType) type;
+            interfClass = (Class<T>) genericType.getRawType();
         } else {
             final String name;
             if (type instanceof GenericArrayType) {
@@ -131,10 +137,10 @@ public abstract class LambdaType<T> {
             }
             throw new IllegalStateException("The FunctionalInterface type cannot be a " + name + ".");
         }
-        init(interfClass);
+        init(interfClass, genericType);
     }
 
-    private void init(Class<T> functionalInterface) {
+    private void init(Class<T> functionalInterface, @Nullable ParameterizedType genericType) {
         requireNonNull(functionalInterface, "functionalInterface");
         if (!functionalInterface.isInterface()) throw new IllegalStateException("functionalInterface must be a interface");
         Method validMethod = null;
@@ -158,6 +164,7 @@ public abstract class LambdaType<T> {
         this.classType = MethodType.methodType(functionalInterface);
         this.method = validMethod;
         this.methodType = MethodType.methodType(validMethod.getReturnType(), validMethod.getParameterTypes());
+        this.genericType = genericType;
     }
 
     /**
