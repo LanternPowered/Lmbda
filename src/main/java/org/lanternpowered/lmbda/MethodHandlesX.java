@@ -316,11 +316,11 @@ public final class MethodHandlesX {
             if (securityManager != null) {
                 securityManager.checkPermission(new ReflectPermission("defineClass"));
             }
-            return doUnchecked(() -> {
+            return AccessController.doPrivileged((PrivilegedAction<Class<?>>) () -> {
                 final Class<?> lookupClass = lookup.lookupClass();
                 final ClassLoader classLoader = lookupClass.getClassLoader();
                 final ProtectionDomain protectionDomain = lookupClass.getProtectionDomain();
-                return (Class<?>) methodHandle.invoke(classLoader, null, byteCode, 0, byteCode.length, protectionDomain);
+                return doUnchecked(() -> (Class<?>) methodHandle.invoke(classLoader, null, byteCode, 0, byteCode.length, protectionDomain));
             });
         }
     }
