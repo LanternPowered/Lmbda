@@ -46,6 +46,7 @@ inline fun <reified T> lambdaType() = object: LambdaType<T>() {}
 /**
  * See [MethodHandlesX.findFinalStaticSetter].
  */
+@Deprecated(message = "Will be removed in 2.0.0, see MethodHandlesX.findFinalStaticSetter")
 @Throws(IllegalAccessException::class, NoSuchFieldException::class)
 inline fun MethodHandles.Lookup.findFinalStaticSetter(target: Class<*>, fieldName: String, fieldType: Class<*>): MethodHandle
         = MethodHandlesX.findFinalStaticSetter(this, target, fieldName, fieldType)
@@ -53,6 +54,7 @@ inline fun MethodHandles.Lookup.findFinalStaticSetter(target: Class<*>, fieldNam
 /**
  * See [MethodHandlesX.findFinalSetter].
  */
+@Deprecated(message = "Will be removed in 2.0.0, see MethodHandlesX.findFinalSetter")
 @Throws(IllegalAccessException::class, NoSuchFieldException::class)
 inline fun MethodHandles.Lookup.findFinalSetter(target: Class<*>, fieldName: String, fieldType: Class<*>): MethodHandle
         = MethodHandlesX.findFinalSetter(this, target, fieldName, fieldType)
@@ -60,6 +62,7 @@ inline fun MethodHandles.Lookup.findFinalSetter(target: Class<*>, fieldName: Str
 /**
  * See [MethodHandlesX.unreflectFinalSetter].
  */
+@Deprecated(message = "Will be removed in 2.0.0, see MethodHandlesX.unreflectFinalSetter")
 @Throws(IllegalAccessException::class)
 inline fun MethodHandles.Lookup.unreflectFinalSetter(field: Field): MethodHandle
         = MethodHandlesX.unreflectFinalSetter(this, field)

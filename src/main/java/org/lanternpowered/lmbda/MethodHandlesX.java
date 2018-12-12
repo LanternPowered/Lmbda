@@ -92,7 +92,9 @@ public final class MethodHandlesX {
      * @return The static setter method handle
      * @throws IllegalAccessException If the given lookup doesn't have access to the target field
      * @throws NoSuchFieldException If the field couldn't be found
+     * @deprecated See {@link FieldAccess#makeAccessible(Field)}.
      */
+    @Deprecated
     public static MethodHandle findFinalStaticSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> fieldType)
             throws IllegalAccessException, NoSuchFieldException {
         requireNonNull(lookup, "lookup");
@@ -123,7 +125,9 @@ public final class MethodHandlesX {
      * @return The setter method handle
      * @throws IllegalAccessException If the given lookup doesn't have access to the target field
      * @throws NoSuchFieldException If the field couldn't be found
+     * @deprecated See {@link FieldAccess#makeAccessible(Field)}.
      */
+    @Deprecated
     public static MethodHandle findFinalSetter(MethodHandles.Lookup lookup, Class<?> target, String fieldName, Class<?> fieldType)
             throws IllegalAccessException, NoSuchFieldException {
         requireNonNull(lookup, "lookup");
@@ -151,7 +155,9 @@ public final class MethodHandlesX {
      * @param field The field to unreflect
      * @return The (static) setter method handle
      * @throws IllegalAccessException If the given lookup doesn't have access to the target field
+     * @deprecated See {@link FieldAccess#makeAccessible(Field)}.
      */
+    @Deprecated
     public static MethodHandle unreflectFinalSetter(MethodHandles.Lookup lookup, Field field) throws IllegalAccessException {
         requireNonNull(lookup, "lookup");
         requireNonNull(field, "field");

@@ -32,6 +32,7 @@ import java.security.PrivilegedAction;
 /**
  * A helper class to provide access to {@link Field}s.
  */
+@Deprecated
 @SuppressWarnings("unchecked")
 public final class FieldAccess {
 
@@ -46,7 +47,16 @@ public final class FieldAccess {
      * final field.
      *
      * @param field The field
+     * @deprecated Reflective access to java packages is no longer supported by default in Java 9+,
+     *             in a context that you have control over the complete application you could export
+     *             these packages to avoid this limitation. Since there is no guarantee that this will
+     *             work, this method is deprecated and will be removed in version {@code 2.0.0}.
+     *             If you desire to modify final fields, you can always copy this class to your
+     *             project. This is at your own risk and be aware of the possible problems.
+     *             See https://stackoverflow.com/questions/41265266/how-to-solve-inaccessibleobjectexception-unable-to-make-member-accessible-m
+     *             for more information.
      */
+    @Deprecated
     public static void makeAccessible(Field field) {
         field.setAccessible(true);
 
