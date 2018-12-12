@@ -34,6 +34,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ReflectPermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.Arrays;
 
 /**
@@ -67,8 +68,8 @@ public final class MethodHandlesX {
     }
 
     /**
-     * Defines a class in the same protection domain of the
-     * {@link java.lang.invoke.MethodHandles.Lookup} target (package private access).
+     * Defines a {@link Class} to the same {@link ClassLoader} and in the same runtime package
+     * and {@link ProtectionDomain} as the {@link java.lang.invoke.MethodHandles.Lookup}'s lookup class.
      *
      * @param lookup The lookup of which the target class will be used to define the class in
      * @param byteCode The byte code of the class to define
@@ -307,7 +308,7 @@ public final class MethodHandlesX {
 
         private static final MethodHandle methodHandle = doUnchecked(() ->
                 ((TrustedPrivateLookupProvider) privateLookupProvider).trustedLookup.findVirtual(ClassLoader.class, "defineClass",
-                        MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class)));
+                        MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class)));
 
         @Override
         public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
@@ -315,7 +316,12 @@ public final class MethodHandlesX {
             if (securityManager != null) {
                 securityManager.checkPermission(new ReflectPermission("defineClass"));
             }
-            return doUnchecked(() -> (Class<?>) methodHandle.invoke(lookup.lookupClass().getClassLoader(), null, byteCode, 0, byteCode.length));
+            return doUnchecked(() -> {
+                final Class<?> lookupClass = lookup.lookupClass();
+                final ClassLoader classLoader = lookupClass.getClassLoader();
+                final ProtectionDomain protectionDomain = lookupClass.getProtectionDomain();
+                return (Class<?>) methodHandle.invoke(classLoader, null, byteCode, 0, byteCode.length, protectionDomain);
+            });
         }
     }
 
