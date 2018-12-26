@@ -243,8 +243,8 @@ final class InternalLambdaFactory {
 
         final Class<?> superClass = Object.class;
         String genericDescriptor = null;
-        if (lmbdaType.genericType != null) {
-            genericDescriptor = toGenericDescriptor(superClass, lmbdaType.genericType);
+        if (lmbdaType.genericFunctionType != null) {
+            genericDescriptor = toGenericDescriptor(superClass, lmbdaType.genericFunctionType);
         }
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, genericDescriptor, Type.getInternalName(superClass),

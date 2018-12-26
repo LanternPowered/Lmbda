@@ -78,7 +78,7 @@ public abstract class LambdaType<T> {
 
     private Class<T> functionClass;
     private Method method;
-    @Nullable ParameterizedType genericType;
+    @Nullable ParameterizedType genericFunctionType;
 
     MethodType classType;
     MethodType methodType;
@@ -117,13 +117,13 @@ public abstract class LambdaType<T> {
     @SuppressWarnings("unchecked")
     private void init(Type type) {
         final Class<T> interfClass;
-        final ParameterizedType genericType;
+        final ParameterizedType genericFunctionType;
         if (type instanceof Class<?>) {
-            genericType = null;
+            genericFunctionType = null;
             interfClass = (Class<T>) type;
         } else if (type instanceof ParameterizedType) {
-            genericType = (ParameterizedType) type;
-            interfClass = (Class<T>) genericType.getRawType();
+            genericFunctionType = (ParameterizedType) type;
+            interfClass = (Class<T>) genericFunctionType.getRawType();
         } else {
             final String name;
             if (type instanceof GenericArrayType) {
@@ -137,10 +137,10 @@ public abstract class LambdaType<T> {
             }
             throw new IllegalStateException("The FunctionalInterface type cannot be a " + name + ".");
         }
-        init(interfClass, genericType);
+        init(interfClass, genericFunctionType);
     }
 
-    private void init(Class<T> functionalInterface, @Nullable ParameterizedType genericType) {
+    private void init(Class<T> functionalInterface, @Nullable ParameterizedType genericFunctionType) {
         requireNonNull(functionalInterface, "functionalInterface");
         if (!functionalInterface.isInterface()) throw new IllegalStateException("functionalInterface must be a interface");
         Method validMethod = null;
@@ -161,10 +161,10 @@ public abstract class LambdaType<T> {
                     functionalInterface.getClass().getName());
         }
         this.functionClass = functionalInterface;
+        this.genericFunctionType = genericFunctionType;
         this.classType = MethodType.methodType(functionalInterface);
         this.method = validMethod;
         this.methodType = MethodType.methodType(validMethod.getReturnType(), validMethod.getParameterTypes());
-        this.genericType = genericType;
     }
 
     /**
@@ -174,6 +174,15 @@ public abstract class LambdaType<T> {
      */
     public Class<T> getFunctionClass() {
         return this.functionClass;
+    }
+
+    /**
+     * Gets the function type that will be implemented.
+     *
+     * @return The function type
+     */
+    public Type getFunctionType() {
+        return this.genericFunctionType != null ? this.genericFunctionType : this.functionClass;
     }
 
     /**
@@ -188,8 +197,9 @@ public abstract class LambdaType<T> {
 
     @Override
     public String toString() {
-        return String.format("LambdaType[class=%s,method=%s]",
-                this.functionClass.getName(), this.method.getName() + this.methodType);
+        final String typeName = this.genericFunctionType != null ? this.genericFunctionType.getTypeName() : this.functionClass.getName();
+        return String.format("LambdaType[type=%s,method=%s]",
+                typeName, this.method.getName() + this.methodType);
     }
 
     @Override
@@ -198,11 +208,12 @@ public abstract class LambdaType<T> {
             return false;
         }
         final LambdaType<?> that = (LambdaType<?>) obj;
-        return that.method.equals(this.method) && that.functionClass == this.functionClass;
+        return that.method.equals(this.method) && that.functionClass == this.functionClass &&
+                Objects.equals(this.genericFunctionType, that.genericFunctionType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.functionClass, this.method);
+        return Objects.hash(this.functionClass, this.method, this.genericFunctionType);
     }
 }

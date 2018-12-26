@@ -26,6 +26,8 @@ package org.lanternpowered.lmbda;
 
 import static java.util.Objects.requireNonNull;
 
+import org.objectweb.asm.ClassReader;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -50,7 +52,7 @@ public final class MethodHandlesX {
      * Gets a lookup object with full capabilities to emulate all supported bytecode
      * behaviors, including private access, on a target class.
      *
-     * <p> If there is a security manager, its checkPermission method is called
+     * <p>If there is a security manager, its checkPermission method is called
      * to check ReflectPermission("suppressAccessChecks").</p>
      *
      * <p>When using java 9+, see
@@ -316,13 +318,46 @@ public final class MethodHandlesX {
             if (securityManager != null) {
                 securityManager.checkPermission(new ReflectPermission("defineClass"));
             }
+            if ((lookup.lookupModes() & MethodHandles.Lookup.PACKAGE) == 0) {
+                throwUnchecked(new IllegalAccessException("Lookup does not have PACKAGE access"));
+            }
+            final String className;
+            try {
+                final ClassReader classReader = new ClassReader(byteCode);
+                className = classReader.getClassName().replace('/', '.');
+            } catch (RuntimeException e) {
+                final ClassFormatError classFormatError = new ClassFormatError();
+                classFormatError.initCause(e);
+                throw classFormatError;
+            }
+            final Class<?> lookupClass = lookup.lookupClass();
+            final String packageName = getPackageName(className);
+            final String lookupPackageName = getPackageName(lookupClass);
+            if (!packageName.equals(lookupPackageName)) {
+                throw new IllegalArgumentException("Class not in same package as lookup class");
+            }
             return AccessController.doPrivileged((PrivilegedAction<Class<?>>) () -> {
-                final Class<?> lookupClass = lookup.lookupClass();
                 final ClassLoader classLoader = lookupClass.getClassLoader();
                 final ProtectionDomain protectionDomain = lookupClass.getProtectionDomain();
-                return doUnchecked(() -> (Class<?>) methodHandle.invoke(classLoader, null, byteCode, 0, byteCode.length, protectionDomain));
+                return doUnchecked(() -> (Class<?>) methodHandle.invoke(classLoader, className,
+                        byteCode, 0, byteCode.length, protectionDomain));
             });
         }
+    }
+
+    private static String getPackageName(Class<?> theClass) {
+        while (theClass.isArray()) {
+            theClass = theClass.getComponentType();
+        }
+        if (theClass.isPrimitive()) {
+            return "java.lang";
+        }
+        return getPackageName(theClass.getName());
+    }
+
+    private static String getPackageName(String className) {
+        final int index = className.lastIndexOf('.');
+        return index == -1 ? "" : className.substring(0, index);
     }
 
     static <T> T doUnchecked(ThrowableSupplier<T> supplier) {
