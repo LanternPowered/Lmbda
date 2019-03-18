@@ -111,7 +111,7 @@ public class IntGetterFieldBenchmark {
             };
             //noinspection unchecked
             proxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, methodHandle);
-            lmbdaFunction = LambdaFactory.create(LambdaType.of(ToIntFunction.class), methodHandle);
+            lmbdaFunction = LambdaFactory.create(new LambdaType<ToIntFunction<IntGetterFieldBenchmark>>() {}, methodHandle);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalStateException(e);
         }

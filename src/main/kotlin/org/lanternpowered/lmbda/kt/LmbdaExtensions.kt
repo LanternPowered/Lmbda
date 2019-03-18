@@ -114,12 +114,12 @@ inline fun <T : Any> KClass<T>.toLambdaType(): LambdaType<T> = LambdaType.of(thi
 
 @Deprecated(message = "GenericArrayType isn't supported.")
 inline fun <T> GenericArrayType.toLambdaType(): LambdaType<T>
-        = throw UnsupportedOperationException("The FunctionalInterface type cannot be a GenericArrayType.")
+        = throw UnsupportedOperationException("A GenericArrayType can't be a LambdaType.")
 
 @Deprecated(message = "WildcardType isn't supported.")
 inline fun <T> WildcardType.toLambdaType(): LambdaType<T>
-        = throw UnsupportedOperationException("The FunctionalInterface type cannot be a WildcardType.")
+        = throw UnsupportedOperationException("A WildcardType can't be a LambdaType.")
 
 @Deprecated(message = "TypeVariable isn't supported.")
 inline fun <T> TypeVariable<*>.toLambdaType(): LambdaType<T>
-        = throw UnsupportedOperationException("The FunctionalInterface type cannot be a TypeVariable.")
+        = throw UnsupportedOperationException("A TypeVariable can't be a LambdaType.")

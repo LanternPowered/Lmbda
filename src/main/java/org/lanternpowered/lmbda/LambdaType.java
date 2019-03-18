@@ -135,7 +135,7 @@ public abstract class LambdaType<T> {
             } else {
                 name = type.getClass().getName();
             }
-            throw new IllegalStateException("The FunctionalInterface type cannot be a " + name + ".");
+            throw new IllegalStateException("A " + name + " can't be a LambdaType.");
         }
         init(interfClass, genericFunctionType);
     }

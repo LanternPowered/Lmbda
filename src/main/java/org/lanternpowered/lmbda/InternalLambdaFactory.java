@@ -53,8 +53,6 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -116,17 +114,6 @@ final class InternalLambdaFactory {
             throw new IllegalStateException("Couldn't create lambda for: \"" + methodHandle + "\". "
                     + "Failed to implement: " + lambdaType, e);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T> T createLambda(LambdaType<T> lmbdaType,
-            MethodHandles.Lookup lookup, MethodHandle methodHandle) throws Throwable {
-        // Generate the lambda class
-        final CallSite callSite = LambdaMetafactory.metafactory(lookup, lmbdaType.getMethod().getName(),
-                lmbdaType.classType, lmbdaType.methodType, methodHandle, methodHandle.type());
-
-        // Create the function
-        return (T) callSite.getTarget().invoke();
     }
 
     private static String toGenericDescriptor(Class<?> superClass, ParameterizedType genericType) {
@@ -224,15 +211,15 @@ final class InternalLambdaFactory {
     private static final String METHOD_HANDLE_FIELD_NAME = "methodHandle";
 
     @SuppressWarnings("unchecked")
-    private static <T> T createGeneratedFunction(LambdaType lmbdaType, MethodHandle methodHandle) {
+    private static <T> T createGeneratedFunction(LambdaType lambdaType, MethodHandle methodHandle) {
         // Convert the method handle types to match the functional method signature,
         // this will make sure that all the objects are converted accordingly so
         // we don't have to do it ourselves with asm.
         // This will also throw an exception if the functional interface cannot be
         // implemented by the given method handle
-        methodHandle = methodHandle.asType(lmbdaType.methodType);
+        methodHandle = methodHandle.asType(lambdaType.methodType);
 
-        final Method method = lmbdaType.getMethod();
+        final Method method = lambdaType.getMethod();
         final ClassWriter cw = new ClassWriter(0);
 
         // The function class will be defined in the package of this library to have
@@ -243,12 +230,12 @@ final class InternalLambdaFactory {
 
         final Class<?> superClass = Object.class;
         String genericDescriptor = null;
-        if (lmbdaType.genericFunctionType != null) {
-            genericDescriptor = toGenericDescriptor(superClass, lmbdaType.genericFunctionType);
+        if (lambdaType.genericFunctionType != null) {
+            genericDescriptor = toGenericDescriptor(superClass, lambdaType.genericFunctionType);
         }
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, genericDescriptor, Type.getInternalName(superClass),
-                new String[] { Type.getInternalName(lmbdaType.getFunctionClass()) });
+                new String[] { Type.getInternalName(lambdaType.getFunctionClass()) });
 
         final FieldVisitor fv = cw.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC,
                 METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;", null, null);

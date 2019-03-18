@@ -27,7 +27,7 @@ open module org.lanternpowered.lmbda {
     exports org.lanternpowered.lmbda.kt;
 
     requires org.objectweb.asm; // Depends on the asm library
-    requires static com.google.common; // Optional dependency for guava
 
-    // No module yet for kotlin stdlib
+    requires static kotlin.stdlib; // Optional dependency for kotlin
+    requires static com.google.common; // Optional dependency for guava
 }

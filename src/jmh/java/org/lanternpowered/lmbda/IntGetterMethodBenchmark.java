@@ -34,6 +34,8 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
@@ -71,6 +73,17 @@ public class IntGetterMethodBenchmark {
     private static ToIntFunction<IntGetterMethodBenchmark> proxyFunction;
     private static ToIntFunction<IntGetterMethodBenchmark> lambdaFunction;
     private static ToIntFunction<IntGetterMethodBenchmark> lmbdaFunction;
+
+    @SuppressWarnings("unchecked")
+    static <T> T createLambda(LambdaType<T> lambdaType,
+            MethodHandles.Lookup lookup, MethodHandle methodHandle) throws Throwable {
+        // Generate the lambda class
+        final CallSite callSite = LambdaMetafactory.metafactory(lookup, lambdaType.getMethod().getName(),
+                lambdaType.classType, lambdaType.methodType, methodHandle, methodHandle.type());
+
+        // Create the function
+        return (T) callSite.getTarget().invoke();
+    }
 
     // We would normally use @Setup, but we need to initialize "static final" fields here...
     static {
@@ -114,9 +127,8 @@ public class IntGetterMethodBenchmark {
             };
             //noinspection unchecked
             proxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, methodHandle);
-            lambdaFunction = InternalLambdaFactory.createLambda(
-                    LambdaType.of(ToIntFunction.class), MethodHandles.lookup(), methodHandle);
-            lmbdaFunction = LambdaFactory.create(LambdaType.of(ToIntFunction.class), methodHandle);
+            lambdaFunction = createLambda(new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, MethodHandles.lookup(), methodHandle);
+            lmbdaFunction = LambdaFactory.create(new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, methodHandle);
         } catch (Throwable e) {
             throw new IllegalStateException(e);
         }
