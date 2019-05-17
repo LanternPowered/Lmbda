@@ -41,6 +41,7 @@ import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -79,7 +80,7 @@ public final class InternalLambdaFactory {
      * @deprecated Should not be used directly, internal use only
      */
     @Deprecated
-    public static MethodHandle requestMethodHandle() {
+    public static @NonNull MethodHandle requestMethodHandle() {
         final MethodHandle methodHandle = currentMethodHandle.get();
         if (methodHandle != null) {
             return methodHandle;
@@ -90,27 +91,27 @@ public final class InternalLambdaFactory {
     /**
      * The package name we will define custom classes in.
      */
-    private static final String packageName = InternalUtilities.getPackageName(InternalLambdaFactory.class);
+    private static final @NonNull String packageName = InternalUtilities.getPackageName(InternalLambdaFactory.class);
 
     /**
      * The internal lookup that has access to this library package.
      */
-    private static final MethodHandles.Lookup internalLookup = AccessController.doPrivileged(
+    private static final MethodHandles.@NonNull Lookup internalLookup = AccessController.doPrivileged(
             (PrivilegedAction<MethodHandles.Lookup>) MethodHandles::lookup);
 
     /**
      * A thread local which temporarily holds the {@link MethodHandle}
      * that will be injected into the generated class.
      */
-    private static final ThreadLocal<MethodHandle> currentMethodHandle = new ThreadLocal<>();
+    private static final @NonNull ThreadLocal<MethodHandle> currentMethodHandle = new ThreadLocal<>();
 
     /**
      * A counter to make sure that lambda names don't conflict.
      */
-    private static final AtomicInteger lambdaCounter = new AtomicInteger();
+    private static final @NonNull AtomicInteger lambdaCounter = new AtomicInteger();
 
     @SuppressWarnings("unchecked")
-    static <T, F extends T> F create(LambdaType<T> lambdaType, MethodHandle methodHandle) {
+    static <T, F extends T> @NonNull F create(@NonNull LambdaType<T> lambdaType, @NonNull MethodHandle methodHandle) {
         requireNonNull(lambdaType, "lambdaType");
         requireNonNull(methodHandle, "methodHandle");
 
@@ -127,7 +128,7 @@ public final class InternalLambdaFactory {
         }
     }
 
-    private static String toGenericDescriptor(Class<?> superClass, ParameterizedType genericType) {
+    private static @NonNull String toGenericDescriptor(@NonNull Class<?> superClass, @NonNull ParameterizedType genericType) {
         final Map<String, TypeVariable<?>> typeVariables = new HashMap<>();
 
         final StringBuilder signatureBuilder = new StringBuilder();
@@ -166,7 +167,8 @@ public final class InternalLambdaFactory {
         return descriptorBuilder.toString();
     }
 
-    private static void toGenericSignature(StringBuilder builder, java.lang.reflect.Type type, @Nullable Map<String, TypeVariable<?>> typeVariables) {
+    private static void toGenericSignature(@NonNull StringBuilder builder,
+            java.lang.reflect.@NonNull Type type, @Nullable Map<String, TypeVariable<?>> typeVariables) {
         if (type instanceof Class) {
             builder.append(Type.getDescriptor((Class) type));
         } else if (type instanceof GenericArrayType) {
@@ -222,7 +224,8 @@ public final class InternalLambdaFactory {
     private static final String METHOD_HANDLE_FIELD_NAME = "methodHandle";
 
     @SuppressWarnings("unchecked")
-    private static <T> T createGeneratedFunction(ResolvedLambdaType lambdaType, MethodHandle methodHandle, MethodHandles.Lookup defineLookup) {
+    private static <@NonNull T> T createGeneratedFunction(@NonNull ResolvedLambdaType lambdaType,
+            @NonNull MethodHandle methodHandle, MethodHandles.@NonNull Lookup defineLookup) {
         // Convert the method handle types to match the functional method signature,
         // this will make sure that all the objects are converted accordingly so
         // we don't have to do it ourselves with asm.
@@ -236,14 +239,18 @@ public final class InternalLambdaFactory {
         final String className = packageName + ".Lmbda$" + lambdaCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
-        final Class<?> superClass = Object.class;
+        final Class<?> functionClass = lambdaType.functionClass;
+        final Class<?> superclass = functionClass.isInterface() ? Object.class : functionClass;
+
         String genericDescriptor = null;
         if (lambdaType.genericFunctionType != null) {
-            genericDescriptor = toGenericDescriptor(superClass, lambdaType.genericFunctionType);
+            genericDescriptor = toGenericDescriptor(superclass, lambdaType.genericFunctionType);
         }
 
-        cw.visit(V1_8, ACC_SUPER, internalClassName, genericDescriptor, Type.getInternalName(superClass),
-                new String[] { Type.getInternalName(lambdaType.functionClass) });
+        final String[] interfaces = !functionClass.isInterface() ? new String[0] :
+                new String[] { Type.getInternalName(lambdaType.functionClass) };
+
+        cw.visit(V1_8, ACC_SUPER, internalClassName, genericDescriptor, Type.getInternalName(superclass), interfaces);
 
         final FieldVisitor fv = cw.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC,
                 METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;", null, null);
@@ -253,7 +260,7 @@ public final class InternalLambdaFactory {
         MethodVisitor mv = cw.visitMethod(0, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+        mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(superclass), "<init>", "()V", false);
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();

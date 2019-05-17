@@ -25,8 +25,10 @@
 package org.lanternpowered.lmbda;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -34,9 +36,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-
-import javax.annotation.Nullable;
+import java.util.stream.Collectors;
 
 /**
  * Represents a resolved lambda type.
@@ -46,21 +50,21 @@ import javax.annotation.Nullable;
 @SuppressWarnings({"unchecked", "ConstantConditions"})
 final class ResolvedLambdaType<@NonNull T> {
 
-    final Class<T> functionClass;
+    final @NonNull Class<T> functionClass;
     final @Nullable ParameterizedType genericFunctionType;
 
-    final Method method;
-    final MethodType methodType;
+    final @NonNull Method method;
+    final @NonNull MethodType methodType;
 
-    ResolvedLambdaType(Type type) {
-        final Class<T> interfClass;
+    ResolvedLambdaType(@NonNull Type type) {
+        final Class<T> functionClass;
         final ParameterizedType genericFunctionType;
         if (type instanceof Class<?>) {
             genericFunctionType = null;
-            interfClass = (Class<T>) type;
+            functionClass = (Class<T>) type;
         } else if (type instanceof ParameterizedType) {
             genericFunctionType = (ParameterizedType) type;
-            interfClass = (Class<T>) genericFunctionType.getRawType();
+            functionClass = (Class<T>) genericFunctionType.getRawType();
         } else {
             final String name;
             if (type instanceof GenericArrayType) {
@@ -74,9 +78,85 @@ final class ResolvedLambdaType<@NonNull T> {
             }
             throw new IllegalStateException("A " + name + " can't be a LambdaType.");
         }
-        if (!interfClass.isInterface()) throw new IllegalStateException("functionalInterface must be a interface");
+        final Method validMethod;
+        if (functionClass.isInterface()) {
+            validMethod = findInterfaceMethod(functionClass);
+        } else if (Modifier.isAbstract(functionClass.getModifiers())) {
+            if (functionClass.getEnclosingClass() != null && !Modifier.isStatic(functionClass.getModifiers())) {
+                throw new IllegalStateException("A abstract function class may not be a non-static inner class.");
+            }
+            // For a abstract class is at least a package private constructor required
+            final Constructor<?>[] constructors = functionClass.getDeclaredConstructors();
+            boolean found = false;
+            for (Constructor<?> constructor : constructors) {
+                // No arguments for this constructor
+                if (constructor.getParameterCount() == 0) {
+                    if (Modifier.isPrivate(constructor.getModifiers())) {
+                        throw new IllegalStateException("The zero arg constructor of a abstract function class must be at least package-private.");
+                    }
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw new IllegalStateException("A abstract function class must have a zero arg constructor.");
+            }
+            validMethod = findAbstractClassMethod(functionClass);
+        } else {
+            throw new IllegalStateException("The function type must be a interface or a abstract class.");
+        }
+        this.functionClass = functionClass;
+        this.genericFunctionType = genericFunctionType;
+        this.method = validMethod;
+        this.methodType = MethodType.methodType(validMethod.getReturnType(), validMethod.getParameterTypes());
+    }
+
+    private static @NonNull Method findAbstractClassMethod(@NonNull Class<?> functionClass) {
+        final Map<String, Method> foundMethods = new HashMap<>();
+        findClassMethods(functionClass, foundMethods);
+
+        final List<Method> methods = foundMethods.values().stream()
+                .filter(method -> !Modifier.isStatic(method.getModifiers()) &&
+                        (!method.isDefault() || Modifier.isAbstract(method.getModifiers())))
+                .collect(Collectors.toList());
+
+        if (methods.size() > 1) {
+            throw new IllegalStateException("Found multiple abstract methods in: " +
+                    functionClass.getClass().getName());
+        } else if (methods.isEmpty()) {
+            throw new IllegalStateException("Couldn't find a abstract method in: " +
+                    functionClass.getClass().getName());
+        }
+
+        return methods.get(0);
+    }
+
+    /**
+     * Converts the {@link Method} to a string with it's unique descriptor and name.
+     *
+     * @param method The method
+     * @return The string
+     */
+    private static @NonNull String toKey(@NonNull Method method) {
+        return method.getName() + ';' + org.objectweb.asm.Type.getMethodDescriptor(method);
+    }
+
+    private static void findClassMethods(@NonNull Class<?> functionClass, @NonNull Map<String, Method> methods) {
+        for (Method method : functionClass.getDeclaredMethods()) {
+            methods.putIfAbsent(toKey(method), method);
+        }
+        for (Class<?> interf : functionClass.getInterfaces()) {
+            findClassMethods(interf, methods);
+        }
+        final Class<?> superclass = functionClass.getSuperclass();
+        if (superclass != Object.class) {
+            findClassMethods(superclass, methods);
+        }
+    }
+
+    private static @NonNull Method findInterfaceMethod(@NonNull Class<?> functionClass) {
         Method validMethod = null;
-        for (Method method : interfClass.getMethods()) {
+        for (Method method : functionClass.getMethods()) {
             // Ignore default and static methods
             if (method.isDefault() || Modifier.isStatic(method.getModifiers())) {
                 continue;
@@ -84,22 +164,19 @@ final class ResolvedLambdaType<@NonNull T> {
             // Only one non implemented method may be present
             if (validMethod != null) {
                 throw new IllegalStateException("Found multiple non-default methods in: " +
-                        interfClass.getClass().getName());
+                        functionClass.getClass().getName());
             }
             validMethod = method;
         }
         if (validMethod == null) {
             throw new IllegalStateException("Couldn't find a non-default method in: " +
-                    interfClass.getClass().getName());
+                    functionClass.getClass().getName());
         }
-        this.functionClass = interfClass;
-        this.genericFunctionType = genericFunctionType;
-        this.method = validMethod;
-        this.methodType = MethodType.methodType(validMethod.getReturnType(), validMethod.getParameterTypes());
+        return validMethod;
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         final String typeName = this.genericFunctionType != null ? this.genericFunctionType.getTypeName() : this.functionClass.getName();
         return String.format("LambdaType[type=%s,method=%s]",
                 typeName, this.method.getName() + this.methodType);

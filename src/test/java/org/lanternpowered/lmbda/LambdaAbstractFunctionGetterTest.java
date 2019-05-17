@@ -30,28 +30,33 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.util.function.IntConsumer;
 
-class LambdaFinalStaticSetterTest {
+class LambdaAbstractFunctionGetterTest {
 
     @Test
     void test() throws Exception {
         final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(TestObject.class, MethodHandles.lookup());
-        final MethodHandle methodHandle = MethodHandlesX.findFinalStaticSetter(lookup, TestObject.class, "data", Integer.class);
+        final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
-        final IntConsumer setter = LambdaFactory.create(LambdaType.of(IntConsumer.class), methodHandle);
+        final MyFunction getter = LambdaFactory.create(new LambdaType<MyFunction>() {}, methodHandle);
 
-        assertEquals(100, TestObject.getData());
-        setter.accept(10000);
-        assertEquals(10000, TestObject.getData());
+        final TestObject object = new TestObject();
+        assertEquals(100, getter.getValue(object));
+        object.setData(10000);
+        assertEquals(10000, getter.getValue(object));
     }
 
     public static class TestObject {
 
-        private static final Integer data = 100;
+        private int data = 100;
 
-        static int getData() {
-            return data;
+        void setData(int value) {
+            this.data = value;
         }
+    }
+
+    abstract static class MyFunction {
+
+        public abstract int getValue(TestObject testObject);
     }
 }
