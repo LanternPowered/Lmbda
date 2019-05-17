@@ -28,7 +28,7 @@ package org.lanternpowered.lmbda.kt
 
 import org.lanternpowered.lmbda.LambdaFactory
 import org.lanternpowered.lmbda.LambdaType
-import org.lanternpowered.lmbda.MethodHandlesX
+import org.lanternpowered.lmbda.MethodHandlesExtensions
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.GenericArrayType
@@ -43,18 +43,18 @@ import kotlin.reflect.KClass
 inline fun <reified T> lambdaType() = object : LambdaType<T>() {}
 
 /**
- * See [MethodHandlesX.defineClass].
+ * See [MethodHandlesExtensions.defineClass].
  */
 @Throws(IllegalAccessException::class)
 inline fun MethodHandles.Lookup.defineClass(bytecode: ByteArray): Class<*>
-        = MethodHandlesX.defineClass(this, bytecode)
+        = MethodHandlesExtensions.defineClass(this, bytecode)
 
 /**
- * See [MethodHandlesX.privateLookupIn].
+ * See [MethodHandlesExtensions.privateLookupIn].
  */
 @Throws(IllegalAccessException::class)
 inline fun MethodHandles.Lookup.privateLookupIn(target: Class<*>): MethodHandles.Lookup
-        = MethodHandlesX.privateLookupIn(target, this)
+        = MethodHandlesExtensions.privateLookupIn(target, this)
 
 /**
  * Constructs a lambda for for the target [MethodHandle] and [LambdaType].

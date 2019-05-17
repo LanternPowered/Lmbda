@@ -32,9 +32,9 @@ import java.lang.invoke.MethodHandles;
 import java.security.ProtectionDomain;
 
 /**
- * A utility class full of magic related to {@link MethodHandles}.
+ * A class with extension methods related to {@link MethodHandles}.
  */
-public final class MethodHandlesX {
+public final class MethodHandlesExtensions {
 
     /**
      * Gets a lookup object with full capabilities to emulate all supported bytecode
@@ -73,6 +73,6 @@ public final class MethodHandlesX {
         return InternalMethodHandles.adapter.defineClass(lookup, byteCode);
     }
 
-    private MethodHandlesX() {
+    private MethodHandlesExtensions() {
     }
 }

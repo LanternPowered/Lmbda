@@ -306,7 +306,7 @@ public final class InternalLambdaFactory {
 
             // Define the class within the provided lookup
             final Class<?> theClass = AccessController.doPrivileged((PrivilegedAction<Class<?>>) () -> InternalUtilities.doUnchecked(
-                    () -> MethodHandlesX.defineClass(defineLookup, cw.toByteArray())));
+                    () -> MethodHandlesExtensions.defineClass(defineLookup, cw.toByteArray())));
 
             // Instantiate the function object
             return InternalUtilities.doUnchecked(

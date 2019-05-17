@@ -137,12 +137,12 @@ final class InternalMethodHandles {
 
         @Override
         public MethodHandles.@NonNull Lookup privateLookupIn(@NonNull Class<?> targetClass, MethodHandles.@NonNull Lookup lookup) {
-            return doUnchecked(() -> (MethodHandles.Lookup) requireNonNull(privateLookupMethodHandle).invoke(targetClass, lookup));
+            return doUnchecked(() -> (MethodHandles.Lookup) privateLookupMethodHandle.invoke(targetClass, lookup));
         }
 
         @Override
         public @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup, @NonNull byte[] byteCode) {
-            return doUnchecked(() -> (Class<?>) requireNonNull(defineClassMethodHandle).invoke(lookup, byteCode));
+            return doUnchecked(() -> (Class<?>) defineClassMethodHandle.invoke(lookup, byteCode));
         }
     }
 
