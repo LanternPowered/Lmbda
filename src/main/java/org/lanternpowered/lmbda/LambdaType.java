@@ -42,40 +42,42 @@ import java.util.Objects;
 public abstract class LambdaType<@NonNull T> {
 
     /**
-     * Attempts to find a function method in the given functional abstract class.
+     * Constructs a new {@link LambdaType} from the given function interface or
+     * abstract class.
      *
      * <p>A functional abstract class is either a interface or a "abstract" class
      * that has a no-arg constructor. In both cases is only one abstract method
      * allowed.</p>
      *
-     * <p>A functional interface doesn't need to be annotated with
-     * {@link FunctionalInterface}, but only one non default method may
-     * be present.</p>
-     *
-     * @param functionalInterface The functional interface
-     * @param <T> The type of the functional interface
-     * @return The functional method
+     * @param functionType The function type
+     * @param <T> The type of the function type
+     * @return The lambda type
      * @throws IllegalArgumentException If no valid functional method could be found
      */
-    public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Class<T> functionalInterface) {
-        requireNonNull(functionalInterface, "functionalInterface");
-        return new Simple<>(functionalInterface);
+    public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Class<T> functionType) {
+        requireNonNull(functionType, "functionType");
+        return new Simple<>(functionType);
     }
 
     /**
-     * Attempts to find a function method in the given functional interface type.
-     * <p>A functional interface doesn't need to be annotated with
-     * {@link FunctionalInterface}, but only one non default method may
-     * be present.
+     * Constructs a new {@link LambdaType} from the given function interface or
+     * abstract class type.
      *
-     * @param functionalInterfaceType The functional interface type
-     * @param <T> The type of the functional interface
-     * @return The functional method
+     * <p>A functional abstract class is either a interface or a "abstract" class
+     * that has a no-arg constructor. In both cases is only one abstract method
+     * allowed.</p>
+     *
+     * <p>The generic signature of the given {@link Type} will be retained by
+     * a resulting function.</p>
+     *
+     * @param functionType The function type
+     * @param <T> The type of the function
+     * @return The lambda type
      * @throws IllegalArgumentException If no valid functional method could be found
      */
-    public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Type functionalInterfaceType) {
-        requireNonNull(functionalInterfaceType, "functionalInterfaceType");
-        return new Simple<>(functionalInterfaceType);
+    public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Type functionType) {
+        requireNonNull(functionType, "functionType");
+        return new Simple<>(functionType);
     }
 
     /**
@@ -203,11 +205,12 @@ public abstract class LambdaType<@NonNull T> {
             return false;
         }
         final LambdaType<?> that = (LambdaType<?>) obj;
-        return that.resolved.equals(this.resolved);
+        return that.resolved.equals(this.resolved) &&
+                Objects.equals(that.defineLookup, this.defineLookup);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.resolved);
+        return Objects.hash(this.resolved, this.defineLookup);
     }
 }
