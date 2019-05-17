@@ -36,7 +36,7 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 
 /**
- * Represents a {@link FunctionalInterface}
+ * Represents a function interface or abstract class
  * that can be be implemented by a generated function.
  */
 public abstract class LambdaType<@NonNull T> {
@@ -163,6 +163,7 @@ public abstract class LambdaType<@NonNull T> {
      * @return The new lambda type
      */
     public @NonNull LambdaType<T> defineClassesWith(MethodHandles.@Nullable Lookup defineLookup) {
+        requireNonNull(defineLookup, "defineLookup");
         return new Simple<>(this.resolved, defineLookup);
     }
 

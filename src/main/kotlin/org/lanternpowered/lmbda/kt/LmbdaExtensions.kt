@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-@file:Suppress("unused", "NOTHING_TO_INLINE", "DeprecatedCallableAddReplaceWith")
+@file:Suppress("unused", "NOTHING_TO_INLINE", "DeprecatedCallableAddReplaceWith", "UNCHECKED_CAST")
 
 package org.lanternpowered.lmbda.kt
 
@@ -36,6 +36,7 @@ import java.lang.reflect.Type
 import java.lang.reflect.TypeVariable
 import java.lang.reflect.WildcardType
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 /**
  * Constructs a new [LambdaType].
@@ -85,6 +86,14 @@ inline fun <T> Type.toLambdaType(): LambdaType<T> = LambdaType.of(this)
  * @see LambdaType.of
  */
 inline fun <T> Class<T>.toLambdaType(): LambdaType<T> = LambdaType.of(this)
+
+/**
+ * Attempts to convert this [KType] into [LambdaType].
+ *
+ * @see LambdaType.of
+ */
+inline fun <T : Any> KType.toLambdaType(): LambdaType<T>
+        = (this.classifier as? KClass<T>)?.toLambdaType() ?: throw IllegalStateException("The classifier must be a KClass.")
 
 /**
  * Attempts to convert this [KClass] into [LambdaType].
