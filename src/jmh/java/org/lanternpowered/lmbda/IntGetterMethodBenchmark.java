@@ -79,7 +79,7 @@ public class IntGetterMethodBenchmark {
             MethodHandles.Lookup lookup, MethodHandle methodHandle) throws Throwable {
         // Generate the lambda class
         final CallSite callSite = LambdaMetafactory.metafactory(lookup, lambdaType.getMethod().getName(),
-                lambdaType.classType, lambdaType.methodType, methodHandle, methodHandle.type());
+                MethodType.methodType(lambdaType.resolved.functionClass), lambdaType.resolved.methodType, methodHandle, methodHandle.type());
 
         // Create the function
         return (T) callSite.getTarget().invoke();
@@ -101,28 +101,28 @@ public class IntGetterMethodBenchmark {
                 try {
                     return (Integer) staticMethodHandle.invokeExact(object);
                 } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
+                    throw InternalUtilities.throwUnchecked(t);
                 }
             };
             staticReflectiveFunction = object -> {
                 try {
                     return (int) staticReflective.invoke(object);
                 } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
+                    throw InternalUtilities.throwUnchecked(t);
                 }
             };
             methodHandleFunction = object -> {
                 try {
                     return (Integer) methodHandle.invokeExact(object);
                 } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
+                    throw InternalUtilities.throwUnchecked(t);
                 }
             };
             reflectiveFunction = object -> {
                 try {
                     return (int) reflective.invoke(object);
                 } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
+                    throw InternalUtilities.throwUnchecked(t);
                 }
             };
             //noinspection unchecked

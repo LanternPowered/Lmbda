@@ -85,7 +85,7 @@ public class IntSetterFieldBenchmark {
                 try {
                     static_unreflect.invokeExact(object, value);
                 } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
+                    throw InternalUtilities.throwUnchecked(t);
                 }
             };
             lmbda = LambdaFactory.create(new LambdaType<IntSetFunction<IntSetterFieldBenchmark>>() {}, mh);

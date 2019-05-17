@@ -26,38 +26,40 @@ package org.lanternpowered.lmbda;
 
 import static java.util.Objects.requireNonNull;
 
-import java.lang.invoke.MethodType;
-import java.lang.reflect.GenericArrayType;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.Objects;
-
-import javax.annotation.Nullable;
 
 /**
  * Represents a {@link FunctionalInterface}
  * that can be be implemented by a generated function.
  */
-public abstract class LambdaType<T> {
+public abstract class LambdaType<@NonNull T> {
 
     /**
-     * Attempts to find a function method in the given functional interface class.
+     * Attempts to find a function method in the given functional abstract class.
+     *
+     * <p>A functional abstract class is either a interface or a "abstract" class
+     * that has a no-arg constructor. In both cases is only one abstract method
+     * allowed.</p>
+     *
      * <p>A functional interface doesn't need to be annotated with
      * {@link FunctionalInterface}, but only one non default method may
-     * be present.
+     * be present.</p>
      *
      * @param functionalInterface The functional interface
      * @param <T> The type of the functional interface
      * @return The functional method
      * @throws IllegalArgumentException If no valid functional method could be found
      */
-    public static <T> LambdaType<T> of(Class<T> functionalInterface) {
+    public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Class<T> functionalInterface) {
         requireNonNull(functionalInterface, "functionalInterface");
-        return new LambdaType<T>(functionalInterface) {};
+        return new Simple<>(functionalInterface);
     }
 
     /**
@@ -71,17 +73,45 @@ public abstract class LambdaType<T> {
      * @return The functional method
      * @throws IllegalArgumentException If no valid functional method could be found
      */
-    public static <T> LambdaType<T> of(Type functionalInterfaceType) {
+    public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Type functionalInterfaceType) {
         requireNonNull(functionalInterfaceType, "functionalInterfaceType");
-        return new LambdaType<T>(functionalInterfaceType) {};
+        return new Simple<>(functionalInterfaceType);
     }
 
-    private Class<T> functionClass;
-    private Method method;
-    @Nullable ParameterizedType genericFunctionType;
+    /**
+     * A simple implementation.
+     */
+    private static final class Simple<@NonNull T> extends LambdaType<T> {
 
-    MethodType classType;
-    MethodType methodType;
+        /**
+         * Constructs a new {@link LambdaType}.
+         *
+         * @param functionalInterfaceType The functional interface type
+         */
+        private Simple(@NonNull Type functionalInterfaceType) {
+            super(new ResolvedLambdaType<>(functionalInterfaceType), null);
+        }
+
+        /**
+         * Constructs a new {@link LambdaType}.
+         *
+         * @param resolved The resolved lambda type
+         * @param defineLookup The define lookup
+         */
+        private Simple(@NonNull ResolvedLambdaType<T> resolved, MethodHandles.@Nullable Lookup defineLookup) {
+            super(resolved, defineLookup);
+        }
+    }
+
+    final @NonNull ResolvedLambdaType<T> resolved;
+
+    /**
+     * The lookup the generated lambda implementation will be
+     * defined in. This is required when the target interface
+     * doesn't provide public access that it can be implemented
+     * outside of it's package.
+     */
+    final MethodHandles.@Nullable Lookup defineLookup;
 
     /**
      * Constructs a new {@link LambdaType}.
@@ -91,7 +121,6 @@ public abstract class LambdaType<T> {
      * If it's not resolved, a {@link IllegalStateException} can
      * be expected.</p>
      */
-    @SuppressWarnings("unchecked")
     public LambdaType() {
         final Class<?> theClass = getClass();
         final Class<?> superClass = theClass.getSuperclass();
@@ -103,68 +132,36 @@ public abstract class LambdaType<T> {
             throw new IllegalStateException("Direct subclasses of LambdaType must be a parameterized type.");
         }
         final ParameterizedType parameterizedType = (ParameterizedType) superType;
-        init(parameterizedType.getActualTypeArguments()[0]);
+        this.resolved = new ResolvedLambdaType<>(parameterizedType.getActualTypeArguments()[0]);
+        this.defineLookup = null;
     }
 
-    private LambdaType(Class<T> functionalInterface) {
-        init(functionalInterface);
+    /**
+     * Constructs a new {@link LambdaType}.
+     *
+     * @param resolved The resolved lambda type
+     * @param defineLookup The define lookup
+     */
+    private LambdaType(@NonNull ResolvedLambdaType<T> resolved, MethodHandles.@Nullable Lookup defineLookup) {
+        this.defineLookup = defineLookup;
+        this.resolved = resolved;
     }
 
-    private LambdaType(Type functionalInterfaceType) {
-        init(functionalInterfaceType);
-    }
-
-    @SuppressWarnings("unchecked")
-    private void init(Type type) {
-        final Class<T> interfClass;
-        final ParameterizedType genericFunctionType;
-        if (type instanceof Class<?>) {
-            genericFunctionType = null;
-            interfClass = (Class<T>) type;
-        } else if (type instanceof ParameterizedType) {
-            genericFunctionType = (ParameterizedType) type;
-            interfClass = (Class<T>) genericFunctionType.getRawType();
-        } else {
-            final String name;
-            if (type instanceof GenericArrayType) {
-                name = "GenericArrayType";
-            } else if (type instanceof WildcardType) {
-                name = "WildcardType";
-            } else if (type instanceof TypeVariable) {
-                name = "TypeVariable";
-            } else {
-                name = type.getClass().getName();
-            }
-            throw new IllegalStateException("A " + name + " can't be a LambdaType.");
-        }
-        init(interfClass, genericFunctionType);
-    }
-
-    private void init(Class<T> functionalInterface, @Nullable ParameterizedType genericFunctionType) {
-        requireNonNull(functionalInterface, "functionalInterface");
-        if (!functionalInterface.isInterface()) throw new IllegalStateException("functionalInterface must be a interface");
-        Method validMethod = null;
-        for (Method method : functionalInterface.getMethods()) {
-            // Ignore default and static methods
-            if (method.isDefault() || Modifier.isStatic(method.getModifiers())) {
-                continue;
-            }
-            // Only one non implemented method may be present
-            if (validMethod != null) {
-                throw new IllegalStateException("Found multiple non-default methods in: " +
-                        functionalInterface.getClass().getName());
-            }
-            validMethod = method;
-        }
-        if (validMethod == null) {
-            throw new IllegalStateException("Couldn't find a non-default method in: " +
-                    functionalInterface.getClass().getName());
-        }
-        this.functionClass = functionalInterface;
-        this.genericFunctionType = genericFunctionType;
-        this.classType = MethodType.methodType(functionalInterface);
-        this.method = validMethod;
-        this.methodType = MethodType.methodType(validMethod.getReturnType(), validMethod.getParameterTypes());
+    /**
+     * Constructs a new {@link LambdaType} where that will define the
+     * implementation class using the provided lookup.
+     *
+     * <p>When the functional interface/abstract class isn't public, or
+     * the abstract method ins't, then should the lookup be defined explicitly.
+     * It implementation class needs the proper access in order to implemented
+     * successfully. This can be in the same package or a different one
+     * depending on what is desired.</p>
+     *
+     * @param defineLookup The define lookup
+     * @return The new lambda type
+     */
+    public @NonNull LambdaType<T> defineClassesWith(MethodHandles.@Nullable Lookup defineLookup) {
+        return new Simple<>(this.resolved, defineLookup);
     }
 
     /**
@@ -172,8 +169,8 @@ public abstract class LambdaType<T> {
      *
      * @return The function class
      */
-    public Class<T> getFunctionClass() {
-        return this.functionClass;
+    public @NonNull Class<T> getFunctionClass() {
+        return this.resolved.functionClass;
     }
 
     /**
@@ -181,8 +178,8 @@ public abstract class LambdaType<T> {
      *
      * @return The function type
      */
-    public Type getFunctionType() {
-        return this.genericFunctionType != null ? this.genericFunctionType : this.functionClass;
+    public @NonNull Type getFunctionType() {
+        return this.resolved.genericFunctionType != null ? this.resolved.genericFunctionType : this.resolved.functionClass;
     }
 
     /**
@@ -191,15 +188,13 @@ public abstract class LambdaType<T> {
      *
      * @return The method
      */
-    public Method getMethod() {
-        return this.method;
+    public @NonNull Method getMethod() {
+        return this.resolved.method;
     }
 
     @Override
-    public String toString() {
-        final String typeName = this.genericFunctionType != null ? this.genericFunctionType.getTypeName() : this.functionClass.getName();
-        return String.format("LambdaType[type=%s,method=%s]",
-                typeName, this.method.getName() + this.methodType);
+    public @NonNull String toString() {
+        return this.resolved.toString();
     }
 
     @Override
@@ -208,12 +203,11 @@ public abstract class LambdaType<T> {
             return false;
         }
         final LambdaType<?> that = (LambdaType<?>) obj;
-        return that.method.equals(this.method) && that.functionClass == this.functionClass &&
-                Objects.equals(this.genericFunctionType, that.genericFunctionType);
+        return that.resolved.equals(this.resolved);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.functionClass, this.method, this.genericFunctionType);
+        return Objects.hash(this.resolved);
     }
 }

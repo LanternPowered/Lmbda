@@ -31,7 +31,6 @@ import org.lanternpowered.lmbda.LambdaType
 import org.lanternpowered.lmbda.MethodHandlesX
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
-import java.lang.reflect.Field
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Type
 import java.lang.reflect.TypeVariable
@@ -41,31 +40,7 @@ import kotlin.reflect.KClass
 /**
  * Constructs a new [LambdaType].
  */
-inline fun <reified T> lambdaType() = object: LambdaType<T>() {}
-
-/**
- * See [MethodHandlesX.findFinalStaticSetter].
- */
-@Deprecated(message = "Will be removed in 2.0.0, see MethodHandlesX.findFinalStaticSetter")
-@Throws(IllegalAccessException::class, NoSuchFieldException::class)
-inline fun MethodHandles.Lookup.findFinalStaticSetter(target: Class<*>, fieldName: String, fieldType: Class<*>): MethodHandle
-        = MethodHandlesX.findFinalStaticSetter(this, target, fieldName, fieldType)
-
-/**
- * See [MethodHandlesX.findFinalSetter].
- */
-@Deprecated(message = "Will be removed in 2.0.0, see MethodHandlesX.findFinalSetter")
-@Throws(IllegalAccessException::class, NoSuchFieldException::class)
-inline fun MethodHandles.Lookup.findFinalSetter(target: Class<*>, fieldName: String, fieldType: Class<*>): MethodHandle
-        = MethodHandlesX.findFinalSetter(this, target, fieldName, fieldType)
-
-/**
- * See [MethodHandlesX.unreflectFinalSetter].
- */
-@Deprecated(message = "Will be removed in 2.0.0, see MethodHandlesX.unreflectFinalSetter")
-@Throws(IllegalAccessException::class)
-inline fun MethodHandles.Lookup.unreflectFinalSetter(field: Field): MethodHandle
-        = MethodHandlesX.unreflectFinalSetter(this, field)
+inline fun <reified T> lambdaType() = object : LambdaType<T>() {}
 
 /**
  * See [MethodHandlesX.defineClass].
@@ -90,6 +65,12 @@ inline fun <T> MethodHandle.createLambda(lambdaType: LambdaType<T>): T = LambdaF
  * Constructs a lambda for for the target [MethodHandle] and [LambdaType].
  */
 inline fun <reified T> MethodHandle.createLambda(): T = LambdaFactory.create(lambdaType<T>(), this)
+
+/**
+ * Constructs a lambda for for the target [MethodHandle] and [LambdaType].
+ */
+inline fun <reified T> MethodHandle.createLambda(defineLookup: MethodHandles.Lookup): T
+        = LambdaFactory.create(lambdaType<T>().defineClassesWith(defineLookup), this)
 
 /**
  * Attempts to convert this [Type] into [LambdaType].

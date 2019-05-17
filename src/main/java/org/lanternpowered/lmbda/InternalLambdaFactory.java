@@ -31,10 +31,10 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
@@ -66,12 +66,31 @@ import javax.annotation.Nullable;
 /**
  * Separated from {@link LambdaFactory} to keep it clean.
  */
-final class InternalLambdaFactory {
+public final class InternalLambdaFactory {
+
+    /**
+     * Requests a {@link MethodHandle} for the construction of a
+     * lambda implementation.
+     *
+     * <p>Calling this method outside of construction phase will
+     * result in a {@link IllegalStateException}.</p>
+     *
+     * @return The method handle
+     * @deprecated Should not be used directly, internal use only
+     */
+    @Deprecated
+    public static MethodHandle requestMethodHandle() {
+        final MethodHandle methodHandle = currentMethodHandle.get();
+        if (methodHandle != null) {
+            return methodHandle;
+        }
+        throw new IllegalStateException("Illegal method handle request.");
+    }
 
     /**
      * The package name we will define custom classes in.
      */
-    private static final String packageName;
+    private static final String packageName = InternalUtilities.getPackageName(InternalLambdaFactory.class);
 
     /**
      * The internal lookup that has access to this library package.
@@ -83,26 +102,25 @@ final class InternalLambdaFactory {
      * A thread local which temporarily holds the {@link MethodHandle}
      * that will be injected into the generated class.
      */
-    @SuppressWarnings("WeakerAccess") // Must be package private! Is accessed by generated classes.
-    static final ThreadLocal<MethodHandle> currentMethodHandle = new ThreadLocal<>();
+    private static final ThreadLocal<MethodHandle> currentMethodHandle = new ThreadLocal<>();
 
     /**
      * A counter to make sure that lambda names don't conflict.
      */
     private static final AtomicInteger lambdaCounter = new AtomicInteger();
 
-    static {
-        final String name = InternalLambdaFactory.class.getName();
-        packageName = name.substring(0, name.lastIndexOf('.'));
-    }
-
     @SuppressWarnings("unchecked")
     static <T, F extends T> F create(LambdaType<T> lambdaType, MethodHandle methodHandle) {
         requireNonNull(lambdaType, "lambdaType");
         requireNonNull(methodHandle, "methodHandle");
 
+        MethodHandles.Lookup defineLookup = lambdaType.defineLookup;
+        if (defineLookup == null) {
+            defineLookup = internalLookup;
+        }
+
         try {
-            return createGeneratedFunction(lambdaType, methodHandle);
+            return createGeneratedFunction(lambdaType.resolved, methodHandle, defineLookup);
         } catch (Throwable e) {
             throw new IllegalStateException("Couldn't create lambda for: \"" + methodHandle + "\". "
                     + "Failed to implement: " + lambdaType, e);
@@ -204,7 +222,7 @@ final class InternalLambdaFactory {
     private static final String METHOD_HANDLE_FIELD_NAME = "methodHandle";
 
     @SuppressWarnings("unchecked")
-    private static <T> T createGeneratedFunction(LambdaType lambdaType, MethodHandle methodHandle) {
+    private static <T> T createGeneratedFunction(ResolvedLambdaType lambdaType, MethodHandle methodHandle, MethodHandles.Lookup defineLookup) {
         // Convert the method handle types to match the functional method signature,
         // this will make sure that all the objects are converted accordingly so
         // we don't have to do it ourselves with asm.
@@ -212,12 +230,9 @@ final class InternalLambdaFactory {
         // implemented by the given method handle
         methodHandle = methodHandle.asType(lambdaType.methodType);
 
-        final Method method = lambdaType.getMethod();
+        final Method method = lambdaType.method;
         final ClassWriter cw = new ClassWriter(0);
 
-        // The function class will be defined in the package of this library to have
-        // access to package private fields, in java 9 this is also the package we
-        // can use to define classes in
         final String className = packageName + ".Lmbda$" + lambdaCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
 
@@ -228,7 +243,7 @@ final class InternalLambdaFactory {
         }
 
         cw.visit(V1_8, ACC_SUPER, internalClassName, genericDescriptor, Type.getInternalName(superClass),
-                new String[] { Type.getInternalName(lambdaType.getFunctionClass()) });
+                new String[] { Type.getInternalName(lambdaType.functionClass) });
 
         final FieldVisitor fv = cw.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC,
                 METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;", null, null);
@@ -246,10 +261,8 @@ final class InternalLambdaFactory {
         // Add the method handle field
         mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
         mv.visitCode();
-        mv.visitFieldInsn(GETSTATIC, Type.getInternalName(InternalLambdaFactory.class),
-                "currentMethodHandle", "Ljava/lang/ThreadLocal;");
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ThreadLocal", "get", "()Ljava/lang/Object;", false);
-        mv.visitTypeInsn(CHECKCAST, "java/lang/invoke/MethodHandle");
+        mv.visitMethodInsn(INVOKESTATIC, Type.getInternalName(InternalLambdaFactory.class), "requestMethodHandle",
+                "()Ljava/lang/invoke/MethodHandle;", false);
         mv.visitFieldInsn(PUTSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;");
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 0);
@@ -284,13 +297,13 @@ final class InternalLambdaFactory {
             // required on initialization of the generated class
             currentMethodHandle.set(methodHandle);
 
-            // Define the class within this package
-            final Class<?> theClass = AccessController.doPrivileged((PrivilegedAction<Class<?>>) () -> MethodHandlesX.doUnchecked(
-                    () -> MethodHandlesX.defineClass(internalLookup, cw.toByteArray())));
+            // Define the class within the provided lookup
+            final Class<?> theClass = AccessController.doPrivileged((PrivilegedAction<Class<?>>) () -> InternalUtilities.doUnchecked(
+                    () -> MethodHandlesX.defineClass(defineLookup, cw.toByteArray())));
 
             // Instantiate the function object
-            return MethodHandlesX.doUnchecked(
-                    () -> (T) internalLookup.in(theClass).findConstructor(theClass, MethodType.methodType(void.class)).invoke());
+            return InternalUtilities.doUnchecked(
+                    () -> (T) defineLookup.in(theClass).findConstructor(theClass, MethodType.methodType(void.class)).invoke());
         } finally {
             // Cleanup
             currentMethodHandle.remove();

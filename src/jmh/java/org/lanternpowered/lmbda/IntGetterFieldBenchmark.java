@@ -85,28 +85,28 @@ public class IntGetterFieldBenchmark {
                 try {
                     return (int) staticMethodHandle.invokeExact(object);
                 } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
+                    throw InternalUtilities.throwUnchecked(t);
                 }
             };
             staticReflectiveFunction = object -> {
                 try {
                     return staticReflective.getInt(object);
                 } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
+                    throw InternalUtilities.throwUnchecked(t);
                 }
             };
             methodHandleFunction = object -> {
                 try {
                     return (int) methodHandle.invokeExact(object);
                 } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
+                    throw InternalUtilities.throwUnchecked(t);
                 }
             };
             reflectiveFunction = object -> {
                 try {
                     return reflective.getInt(object);
                 } catch (Throwable t) {
-                    throw MethodHandlesX.throwUnchecked(t);
+                    throw InternalUtilities.throwUnchecked(t);
                 }
             };
             //noinspection unchecked

@@ -24,12 +24,15 @@
  */
 package org.lanternpowered.lmbda;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.lang.invoke.MethodHandle;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -42,6 +45,7 @@ public final class LambdaFactory {
     // Supplier
 
     private static final LambdaType<Supplier> supplierInterface = LambdaType.of(Supplier.class);
+    private static final LambdaType<IntSupplier> intSupplierInterface = LambdaType.of(IntSupplier.class);
 
     // Functions
 
@@ -67,7 +71,7 @@ public final class LambdaFactory {
      * @return The created bi predicate
      * @see #create(LambdaType, MethodHandle)
      */
-    public static <T, U> BiPredicate<T, U> createBiPredicate(MethodHandle methodHandle) {
+    public static <T, U> @NonNull BiPredicate<T, U> createBiPredicate(@NonNull MethodHandle methodHandle) {
         return create(biPredicateInterface, methodHandle);
     }
 
@@ -79,7 +83,7 @@ public final class LambdaFactory {
      * @return The created predicate
      * @see #create(LambdaType, MethodHandle)
      */
-    public static <T> Predicate<T> createPredicate(MethodHandle methodHandle) {
+    public static <T> @NonNull Predicate<T> createPredicate(@NonNull MethodHandle methodHandle) {
         return create(predicateInterface, methodHandle);
     }
 
@@ -92,7 +96,7 @@ public final class LambdaFactory {
      * @return The created bi consumer
      * @see #create(LambdaType, MethodHandle)
      */
-    public static <T, U> BiConsumer<T, U> createBiConsumer(MethodHandle methodHandle) {
+    public static <T, U> @NonNull BiConsumer<T, U> createBiConsumer(@NonNull MethodHandle methodHandle) {
         return create(biConsumerInterface, methodHandle);
     }
 
@@ -104,7 +108,7 @@ public final class LambdaFactory {
      * @return The created consumer
      * @see #create(LambdaType, MethodHandle)
      */
-    public static <T> Consumer<T> createConsumer(MethodHandle methodHandle) {
+    public static <T> @NonNull Consumer<T> createConsumer(@NonNull MethodHandle methodHandle) {
         return create(consumerInterface, methodHandle);
     }
 
@@ -116,8 +120,19 @@ public final class LambdaFactory {
      * @return The created supplier
      * @see #create(LambdaType, MethodHandle)
      */
-    public static <T> Supplier<T> createSupplier(MethodHandle methodHandle) {
+    public static <T> @NonNull Supplier<T> createSupplier(@NonNull MethodHandle methodHandle) {
         return create(supplierInterface, methodHandle);
+    }
+
+    /**
+     * Attempts to create a {@link IntSupplier} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @return The created int supplier
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static @NonNull IntSupplier createIntSupplier(@NonNull MethodHandle methodHandle) {
+        return create(intSupplierInterface, methodHandle);
     }
 
     /**
@@ -130,7 +145,7 @@ public final class LambdaFactory {
      * @return The created bi function
      * @see #create(LambdaType, MethodHandle)
      */
-    public static <T, U, R> BiFunction<T, U, R> createBiFunction(MethodHandle methodHandle) {
+    public static <T, U, R> @NonNull BiFunction<T, U, R> createBiFunction(@NonNull MethodHandle methodHandle) {
         return create(biFunctionInterface, methodHandle);
     }
 
@@ -143,7 +158,7 @@ public final class LambdaFactory {
      * @return The created function
      * @see #create(LambdaType, MethodHandle)
      */
-    public static <T, R> Function<T, R> createFunction(MethodHandle methodHandle) {
+    public static <T, R> @NonNull Function<T, R> createFunction(@NonNull MethodHandle methodHandle) {
         return create(functionInterface, methodHandle);
     }
 
@@ -156,7 +171,7 @@ public final class LambdaFactory {
      * @param <T> The functional interface type
      * @return The constructed function
      */
-    public static <T> T create(LambdaType<T> lambdaType, MethodHandle methodHandle) {
+    public static <T> @NonNull T create(@NonNull LambdaType<T> lambdaType, @NonNull MethodHandle methodHandle) {
         return InternalLambdaFactory.create(lambdaType, methodHandle);
     }
 
