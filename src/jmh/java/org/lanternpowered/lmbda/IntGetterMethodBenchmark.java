@@ -34,8 +34,6 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
@@ -49,6 +47,7 @@ import java.util.function.ToIntFunction;
  * <a href="https://stackoverflow.com/questions/22244402/how-can-i-improve-performance-of-field-set-perhap-using-methodhandles?noredirect=1&lq=1">
  *     How can I improve performance of Field.set (perhaps using MethodHandles)?</a>
  */
+@SuppressWarnings("unchecked")
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
@@ -74,29 +73,17 @@ public class IntGetterMethodBenchmark {
     private static ToIntFunction<IntGetterMethodBenchmark> lambdaFunction;
     private static ToIntFunction<IntGetterMethodBenchmark> lmbdaFunction;
 
-    @SuppressWarnings("unchecked")
-    static <T> T createLambda(LambdaType<T> lambdaType,
-            MethodHandles.Lookup lookup, MethodHandle methodHandle) throws Throwable {
-        // Generate the lambda class
-        final CallSite callSite = LambdaMetafactory.metafactory(lookup, lambdaType.getMethod().getName(),
-                MethodType.methodType(lambdaType.resolved.functionClass), lambdaType.resolved.methodType, methodHandle, methodHandle.type());
-
-        // Create the function
-        return (T) callSite.getTarget().invoke();
-    }
-
     // We would normally use @Setup, but we need to initialize "static final" fields here...
     static {
         try {
             // Access method handles, etc.
             reflective = IntGetterMethodBenchmark.class.getDeclaredMethod("getValue");
-            methodHandle = MethodHandles.lookup().findVirtual(
-                            IntGetterMethodBenchmark.class, "getValue", MethodType.methodType(Integer.class));
+            methodHandle = MethodHandles.lookup().findVirtual(IntGetterMethodBenchmark.class, "getValue", MethodType.methodType(Integer.class));
             staticReflective = reflective;
             staticMethodHandle = methodHandle;
 
             // Generate functions
-            plainFunction = object -> object.value;
+            plainFunction = IntGetterMethodBenchmark::getValue;
             staticMethodHandleFunction = object -> {
                 try {
                     return (Integer) staticMethodHandle.invokeExact(object);
@@ -106,7 +93,7 @@ public class IntGetterMethodBenchmark {
             };
             staticReflectiveFunction = object -> {
                 try {
-                    return (int) staticReflective.invoke(object);
+                    return (Integer) staticReflective.invoke(object);
                 } catch (Throwable t) {
                     throw InternalUtilities.throwUnchecked(t);
                 }
@@ -120,14 +107,13 @@ public class IntGetterMethodBenchmark {
             };
             reflectiveFunction = object -> {
                 try {
-                    return (int) reflective.invoke(object);
+                    return (Integer) reflective.invoke(object);
                 } catch (Throwable t) {
                     throw InternalUtilities.throwUnchecked(t);
                 }
             };
-            //noinspection unchecked
             proxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, methodHandle);
-            lambdaFunction = createLambda(new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, MethodHandles.lookup(), methodHandle);
+            lambdaFunction = JavaLambdaFactory.create(new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, MethodHandles.lookup(), methodHandle);
             lmbdaFunction = LambdaFactory.create(new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, methodHandle);
         } catch (Throwable e) {
             throw new IllegalStateException(e);
@@ -136,6 +122,11 @@ public class IntGetterMethodBenchmark {
 
     private Integer getValue() {
         return this.value;
+    }
+
+    @Benchmark
+    public int direct() {
+        return getValue();
     }
 
     @Benchmark

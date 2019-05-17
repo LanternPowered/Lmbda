@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,7 @@ import java.util.concurrent.TimeUnit;
  * <a href="https://stackoverflow.com/questions/22244402/how-can-i-improve-performance-of-field-set-perhap-using-methodhandles?noredirect=1&lq=1">
  *     How can I improve performance of Field.set (perhaps using MethodHandles)?</a>
  */
+@SuppressWarnings("unchecked")
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
@@ -52,21 +54,23 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class IntSetterFieldBenchmark {
 
-    private int value = 42;
+    private int value = 32;
 
-    private static final Field static_reflective;
-    private static final MethodHandle static_unreflect;
-    private static final MethodHandle static_mh;
+    private static final Field staticReflective;
+    private static final MethodHandle staticMethodHandle;
 
     private static Field reflective;
-    private static MethodHandle unreflect;
-    private static MethodHandle mh;
+    private static MethodHandle methodHandle;
 
-    private static IntSetFunction<IntSetterFieldBenchmark> mh_function;
+    private static IntSetFunction<IntSetterFieldBenchmark> plainFunction;
+    private static IntSetFunction<IntSetterFieldBenchmark> staticMethodHandleFunction;
+    private static IntSetFunction<IntSetterFieldBenchmark> staticReflectiveFunction;
+    private static IntSetFunction<IntSetterFieldBenchmark> methodHandleFunction;
+    private static IntSetFunction<IntSetterFieldBenchmark> reflectiveFunction;
+    private static IntSetFunction<IntSetterFieldBenchmark> proxyFunction;
+    private static IntSetFunction<IntSetterFieldBenchmark> lmbdaFunction;
 
-    private static IntSetFunction<IntSetterFieldBenchmark> lmbda;
-
-    interface IntSetFunction<T> {
+    public interface IntSetFunction<T> {
 
         void apply(T target, int value);
     }
@@ -75,88 +79,91 @@ public class IntSetterFieldBenchmark {
     static {
         try {
             reflective = IntSetterFieldBenchmark.class.getDeclaredField("value");
-            unreflect = MethodHandles.lookup().unreflectSetter(reflective);
-            mh = MethodHandles.lookup().findSetter(IntSetterFieldBenchmark.class, "value", int.class);
-            static_reflective = reflective;
-            static_unreflect = unreflect;
-            static_mh = mh;
+            methodHandle = MethodHandles.lookup().findSetter(IntSetterFieldBenchmark.class, "value", int.class);
+            staticReflective = reflective;
+            staticMethodHandle = methodHandle;
             // Create a manually implemented lambda to compare performance with generated ones.
-            mh_function = (object, value) -> {
+            plainFunction = (object, value) -> object.value = value;
+            methodHandleFunction = (object, value) -> {
                 try {
-                    static_unreflect.invokeExact(object, value);
+                    methodHandle.invokeExact(object, value);
                 } catch (Throwable t) {
                     throw InternalUtilities.throwUnchecked(t);
                 }
             };
-            lmbda = LambdaFactory.create(new LambdaType<IntSetFunction<IntSetterFieldBenchmark>>() {}, mh);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new IllegalStateException(e);
+            staticMethodHandleFunction = (object, value) -> {
+                try {
+                    staticMethodHandle.invokeExact(object, value);
+                } catch (Throwable t) {
+                    throw InternalUtilities.throwUnchecked(t);
+                }
+            };
+            staticReflectiveFunction = (object, value) -> {
+                try {
+                    staticReflective.setInt(object, value);
+                } catch (Throwable t) {
+                    throw InternalUtilities.throwUnchecked(t);
+                }
+            };
+            methodHandleFunction = (object, value) -> {
+                try {
+                    methodHandle.invokeExact(object, value);
+                } catch (Throwable t) {
+                    throw InternalUtilities.throwUnchecked(t);
+                }
+            };
+            reflectiveFunction = (object, value) -> {
+                try {
+                    reflective.setInt(object, value);
+                } catch (Throwable t) {
+                    throw InternalUtilities.throwUnchecked(t);
+                }
+            };
+            proxyFunction = MethodHandleProxies.asInterfaceInstance(IntSetFunction.class, methodHandle);
+            lmbdaFunction = LambdaFactory.create(new LambdaType<IntSetFunction<IntSetterFieldBenchmark>>() {}, methodHandle);
+        } catch (Throwable t) {
+            throw new IllegalStateException(t);
         }
     }
 
     @Benchmark
-    public void plain(Data data) {
+    public void direct(Data data) {
         this.value = data.value++;
     }
 
     @Benchmark
-    public void dynamic_reflect(Data data) throws IllegalAccessException {
-        reflective.set(this, data.value++);
+    public void plain(Data data) {
+        plainFunction.apply(this, data.value++);
     }
 
     @Benchmark
-    public void dynamic_unreflect_invoke(Data data) throws Throwable {
-        unreflect.invoke(this, data.value++);
+    public void dynamic_reflect(Data data) {
+        reflectiveFunction.apply(this, data.value++);
     }
 
     @Benchmark
-    public void dynamic_unreflect_invokeExact(Data data) throws Throwable {
-        unreflect.invokeExact(this, data.value++);
+    public void dynamic_mh(Data data) {
+        methodHandleFunction.apply(this, data.value++);
     }
 
     @Benchmark
-    public void dynamic_mh_invoke(Data data) throws Throwable {
-        mh.invoke(this, data.value++);
+    public void static_reflect(Data data) {
+        staticReflectiveFunction.apply(this, data.value++);
     }
 
     @Benchmark
-    public void dynamic_mh_invokeExact(Data data) throws Throwable {
-        mh.invokeExact(this, data.value++);
+    public void static_mh(Data data) {
+        staticMethodHandleFunction.apply(this, data.value++);
     }
 
     @Benchmark
-    public void static_reflect(Data data) throws IllegalAccessException {
-        static_reflective.set(this, data.value++);
+    public void proxy(Data data) {
+        proxyFunction.apply(this, data.value++);
     }
 
     @Benchmark
-    public void static_unreflect_invoke(Data data) throws Throwable {
-        static_unreflect.invoke(this, data.value++);
-    }
-
-    @Benchmark
-    public void static_unreflect_invokeExact(Data data) throws Throwable {
-        static_unreflect.invokeExact(this, data.value++);
-    }
-
-    @Benchmark
-    public void static_mh_invoke(Data data) throws Throwable {
-        static_mh.invoke(this, data.value++);
-    }
-
-    @Benchmark
-    public void static_mh_invokeExact(Data data) throws Throwable {
-        static_mh.invokeExact(this, data.value++);
-    }
-
-    @Benchmark
-    public void static_mh_function(Data data) {
-        mh_function.apply(this, data.value++);
-    }
-
-    @Benchmark
-    public void lmbda_function(Data data) {
-        lmbda.apply(this, data.value++);
+    public void lmbda(Data data) {
+        lmbdaFunction.apply(this, data.value++);
     }
 
     @State(Scope.Benchmark)

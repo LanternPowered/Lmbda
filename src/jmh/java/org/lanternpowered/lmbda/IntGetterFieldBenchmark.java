@@ -54,7 +54,7 @@ import java.util.function.ToIntFunction;
 @State(Scope.Thread)
 public class IntGetterFieldBenchmark {
 
-    private int value = 42;
+    private int value = 32;
 
     private static final MethodHandle staticMethodHandle;
     private static final Field staticReflective;
@@ -115,6 +115,11 @@ public class IntGetterFieldBenchmark {
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    @Benchmark
+    public int direct() {
+        return this.value;
     }
 
     @Benchmark
