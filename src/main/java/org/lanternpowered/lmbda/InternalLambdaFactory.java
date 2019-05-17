@@ -89,11 +89,6 @@ public final class InternalLambdaFactory {
     }
 
     /**
-     * The package name we will define custom classes in.
-     */
-    private static final @NonNull String packageName = InternalUtilities.getPackageName(InternalLambdaFactory.class);
-
-    /**
      * The internal lookup that has access to this library package.
      */
     private static final MethodHandles.@NonNull Lookup internalLookup = AccessController.doPrivileged(
@@ -235,6 +230,8 @@ public final class InternalLambdaFactory {
 
         final Method method = lambdaType.method;
         final ClassWriter cw = new ClassWriter(0);
+
+        final String packageName = InternalUtilities.getPackageName(defineLookup.lookupClass());
 
         final String className = packageName + ".Lmbda$" + lambdaCounter.incrementAndGet();
         final String internalClassName = className.replace('.', '/');
