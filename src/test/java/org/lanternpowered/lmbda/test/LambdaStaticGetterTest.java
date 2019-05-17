@@ -22,11 +22,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.lanternpowered.lmbda;
+package org.lanternpowered.lmbda.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+import org.lanternpowered.lmbda.LambdaFactory;
+import org.lanternpowered.lmbda.LambdaType;
+import org.lanternpowered.lmbda.MethodHandlesExtensions;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;

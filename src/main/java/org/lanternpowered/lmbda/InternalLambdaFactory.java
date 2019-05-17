@@ -50,6 +50,7 @@ import org.objectweb.asm.Type;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -113,6 +114,32 @@ public final class InternalLambdaFactory {
         MethodHandles.Lookup defineLookup = lambdaType.defineLookup;
         if (defineLookup == null) {
             defineLookup = internalLookup;
+        }
+
+        // Check that the lambda type can be defined using the lookup
+        final Class<?> functionClass = lambdaType.resolved.functionClass;
+
+        // Check if the classes are in the same package, this is only a problem
+        // if the access isn't public, or the constructor isn't public
+        final boolean samePackage = InternalUtilities.getPackageName(functionClass)
+                .equals(InternalUtilities.getPackageName(defineLookup.lookupClass()));
+
+        if (!Modifier.isPublic(functionClass.getModifiers()) && !samePackage) {
+            throw new IllegalStateException("The function class isn't public and no applicable define lookup is provided. When the "
+                    + "access isn't public, the defined class must be in the same package, a lookup within the same package can be "
+                    + "set using LambdaType#defineClassesWith(...)");
+        } else if (!functionClass.isInterface()) {
+            try {
+                final Constructor<?> constructor = functionClass.getDeclaredConstructor();
+                if (!Modifier.isPublic(constructor.getModifiers()) && !samePackage) {
+                    throw new IllegalStateException("The function class constructor isn't public and no applicable define lookup is"
+                            + "provided. When the access isn't public, the defined class must be in the same package, a lookup within"
+                            + "the same package can be set using LambdaType#defineClassesWith(...)");
+                }
+            } catch (NoSuchMethodException e) {
+                // Should never happen, is already checked for at the construction of lambda type
+                throw InternalUtilities.throwUnchecked(e);
+            }
         }
 
         try {
