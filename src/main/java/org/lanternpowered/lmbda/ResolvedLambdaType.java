@@ -79,6 +79,9 @@ final class ResolvedLambdaType<@NonNull T> {
             }
             throw new IllegalStateException("A " + name + " can't be a LambdaType.");
         }
+        if (Modifier.isPrivate(functionClass.getModifiers())) {
+            throw new IllegalStateException("A function class may not be private.");
+        }
         final Method validMethod;
         if (functionClass.isInterface()) {
             validMethod = findInterfaceMethod(functionClass);

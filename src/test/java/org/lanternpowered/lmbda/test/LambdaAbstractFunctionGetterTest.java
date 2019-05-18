@@ -25,7 +25,6 @@
 package org.lanternpowered.lmbda.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import org.lanternpowered.lmbda.LambdaFactory;
@@ -48,14 +47,6 @@ class LambdaAbstractFunctionGetterTest {
         assertEquals(100, getter.getValue(object));
         object.setData(10000);
         assertEquals(10000, getter.getValue(object));
-    }
-
-    @Test
-    void testExpectWrongPackage() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-        final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
-
-        assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(new LambdaType<MyFunction>() {}, methodHandle));
     }
 
     public static class TestObject {

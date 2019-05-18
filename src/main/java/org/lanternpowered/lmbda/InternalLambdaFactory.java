@@ -52,7 +52,6 @@ import org.objectweb.asm.Type;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -132,8 +131,8 @@ public final class InternalLambdaFactory {
                     + "the same package can be set using LambdaType#defineClassesWith(...)"));
         } else if (!functionClass.isInterface()) {
             try {
-                final Constructor<?> constructor = functionClass.getDeclaredConstructor();
-                if (!Modifier.isPublic(constructor.getModifiers()) && !samePackage) {
+                final int modifiers = functionClass.getDeclaredConstructor().getModifiers();
+                if (!(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) && !samePackage) {
                     throw throwUnchecked(new IllegalAccessException("The function class constructor isn't public and no applicable "
                             + "define lookup is  provided. When the access isn't public, the defined class must be in the same "
                             + "package, a lookup within the same package can be set using LambdaType#defineClassesWith(...)"));
@@ -142,8 +141,8 @@ public final class InternalLambdaFactory {
                 // Should never happen, is already checked for at the construction of lambda type
                 throw throwUnchecked(e);
             }
-            final Method method = lambdaType.resolved.method;
-            if (!(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers())) && !samePackage) {
+            final int modifiers = lambdaType.resolved.method.getModifiers();
+            if (!(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) && !samePackage) {
                 throw throwUnchecked(new IllegalAccessException("The function class method isn't public or protected and no "
                         + "applicable define lookup is provided. When the access isn't public, the defined class must be in the "
                         + "same package, a lookup within the same package can be set using LambdaType#defineClassesWith(...)"));
