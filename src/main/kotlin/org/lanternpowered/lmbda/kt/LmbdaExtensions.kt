@@ -58,6 +58,20 @@ inline fun MethodHandles.Lookup.privateLookupIn(target: Class<*>): MethodHandles
         = MethodHandlesExtensions.privateLookupIn(target, this)
 
 /**
+ * See [MethodHandlesExtensions.privateLookupIn].
+ */
+@Throws(IllegalAccessException::class)
+inline fun MethodHandles.Lookup.privateLookupIn(target: KClass<*>): MethodHandles.Lookup
+        = MethodHandlesExtensions.privateLookupIn(target.java, this)
+
+/**
+ * See [MethodHandlesExtensions.privateLookupIn].
+ */
+@Throws(IllegalAccessException::class)
+inline fun <reified T> MethodHandles.Lookup.privateLookupIn(): MethodHandles.Lookup
+        = MethodHandlesExtensions.privateLookupIn(T::class.java, this)
+
+/**
  * Constructs a lambda for for the target [MethodHandle] and [LambdaType].
  */
 inline fun <T> MethodHandle.createLambda(lambdaType: LambdaType<T>): T = LambdaFactory.create(lambdaType, this)

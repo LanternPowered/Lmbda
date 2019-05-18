@@ -182,7 +182,7 @@ public abstract class LambdaType<@NonNull T> {
      * @return The function type
      */
     public @NonNull Type getFunctionType() {
-        return this.resolved.genericFunctionType != null ? this.resolved.genericFunctionType : this.resolved.functionClass;
+        return this.resolved.getFunctionType();
     }
 
     /**
@@ -192,7 +192,7 @@ public abstract class LambdaType<@NonNull T> {
      * @return The method
      */
     public @NonNull Method getMethod() {
-        return this.resolved.method;
+        return this.resolved.getMethodCopy();
     }
 
     @Override

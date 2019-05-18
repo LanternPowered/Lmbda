@@ -36,6 +36,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -175,16 +176,45 @@ final class ResolvedLambdaType<@NonNull T> {
         return validMethod;
     }
 
+    /**
+     * Gets the function type.
+     *
+     * @return The function type
+     */
+    @NonNull Type getFunctionType() {
+        return this.genericFunctionType != null ? this.genericFunctionType : this.functionClass;
+    }
+
+    /**
+     * Gets a copy of the {@link Method} object.
+     *
+     * <p>This way we can prevent modified access through {@link Method#setAccessible(boolean)}
+     * to be shared by everything that accesses the method.</p>
+     *
+     * @return The method copy
+     */
+    @NonNull Method getMethodCopy() {
+        // Find the same method object in the declaring class
+        final Class<?>[] parameters = this.method.getParameterTypes();
+        for (Method method : this.method.getDeclaringClass().getDeclaredMethods()) {
+            if (method.getName().equals(this.method.getName()) &&
+                    method.getReturnType().equals(this.method.getReturnType()) &&
+                    method.getParameterCount() == parameters.length &&
+                    Arrays.equals(method.getParameterTypes(), parameters)) {
+                return method;
+            }
+        }
+        throw new IllegalStateException();
+    }
+
     @Override
     public @NonNull String toString() {
-        final String typeName = this.genericFunctionType != null ? this.genericFunctionType.getTypeName() : this.functionClass.getName();
-        return String.format("LambdaType[type=%s,method=%s]",
-                typeName, this.method.getName() + this.methodType);
+        return String.format("LambdaType[type=%s,method=%s]", getFunctionType().getTypeName(), this.method.getName() + this.methodType);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof LambdaType)) {
+        if (!(obj instanceof ResolvedLambdaType)) {
             return false;
         }
         final ResolvedLambdaType<?> that = (ResolvedLambdaType<?>) obj;

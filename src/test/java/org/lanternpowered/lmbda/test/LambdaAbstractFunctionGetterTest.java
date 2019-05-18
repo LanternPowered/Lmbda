@@ -55,7 +55,7 @@ class LambdaAbstractFunctionGetterTest {
         final MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
-        assertThrows(IllegalStateException.class, () -> LambdaFactory.create(new LambdaType<MyFunction>() {}, methodHandle));
+        assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(new LambdaType<MyFunction>() {}, methodHandle));
     }
 
     public static class TestObject {

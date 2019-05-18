@@ -24,6 +24,8 @@
  */
 package org.lanternpowered.lmbda;
 
+import static org.lanternpowered.lmbda.InternalUtilities.throwUnchecked;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -88,41 +90,41 @@ public class IntSetterFieldBenchmark {
                 try {
                     methodHandle.invokeExact(object, value);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             staticMethodHandleFunction = (object, value) -> {
                 try {
                     staticMethodHandle.invokeExact(object, value);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             staticReflectiveFunction = (object, value) -> {
                 try {
                     staticReflective.setInt(object, value);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             methodHandleFunction = (object, value) -> {
                 try {
                     methodHandle.invokeExact(object, value);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             reflectiveFunction = (object, value) -> {
                 try {
                     reflective.setInt(object, value);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             proxyFunction = MethodHandleProxies.asInterfaceInstance(IntSetFunction.class, methodHandle);
             lmbdaFunction = LambdaFactory.create(new LambdaType<IntSetFunction<IntSetterFieldBenchmark>>() {}, methodHandle);
         } catch (Throwable t) {
-            throw new IllegalStateException(t);
+            throw throwUnchecked(t);
         }
     }
 

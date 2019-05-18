@@ -25,6 +25,8 @@
 package org.lanternpowered.lmbda;
 
 import static java.util.Objects.requireNonNull;
+import static org.lanternpowered.lmbda.InternalUtilities.doUnchecked;
+import static org.lanternpowered.lmbda.InternalUtilities.throwUnchecked;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -125,20 +127,26 @@ public final class InternalLambdaFactory {
                 .equals(InternalUtilities.getPackageName(defineLookup.lookupClass()));
 
         if (!Modifier.isPublic(functionClass.getModifiers()) && !samePackage) {
-            throw new IllegalStateException("The function class isn't public and no applicable define lookup is provided. When the "
-                    + "access isn't public, the defined class must be in the same package, a lookup within the same package can be "
-                    + "set using LambdaType#defineClassesWith(...)");
+            throw throwUnchecked(new IllegalAccessException("The function class isn't public and no applicable define lookup is "
+                    + "provided. When the access isn't public, the defined class must be in the same package, a lookup within "
+                    + "the same package can be set using LambdaType#defineClassesWith(...)"));
         } else if (!functionClass.isInterface()) {
             try {
                 final Constructor<?> constructor = functionClass.getDeclaredConstructor();
                 if (!Modifier.isPublic(constructor.getModifiers()) && !samePackage) {
-                    throw new IllegalStateException("The function class constructor isn't public and no applicable define lookup is"
-                            + "provided. When the access isn't public, the defined class must be in the same package, a lookup within"
-                            + "the same package can be set using LambdaType#defineClassesWith(...)");
+                    throw throwUnchecked(new IllegalAccessException("The function class constructor isn't public and no applicable "
+                            + "define lookup is  provided. When the access isn't public, the defined class must be in the same "
+                            + "package, a lookup within the same package can be set using LambdaType#defineClassesWith(...)"));
                 }
             } catch (NoSuchMethodException e) {
                 // Should never happen, is already checked for at the construction of lambda type
-                throw InternalUtilities.throwUnchecked(e);
+                throw throwUnchecked(e);
+            }
+            final Method method = lambdaType.resolved.method;
+            if (!(Modifier.isPublic(method.getModifiers()) || Modifier.isProtected(method.getModifiers())) && !samePackage) {
+                throw throwUnchecked(new IllegalAccessException("The function class method isn't public or protected and no "
+                        + "applicable define lookup is provided. When the access isn't public, the defined class must be in the "
+                        + "same package, a lookup within the same package can be set using LambdaType#defineClassesWith(...)"));
             }
         }
 
@@ -329,12 +337,11 @@ public final class InternalLambdaFactory {
             currentMethodHandle.set(methodHandle);
 
             // Define the class within the provided lookup
-            final Class<?> theClass = AccessController.doPrivileged((PrivilegedAction<Class<?>>) () -> InternalUtilities.doUnchecked(
+            final Class<?> theClass = AccessController.doPrivileged((PrivilegedAction<Class<?>>) () -> doUnchecked(
                     () -> MethodHandlesExtensions.defineClass(defineLookup, cw.toByteArray())));
 
             // Instantiate the function object
-            return InternalUtilities.doUnchecked(
-                    () -> (T) defineLookup.in(theClass).findConstructor(theClass, MethodType.methodType(void.class)).invoke());
+            return doUnchecked(() -> (T) defineLookup.in(theClass).findConstructor(theClass, MethodType.methodType(void.class)).invoke());
         } finally {
             // Cleanup
             currentMethodHandle.remove();

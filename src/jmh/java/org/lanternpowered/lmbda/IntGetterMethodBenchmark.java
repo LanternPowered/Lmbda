@@ -24,6 +24,8 @@
  */
 package org.lanternpowered.lmbda;
 
+import static org.lanternpowered.lmbda.InternalUtilities.throwUnchecked;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -88,35 +90,35 @@ public class IntGetterMethodBenchmark {
                 try {
                     return (Integer) staticMethodHandle.invokeExact(object);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             staticReflectiveFunction = object -> {
                 try {
                     return (Integer) staticReflective.invoke(object);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             methodHandleFunction = object -> {
                 try {
                     return (Integer) methodHandle.invokeExact(object);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             reflectiveFunction = object -> {
                 try {
                     return (Integer) reflective.invoke(object);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             proxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, methodHandle);
             lambdaFunction = JavaLambdaFactory.create(new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, MethodHandles.lookup(), methodHandle);
             lmbdaFunction = LambdaFactory.create(new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, methodHandle);
-        } catch (Throwable e) {
-            throw new IllegalStateException(e);
+        } catch (Throwable t) {
+            throw throwUnchecked(t);
         }
     }
 

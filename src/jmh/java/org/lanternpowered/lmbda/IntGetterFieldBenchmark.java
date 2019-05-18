@@ -24,6 +24,8 @@
  */
 package org.lanternpowered.lmbda;
 
+import static org.lanternpowered.lmbda.InternalUtilities.throwUnchecked;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -85,35 +87,35 @@ public class IntGetterFieldBenchmark {
                 try {
                     return (int) staticMethodHandle.invokeExact(object);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             staticReflectiveFunction = object -> {
                 try {
                     return staticReflective.getInt(object);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             methodHandleFunction = object -> {
                 try {
                     return (int) methodHandle.invokeExact(object);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             reflectiveFunction = object -> {
                 try {
                     return reflective.getInt(object);
                 } catch (Throwable t) {
-                    throw InternalUtilities.throwUnchecked(t);
+                    throw throwUnchecked(t);
                 }
             };
             //noinspection unchecked
             proxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, methodHandle);
             lmbdaFunction = LambdaFactory.create(new LambdaType<ToIntFunction<IntGetterFieldBenchmark>>() {}, methodHandle);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new IllegalStateException(e);
+        } catch (Throwable t) {
+            throw throwUnchecked(t);
         }
     }
 
