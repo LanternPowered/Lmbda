@@ -18,7 +18,6 @@ matrix:
       jdk: openjdk-ea
       script: ./gradlew build test
   allow_failures:
-    - jdk: openjdk12
     - jdk: openjdk-ea
 
 env:

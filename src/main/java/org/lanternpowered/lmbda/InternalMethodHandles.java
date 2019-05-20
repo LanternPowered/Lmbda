@@ -89,7 +89,7 @@ final class InternalMethodHandles {
          * @return The defined class
          * @throws IllegalAccessException If the lookup doesn't have package private access to the target package
          */
-        @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup, @NonNull byte[] byteCode) throws IllegalAccessException;
+        @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup, byte @NonNull[] byteCode) throws IllegalAccessException;
     }
 
     /**

@@ -107,7 +107,6 @@ public final class InternalLambdaFactory {
      */
     private static final @NonNull AtomicInteger lambdaCounter = new AtomicInteger();
 
-    @SuppressWarnings("unchecked")
     static <T, F extends T> @NonNull F create(@NonNull LambdaType<T> lambdaType, @NonNull MethodHandle methodHandle) {
         requireNonNull(lambdaType, "lambdaType");
         requireNonNull(methodHandle, "methodHandle");

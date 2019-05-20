@@ -38,6 +38,8 @@ import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
 import java.util.function.DoublePredicate;
 import java.util.function.DoubleSupplier;
+import java.util.function.DoubleToIntFunction;
+import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.function.IntBinaryOperator;
@@ -45,20 +47,27 @@ import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.IntSupplier;
+import java.util.function.IntToDoubleFunction;
+import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
 import java.util.function.LongPredicate;
 import java.util.function.LongSupplier;
+import java.util.function.LongToDoubleFunction;
+import java.util.function.LongToIntFunction;
 import java.util.function.LongUnaryOperator;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.ObjIntConsumer;
 import java.util.function.ObjLongConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntBiFunction;
 import java.util.function.ToIntFunction;
+import java.util.function.ToLongBiFunction;
 import java.util.function.ToLongFunction;
 import java.util.function.UnaryOperator;
 
@@ -85,8 +94,17 @@ public final class LambdaFactory {
     private static final LambdaType<ToDoubleFunction> toDoubleFunctionInterface = LambdaType.of(ToDoubleFunction.class);
     private static final LambdaType<LongFunction> longFunctionInterface = LambdaType.of(LongFunction.class);
     private static final LambdaType<ToLongFunction> toLongFunctionInterface = LambdaType.of(ToLongFunction.class);
+    private static final LambdaType<IntToLongFunction> intToLongFunctionInterface = LambdaType.of(IntToLongFunction.class);
+    private static final LambdaType<IntToDoubleFunction> intToDoubleFunctionInterface = LambdaType.of(IntToDoubleFunction.class);
+    private static final LambdaType<DoubleToIntFunction> doubleToIntFunctionInterface = LambdaType.of(DoubleToIntFunction.class);
+    private static final LambdaType<DoubleToLongFunction> doubleToLongFunctionInterface = LambdaType.of(DoubleToLongFunction.class);
+    private static final LambdaType<LongToIntFunction> longToIntFunctionInterface = LambdaType.of(LongToIntFunction.class);
+    private static final LambdaType<LongToDoubleFunction> longToLongFunctionInterface = LambdaType.of(LongToDoubleFunction.class);
 
     private static final LambdaType<BiFunction> biFunctionInterface = LambdaType.of(BiFunction.class);
+    private static final LambdaType<ToIntBiFunction> toIntBiFunctionInterface = LambdaType.of(ToIntBiFunction.class);
+    private static final LambdaType<ToDoubleBiFunction> toDoubleBiFunctionInterface = LambdaType.of(ToDoubleBiFunction.class);
+    private static final LambdaType<ToLongBiFunction> toLongBiFunctionInterface = LambdaType.of(ToLongBiFunction.class);
 
     // Consumers
 
@@ -434,6 +452,45 @@ public final class LambdaFactory {
     }
 
     /**
+     * Attempts to create a {@link ToIntBiFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The first input type of the function
+     * @param <U> The second input type of the function
+     * @return The created to int bi function
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static <T, U> @NonNull ToIntBiFunction<T, U> createToIntBiFunction(@NonNull MethodHandle methodHandle) {
+        return create(toIntBiFunctionInterface, methodHandle);
+    }
+
+    /**
+     * Attempts to create a {@link ToDoubleBiFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The first input type of the function
+     * @param <U> The second input type of the function
+     * @return The created to double bi function
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static <T, U> @NonNull ToDoubleBiFunction<T, U> createToDoubleBiFunction(@NonNull MethodHandle methodHandle) {
+        return create(toDoubleBiFunctionInterface, methodHandle);
+    }
+
+    /**
+     * Attempts to create a {@link ToLongBiFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @param <T> The first input type of the function
+     * @param <U> The second input type of the function
+     * @return The created to long bi function
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static <T, U> @NonNull ToLongBiFunction<T, U> createToLongBiFunction(@NonNull MethodHandle methodHandle) {
+        return create(toLongBiFunctionInterface, methodHandle);
+    }
+
+    /**
      * Attempts to create a {@link Function} for the given {@link MethodHandle}.
      *
      * @param methodHandle The method handle
@@ -516,6 +573,61 @@ public final class LambdaFactory {
      */
     public static <T> @NonNull ToLongFunction<T> createToLongFunction(@NonNull MethodHandle methodHandle) {
         return create(toLongFunctionInterface, methodHandle);
+    }
+
+    /**
+     * Attempts to create a {@link IntToLongFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @return The created int to long function
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static @NonNull IntToLongFunction createIntToLongFunction(@NonNull MethodHandle methodHandle) {
+        return create(intToLongFunctionInterface, methodHandle);
+    }
+
+    /**
+     * Attempts to create a {@link IntToDoubleFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @return The created int to double function
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static @NonNull IntToDoubleFunction createIntToDoubleFunction(@NonNull MethodHandle methodHandle) {
+        return create(intToDoubleFunctionInterface, methodHandle);
+    }
+
+    /**
+     * Attempts to create a {@link DoubleToIntFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @return The created double to int function
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static @NonNull DoubleToIntFunction createDoubleToIntFunction(@NonNull MethodHandle methodHandle) {
+        return create(doubleToIntFunctionInterface, methodHandle);
+    }
+
+    /**
+     * Attempts to create a {@link DoubleToLongFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @return The created double to long function
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static @NonNull DoubleToLongFunction createDoubleToLongFunction(@NonNull MethodHandle methodHandle) {
+        return create(doubleToLongFunctionInterface, methodHandle);
+    }
+
+    /**
+     * Attempts to create a {@link LongToIntFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @return The created long to int function
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static @NonNull LongToIntFunction createLongToIntFunction(@NonNull MethodHandle methodHandle) {
+        return create(longToIntFunctionInterface, methodHandle);
     }
 
     /**

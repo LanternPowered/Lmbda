@@ -43,7 +43,7 @@ public final class MethodHandlesExtensions {
      * <p>If there is a security manager, its checkPermission method is called
      * to check ReflectPermission("suppressAccessChecks").</p>
      *
-     * <p>When using java 9+, see
+     * <p>When using Java 9+, see
      * https://docs.oracle.com/javase/9/docs/api/java/lang/invoke/MethodHandles.html#privateLookupIn-java.lang.Class-java.lang.invoke.MethodHandles.Lookup-</p>
      *
      * @param targetClass The target class for which private access should be acquired
@@ -67,7 +67,7 @@ public final class MethodHandlesExtensions {
      * @return The defined class
      * @throws IllegalAccessException If the lookup doesn't have package private access to the target package
      */
-    public static @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup, @NonNull byte[] byteCode) throws IllegalAccessException {
+    public static @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup, byte @NonNull[] byteCode) throws IllegalAccessException {
         requireNonNull(lookup, "lookup");
         requireNonNull(byteCode, "byteCode");
         return InternalMethodHandles.adapter.defineClass(lookup, byteCode);

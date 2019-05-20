@@ -43,6 +43,31 @@ class LambdaAccessTest {
     }
 
     @Test
+    void testPublicInterface() throws Exception {
+        final MethodHandle methodHandle = getGetterMethodHandle();
+
+        // Private function classes aren't supported
+        assertDoesNotThrow(() -> LambdaFactory.create(
+                new LambdaType<IMyPublicFunction>() {}, methodHandle));
+    }
+
+    @Test
+    void testPackagePrivateInterface() throws Exception {
+        final MethodHandle methodHandle = getGetterMethodHandle();
+
+        assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
+                new LambdaType<IMyPackagePrivateFunction>() {}, methodHandle));
+        assertDoesNotThrow(() -> LambdaFactory.create(
+                new LambdaType<IMyPackagePrivateFunction>() {}.defineClassesWith(MethodHandles.lookup()), methodHandle));
+    }
+
+    @Test
+    void testPrivateInterface() {
+        // Private function interfaces aren't supported
+        assertThrows(IllegalStateException.class, () -> new LambdaType<IMyPrivateFunction>() {});
+    }
+
+    @Test
     void testPrivate() {
         // Private function classes aren't supported
         assertThrows(IllegalStateException.class, () -> new LambdaType<MyPrivateFunction>() {});
@@ -79,6 +104,12 @@ class LambdaAccessTest {
                 new LambdaType<MyProtectedFunction>() {}, methodHandle));
         assertDoesNotThrow(() -> LambdaFactory.create(
                 new LambdaType<MyProtectedFunction>() {}.defineClassesWith(MethodHandles.lookup()), methodHandle));
+    }
+
+    @Test
+    void testPrivateConstructor() {
+        // Function classes with private constructors aren't supported
+        assertThrows(IllegalStateException.class, () -> new LambdaType<MyFunctionWithPrivateConstructor>() {});
     }
 
     @Test
@@ -128,6 +159,21 @@ class LambdaAccessTest {
         private int data = 100;
     }
 
+    private interface IMyPrivateFunction {
+
+        int getValue(TestObject testObject);
+    }
+
+    public interface IMyPublicFunction {
+
+        int getValue(TestObject testObject);
+    }
+
+    interface IMyPackagePrivateFunction {
+
+        int getValue(TestObject testObject);
+    }
+
     public abstract static class MyPublicFunction {
 
         public abstract int getValue(TestObject testObject);
@@ -144,6 +190,14 @@ class LambdaAccessTest {
     }
 
     abstract static class MyProtectedFunction {
+
+        public abstract int getValue(TestObject testObject);
+    }
+
+    public abstract static class MyFunctionWithPrivateConstructor {
+
+        private MyFunctionWithPrivateConstructor() {
+        }
 
         public abstract int getValue(TestObject testObject);
     }
