@@ -126,10 +126,10 @@ final class ResolvedLambdaType<@NonNull T> {
 
         if (methods.size() > 1) {
             throw new IllegalStateException("Found multiple abstract methods in: " +
-                    functionClass.getClass().getName());
+                    functionClass.getName());
         } else if (methods.isEmpty()) {
             throw new IllegalStateException("Couldn't find a abstract method in: " +
-                    functionClass.getClass().getName());
+                    functionClass.getName());
         }
 
         return methods.get(0);
@@ -168,7 +168,7 @@ final class ResolvedLambdaType<@NonNull T> {
             // Only one non implemented method may be present
             if (validMethod != null) {
                 throw new IllegalStateException("Found multiple non-default methods in: " +
-                        functionClass.getClass().getName());
+                        functionClass.getName());
             }
             validMethod = method;
         }

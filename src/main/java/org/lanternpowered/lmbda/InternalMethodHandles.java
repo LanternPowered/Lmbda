@@ -129,7 +129,7 @@ final class InternalMethodHandles {
          *
          * @return The method handle of the define class method
          */
-        private static @Nullable MethodHandle getDefineClassMethodHandle() {
+        private static @NonNull MethodHandle getDefineClassMethodHandle() {
             //noinspection JavaLangInvokeHandleSignature
             return doUnchecked(() -> MethodHandles.publicLookup().findVirtual(MethodHandles.Lookup.class, "defineClass",
                     MethodType.methodType(Class.class, byte[].class)));
@@ -141,7 +141,7 @@ final class InternalMethodHandles {
         }
 
         @Override
-        public @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup, @NonNull byte[] byteCode) {
+        public @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup, byte @NonNull[] byteCode) {
             return doUnchecked(() -> (Class<?>) defineClassMethodHandle.invoke(lookup, byteCode));
         }
     }
@@ -214,7 +214,7 @@ final class InternalMethodHandles {
         }
 
         @Override
-        public @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup, @NonNull byte[] byteCode) {
+        public @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup, byte @NonNull[] byteCode) {
             final SecurityManager securityManager = System.getSecurityManager();
             if (securityManager != null) {
                 securityManager.checkPermission(new ReflectPermission("defineClass"));
