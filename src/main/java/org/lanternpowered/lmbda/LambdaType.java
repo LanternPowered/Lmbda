@@ -154,7 +154,7 @@ public abstract class LambdaType<@NonNull T> {
      * implementation class using the provided lookup.
      *
      * <p>When the functional interface/abstract class isn't public, or
-     * the abstract method ins't, then should the lookup be defined explicitly.
+     * the abstract method isn't, then should the lookup be defined explicitly.
      * It implementation class needs the proper access in order to implemented
      * successfully. This can be in the same package or a different one
      * depending on what is desired.</p>
@@ -162,7 +162,7 @@ public abstract class LambdaType<@NonNull T> {
      * @param defineLookup The define lookup
      * @return The new lambda type
      */
-    public final @NonNull LambdaType<T> defineClassesWith(MethodHandles.@Nullable Lookup defineLookup) {
+    public final @NonNull LambdaType<T> defineClassesWith(MethodHandles.@NonNull Lookup defineLookup) {
         requireNonNull(defineLookup, "defineLookup");
         return new Simple<>(this.resolved, defineLookup);
     }
