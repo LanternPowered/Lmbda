@@ -154,6 +154,14 @@ class LambdaAccessTest {
                 new LambdaType<MyFunctionWithProtectedMethod>() {}.defineClassesWith(MethodHandles.lookup()), methodHandle));
     }
 
+    @Test
+    void testInnerClass() throws Exception {
+        final MethodHandle methodHandle = getGetterMethodHandle();
+
+        assertThrows(IllegalStateException.class, () -> LambdaFactory.create(
+                new LambdaType<MyInnerFunction>() {}, methodHandle));
+    }
+
     private static class TestObject {
 
         private int data = 100;
@@ -172,6 +180,11 @@ class LambdaAccessTest {
     interface IMyPackagePrivateFunction {
 
         int getValue(TestObject testObject);
+    }
+
+    public abstract class MyInnerFunction {
+
+        public abstract int getValue(TestObject testObject);
     }
 
     public abstract static class MyPublicFunction {

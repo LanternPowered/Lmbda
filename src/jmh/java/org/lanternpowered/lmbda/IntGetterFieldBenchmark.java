@@ -130,22 +130,22 @@ public class IntGetterFieldBenchmark {
     }
 
     @Benchmark
-    public int static_mh() {
+    public int staticMethodHandle() {
         return staticMethodHandleFunction.applyAsInt(this);
     }
 
     @Benchmark
-    public int static_reflect() {
+    public int staticReflect() {
         return staticReflectiveFunction.applyAsInt(this);
     }
 
     @Benchmark
-    public int dynamic_mh() {
+    public int dynamicMethodHandle() {
         return methodHandleFunction.applyAsInt(this);
     }
 
     @Benchmark
-    public int dynamic_reflect() {
+    public int dynamicReflect() {
         return reflectiveFunction.applyAsInt(this);
     }
 

@@ -27,22 +27,47 @@ package org.lanternpowered.lmbda;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.util.Arrays;
+import java.util.List;
+
 final class InternalUtilities {
+
+    private static final @NonNull List<@NonNull Class<?>> javaTypeSubclasses = Arrays.asList(
+            Class.class, ParameterizedType.class, GenericArrayType.class, WildcardType.class, TypeVariable.class);
+
+    /**
+     * Gets a readable class name to the given {@link Type}.
+     *
+     * @param type The type
+     * @return The readable name
+     */
+    static @NonNull String getTypeClassName(@NonNull Type type) {
+        return javaTypeSubclasses.stream()
+                .filter(subclass -> subclass.isInstance(type))
+                .map(Class::getSimpleName).findFirst()
+                .orElseGet(() -> type.getClass().getName());
+    }
 
     /**
      * Gets the package name for the given {@link Class}.
      *
-     * @param theClass The class
+     * @param theClass The class to get the package for
      * @return The package name
      */
     static @NonNull String getPackageName(@NonNull Class<?> theClass) {
-        while (theClass.isArray()) {
-            theClass = theClass.getComponentType();
+        Class<?> target = theClass;
+        while (target.isArray()) {
+            target = target.getComponentType();
         }
-        if (theClass.isPrimitive()) {
+        if (target.isPrimitive()) {
             return "java.lang";
         }
-        return getPackageName(theClass.getName());
+        return getPackageName(target.getName());
     }
 
     /**
@@ -94,7 +119,7 @@ final class InternalUtilities {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends Throwable> void throwUnchecked0(@NonNull Throwable t) throws T {
+    private static <@NonNull T extends Throwable> void throwUnchecked0(@NonNull Throwable t) throws T {
         throw (T) t;
     }
 

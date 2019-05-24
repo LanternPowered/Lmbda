@@ -29,13 +29,10 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -67,61 +64,75 @@ final class ResolvedLambdaType<@NonNull T> {
             genericFunctionType = (ParameterizedType) type;
             functionClass = (Class<T>) genericFunctionType.getRawType();
         } else {
-            final String name;
-            if (type instanceof GenericArrayType) {
-                name = "GenericArrayType";
-            } else if (type instanceof WildcardType) {
-                name = "WildcardType";
-            } else if (type instanceof TypeVariable) {
-                name = "TypeVariable";
-            } else {
-                name = type.getClass().getName();
-            }
-            throw new IllegalStateException("A " + name + " can't be a LambdaType.");
+            throw new IllegalStateException("A " + InternalUtilities.getTypeClassName(type) + " can't be a LambdaType.");
         }
+        this.method = validateClassAndFindMethod(functionClass);
+        this.methodType = MethodType.methodType(this.method.getReturnType(), this.method.getParameterTypes());
+        this.functionClass = functionClass;
+        this.genericFunctionType = genericFunctionType;
+    }
+
+    /**
+     * Validates the function class and attempts to find a valid
+     * {@link Method} that can be implemented it.
+     *
+     * @param functionClass The function class
+     * @return The function method
+     */
+    private static @NonNull Method validateClassAndFindMethod(@NonNull Class<?> functionClass) {
         if (Modifier.isPrivate(functionClass.getModifiers())) {
             throw new IllegalStateException("A function class may not be private.");
         }
-        final Method validMethod;
         if (functionClass.isInterface()) {
-            validMethod = findInterfaceMethod(functionClass);
+            return findInterfaceMethod(functionClass);
         } else if (Modifier.isAbstract(functionClass.getModifiers())) {
             if (functionClass.getEnclosingClass() != null && !Modifier.isStatic(functionClass.getModifiers())) {
                 throw new IllegalStateException("A abstract function class may not be a non-static inner class.");
             }
-            // For a abstract class is at least a package private constructor required
-            final Constructor<?>[] constructors = functionClass.getDeclaredConstructors();
-            boolean found = false;
-            for (Constructor<?> constructor : constructors) {
-                // No arguments for this constructor
-                if (constructor.getParameterCount() == 0) {
-                    if (Modifier.isPrivate(constructor.getModifiers())) {
-                        throw new IllegalStateException("The zero arg constructor of a abstract function class must be at least package-private.");
-                    }
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                throw new IllegalStateException("A abstract function class must have a zero arg constructor.");
-            }
-            validMethod = findAbstractClassMethod(functionClass);
+            validateConstructors(functionClass);
+            return findAbstractClassMethod(functionClass);
         } else {
             throw new IllegalStateException("The function type must be a interface or a abstract class.");
         }
-        this.functionClass = functionClass;
-        this.genericFunctionType = genericFunctionType;
-        this.method = validMethod;
-        this.methodType = MethodType.methodType(validMethod.getReturnType(), validMethod.getParameterTypes());
     }
 
+    /**
+     * Validates the {@link Constructor}s of the function class.
+     *
+     * @param functionClass The function class
+     */
+    private static void validateConstructors(@NonNull Class<?> functionClass) {
+        // For a abstract class is at least a package private constructor required
+        final Constructor<?>[] constructors = functionClass.getDeclaredConstructors();
+        boolean found = false;
+        for (Constructor<?> constructor : constructors) {
+            // No arguments for this constructor
+            if (constructor.getParameterCount() == 0) {
+                if (Modifier.isPrivate(constructor.getModifiers())) {
+                    throw new IllegalStateException("The zero arg constructor of a abstract function class must be at least package-private.");
+                }
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            throw new IllegalStateException("A abstract function class must have a zero arg constructor.");
+        }
+    }
+
+    /**
+     * Attempts to find a valid {@link Method} that can be
+     * implemented for the abstract function class.
+     *
+     * @param functionClass The function class
+     * @return The function method
+     */
     private static @NonNull Method findAbstractClassMethod(@NonNull Class<?> functionClass) {
         final Map<String, Method> foundMethods = new HashMap<>();
         findClassMethods(functionClass, foundMethods);
 
         final List<Method> methods = foundMethods.values().stream()
-                .filter(method -> !Modifier.isStatic(method.getModifiers()) &&
-                        (!method.isDefault() || Modifier.isAbstract(method.getModifiers())))
+                .filter(method -> !Modifier.isStatic(method.getModifiers()) && Modifier.isAbstract(method.getModifiers()))
                 .collect(Collectors.toList());
 
         if (methods.size() > 1) {
@@ -136,7 +147,7 @@ final class ResolvedLambdaType<@NonNull T> {
     }
 
     /**
-     * Converts the {@link Method} to a string with it's unique descriptor and name.
+     * Converts the {@link Method} to a string with its unique descriptor and name.
      *
      * @param method The method
      * @return The string
@@ -145,6 +156,15 @@ final class ResolvedLambdaType<@NonNull T> {
         return method.getName() + ';' + org.objectweb.asm.Type.getMethodDescriptor(method);
     }
 
+    /**
+     * Finds all the methods that are defined in the function class and its superclasses or
+     * interfaces. Methods with the same signature and name which are defined in a superclass
+     * will be skipped. Only one {@link Method} with a specific signature and name will be
+     * present in the resulting map.
+     *
+     * @param functionClass The function class
+     * @param methods The method map
+     */
     private static void findClassMethods(@NonNull Class<?> functionClass, @NonNull Map<String, Method> methods) {
         for (Method method : functionClass.getDeclaredMethods()) {
             methods.putIfAbsent(toKey(method), method);
@@ -158,6 +178,13 @@ final class ResolvedLambdaType<@NonNull T> {
         }
     }
 
+    /**
+     * Attempts to find a valid {@link Method} that can be
+     * implemented for the function interface.
+     *
+     * @param functionClass The function class
+     * @return The function method
+     */
     private static @NonNull Method findInterfaceMethod(@NonNull Class<?> functionClass) {
         Method validMethod = null;
         for (Method method : functionClass.getMethods()) {
@@ -216,7 +243,7 @@ final class ResolvedLambdaType<@NonNull T> {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (!(obj instanceof ResolvedLambdaType)) {
             return false;
         }

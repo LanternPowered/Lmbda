@@ -139,22 +139,22 @@ public class IntSetterFieldBenchmark {
     }
 
     @Benchmark
-    public void dynamic_reflect(Data data) {
+    public void dynamicReflect(Data data) {
         reflectiveFunction.apply(this, data.value++);
     }
 
     @Benchmark
-    public void dynamic_mh(Data data) {
+    public void dynamicMethodHandle(Data data) {
         methodHandleFunction.apply(this, data.value++);
     }
 
     @Benchmark
-    public void static_reflect(Data data) {
+    public void staticReflect(Data data) {
         staticReflectiveFunction.apply(this, data.value++);
     }
 
     @Benchmark
-    public void static_mh(Data data) {
+    public void staticMethodHandle(Data data) {
         staticMethodHandleFunction.apply(this, data.value++);
     }
 

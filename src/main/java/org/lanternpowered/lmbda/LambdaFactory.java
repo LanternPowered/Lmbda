@@ -99,7 +99,7 @@ public final class LambdaFactory {
     private static final LambdaType<DoubleToIntFunction> doubleToIntFunctionInterface = LambdaType.of(DoubleToIntFunction.class);
     private static final LambdaType<DoubleToLongFunction> doubleToLongFunctionInterface = LambdaType.of(DoubleToLongFunction.class);
     private static final LambdaType<LongToIntFunction> longToIntFunctionInterface = LambdaType.of(LongToIntFunction.class);
-    private static final LambdaType<LongToDoubleFunction> longToLongFunctionInterface = LambdaType.of(LongToDoubleFunction.class);
+    private static final LambdaType<LongToDoubleFunction> longToDoubleFunctionInterface = LambdaType.of(LongToDoubleFunction.class);
 
     private static final LambdaType<BiFunction> biFunctionInterface = LambdaType.of(BiFunction.class);
     private static final LambdaType<ToIntBiFunction> toIntBiFunctionInterface = LambdaType.of(ToIntBiFunction.class);
@@ -628,6 +628,17 @@ public final class LambdaFactory {
      */
     public static @NonNull LongToIntFunction createLongToIntFunction(@NonNull MethodHandle methodHandle) {
         return create(longToIntFunctionInterface, methodHandle);
+    }
+
+    /**
+     * Attempts to create a {@link LongToDoubleFunction} for the given {@link MethodHandle}.
+     *
+     * @param methodHandle The method handle
+     * @return The created long to double function
+     * @see #create(LambdaType, MethodHandle)
+     */
+    public static @NonNull LongToDoubleFunction createLongToDoubleFunction(@NonNull MethodHandle methodHandle) {
+        return create(longToDoubleFunctionInterface, methodHandle);
     }
 
     /**

@@ -26,22 +26,9 @@
 
 package org.lanternpowered.lmbda.kt
 
-import org.lanternpowered.lmbda.LambdaFactory
-import org.lanternpowered.lmbda.LambdaType
 import org.lanternpowered.lmbda.MethodHandlesExtensions
-import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
-import java.lang.reflect.GenericArrayType
-import java.lang.reflect.Type
-import java.lang.reflect.TypeVariable
-import java.lang.reflect.WildcardType
 import kotlin.reflect.KClass
-import kotlin.reflect.KType
-
-/**
- * Constructs a new [LambdaType].
- */
-inline fun <reified T> lambdaType() = object : LambdaType<T>() {}
 
 /**
  * See [MethodHandlesExtensions.defineClass].
@@ -70,60 +57,3 @@ inline fun MethodHandles.Lookup.privateLookupIn(target: KClass<*>): MethodHandle
 @Throws(IllegalAccessException::class)
 inline fun <reified T> MethodHandles.Lookup.privateLookupIn(): MethodHandles.Lookup
         = MethodHandlesExtensions.privateLookupIn(T::class.java, this)
-
-/**
- * Constructs a lambda for for the target [MethodHandle] and [LambdaType].
- */
-inline fun <T> MethodHandle.createLambda(lambdaType: LambdaType<T>): T = LambdaFactory.create(lambdaType, this)
-
-/**
- * Constructs a lambda for for the target [MethodHandle] and [LambdaType].
- */
-inline fun <reified T> MethodHandle.createLambda(): T = LambdaFactory.create(lambdaType<T>(), this)
-
-/**
- * Constructs a lambda for for the target [MethodHandle] and [LambdaType].
- */
-inline fun <reified T> MethodHandle.createLambda(defineLookup: MethodHandles.Lookup): T
-        = LambdaFactory.create(lambdaType<T>().defineClassesWith(defineLookup), this)
-
-/**
- * Attempts to convert this [Type] into [LambdaType].
- *
- * @see LambdaType.of
- */
-inline fun <T> Type.toLambdaType(): LambdaType<T> = LambdaType.of(this)
-
-/**
- * Attempts to convert this [Class] into [LambdaType].
- *
- * @see LambdaType.of
- */
-inline fun <T> Class<T>.toLambdaType(): LambdaType<T> = LambdaType.of(this)
-
-/**
- * Attempts to convert this [KType] into [LambdaType].
- *
- * @see LambdaType.of
- */
-inline fun <T : Any> KType.toLambdaType(): LambdaType<T>
-        = (this.classifier as? KClass<T>)?.toLambdaType() ?: throw IllegalStateException("The classifier must be a KClass.")
-
-/**
- * Attempts to convert this [KClass] into [LambdaType].
- *
- * @see LambdaType.of
- */
-inline fun <T : Any> KClass<T>.toLambdaType(): LambdaType<T> = LambdaType.of(this.java)
-
-@Deprecated(message = "GenericArrayType isn't supported.")
-inline fun <T> GenericArrayType.toLambdaType(): LambdaType<T>
-        = throw UnsupportedOperationException("A GenericArrayType can't be a LambdaType.")
-
-@Deprecated(message = "WildcardType isn't supported.")
-inline fun <T> WildcardType.toLambdaType(): LambdaType<T>
-        = throw UnsupportedOperationException("A WildcardType can't be a LambdaType.")
-
-@Deprecated(message = "TypeVariable isn't supported.")
-inline fun <T> TypeVariable<*>.toLambdaType(): LambdaType<T>
-        = throw UnsupportedOperationException("A TypeVariable can't be a LambdaType.")

@@ -88,10 +88,10 @@ public abstract class LambdaType<@NonNull T> {
         /**
          * Constructs a new {@link LambdaType}.
          *
-         * @param functionalInterfaceType The functional interface type
+         * @param functionType The function type
          */
-        private Simple(@NonNull Type functionalInterfaceType) {
-            super(new ResolvedLambdaType<>(functionalInterfaceType), null);
+        Simple(@NonNull Type functionType) {
+            super(new ResolvedLambdaType<>(functionType), null);
         }
 
         /**
@@ -100,7 +100,7 @@ public abstract class LambdaType<@NonNull T> {
          * @param resolved The resolved lambda type
          * @param defineLookup The define lookup
          */
-        private Simple(@NonNull ResolvedLambdaType<T> resolved, MethodHandles.@Nullable Lookup defineLookup) {
+        Simple(@NonNull ResolvedLambdaType<T> resolved, MethodHandles.@Nullable Lookup defineLookup) {
             super(resolved, defineLookup);
         }
     }
@@ -162,7 +162,7 @@ public abstract class LambdaType<@NonNull T> {
      * @param defineLookup The define lookup
      * @return The new lambda type
      */
-    public @NonNull LambdaType<T> defineClassesWith(MethodHandles.@Nullable Lookup defineLookup) {
+    public final @NonNull LambdaType<T> defineClassesWith(MethodHandles.@Nullable Lookup defineLookup) {
         requireNonNull(defineLookup, "defineLookup");
         return new Simple<>(this.resolved, defineLookup);
     }
@@ -172,7 +172,7 @@ public abstract class LambdaType<@NonNull T> {
      *
      * @return The function class
      */
-    public @NonNull Class<T> getFunctionClass() {
+    public final @NonNull Class<T> getFunctionClass() {
         return this.resolved.functionClass;
     }
 
@@ -181,7 +181,7 @@ public abstract class LambdaType<@NonNull T> {
      *
      * @return The function type
      */
-    public @NonNull Type getFunctionType() {
+    public final @NonNull Type getFunctionType() {
         return this.resolved.getFunctionType();
     }
 
@@ -191,17 +191,17 @@ public abstract class LambdaType<@NonNull T> {
      *
      * @return The method
      */
-    public @NonNull Method getMethod() {
+    public final @NonNull Method getMethod() {
         return this.resolved.getMethodCopy();
     }
 
     @Override
-    public @NonNull String toString() {
+    public final @NonNull String toString() {
         return this.resolved.toString();
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public final boolean equals(@Nullable Object obj) {
         if (!(obj instanceof LambdaType)) {
             return false;
         }
@@ -211,7 +211,19 @@ public abstract class LambdaType<@NonNull T> {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return Objects.hash(this.resolved, this.defineLookup);
+    }
+
+    // Override these to force them as final
+
+    @Override
+    protected final @NonNull Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+
+    @Override
+    protected final void finalize() throws Throwable {
+        super.finalize();
     }
 }
