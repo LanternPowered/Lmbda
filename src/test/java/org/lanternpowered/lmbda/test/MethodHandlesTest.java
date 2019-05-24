@@ -44,6 +44,16 @@ import java.lang.invoke.MethodHandles;
 final class MethodHandlesTest {
 
     @Test
+    void testPrivateLookupInPrimitiveClass() {
+        assertThrows(IllegalArgumentException.class, () -> MethodHandlesExtensions.privateLookupIn(byte.class, MethodHandles.lookup()));
+    }
+
+    @Test
+    void testPrivateLookupInArrayClass() {
+        assertThrows(IllegalArgumentException.class, () -> MethodHandlesExtensions.privateLookupIn(Dummy[].class, MethodHandles.lookup()));
+    }
+
+    @Test
     void testDefineNoPackageAccess() {
         final byte[] byteCode = generateSimpleByteCode("org.lanternpowered.lmbda.test.other.TestDefineNoPackageAccess");
 

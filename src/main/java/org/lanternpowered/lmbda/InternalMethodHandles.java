@@ -210,6 +210,12 @@ final class InternalMethodHandles {
             if (securityManager != null) {
                 securityManager.checkPermission(new ReflectPermission("suppressAccessChecks"));
             }
+            if (targetClass.isPrimitive()) {
+                throw new IllegalArgumentException(targetClass + " is a primitive class");
+            }
+            if (targetClass.isArray()) {
+                throw new IllegalArgumentException(targetClass + " is an array class");
+            }
             return trustedLookup.in(targetClass);
         }
 
