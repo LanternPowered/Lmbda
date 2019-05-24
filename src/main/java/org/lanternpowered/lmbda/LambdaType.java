@@ -222,6 +222,7 @@ public abstract class LambdaType<@NonNull T> {
         return super.clone();
     }
 
+    @Deprecated
     @Override
     protected final void finalize() throws Throwable {
         super.finalize();
