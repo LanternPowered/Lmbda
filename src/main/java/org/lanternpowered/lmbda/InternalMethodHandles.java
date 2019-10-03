@@ -109,7 +109,7 @@ final class InternalMethodHandles {
     private static @Nullable MethodHandle findPrivateLookupMethodHandle() {
         try {
             //noinspection JavaLangInvokeHandleSignature
-            return MethodHandles.publicLookup().findVirtual(MethodHandles.class, "privateLookupIn",
+            return MethodHandles.publicLookup().findStatic(MethodHandles.class, "privateLookupIn",
                     MethodType.methodType(MethodHandles.Lookup.class, Class.class, MethodHandles.Lookup.class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             return null;
