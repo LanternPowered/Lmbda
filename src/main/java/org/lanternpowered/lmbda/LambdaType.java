@@ -155,7 +155,7 @@ public abstract class LambdaType<@NonNull T> {
      *
      * <p>When the functional interface/abstract class isn't public, or
      * the abstract method isn't, then should the lookup be defined explicitly.
-     * It implementation class needs the proper access in order to implemented
+     * Its implementation class needs the proper access in order to be implemented
      * successfully. This can be in the same package or a different one
      * depending on what is desired.</p>
      *

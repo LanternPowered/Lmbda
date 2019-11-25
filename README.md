@@ -20,7 +20,8 @@ Every available `MethodHandle` can be implemented by a functional interface. But
 Non static methods will always take a extra parameter which represents the target object of the method. This is always the first parameter.
 
 Note: Generating functions requires that you have access to the target class.
-In Java 9, this is even more important because the module your code is located in must be able to access the module of the target class, see [`MethodHandles#privateLookupIn`] for more info.
+Since Java 9, this is even more important because the module your code is located in must be able to access the module of the target class, see
+ [`MethodHandles#privateLookupIn`] for more info.
 
 ### Generating method functions
 
@@ -40,16 +41,11 @@ the method signature. The `IntConsumer` is a good choice available within the
 Java 8 API.
 
 ```java
-class MyClass {
-    
-    void test() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(MyObject.class, MethodHandles.lookup());
-        final MethodHandle methodHandle = lookup.findStatic(MyObject.class, "set", MethodType.methodType(void.class, int.class));
+final MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(MyObject.class, MethodHandles.lookup());
+final MethodHandle methodHandle = lookup.findStatic(MyObject.class, "set", MethodType.methodType(void.class, int.class));
 
-        final IntConsumer setter = LmbdaFactory.create(LmbdaType.of(IntConsumer.class), methodHandle);
-        setter.accept(1000);
-    }
-}
+final IntConsumer setter = LambdaFactory.create(LambdaType.of(IntConsumer.class), methodHandle);
+setter.accept(1000);
 ```
 
 #### Setter method
@@ -74,19 +70,13 @@ the method signature. The `ObjIntConsumer` is a good choice available within the
 Java 8 API.
 
 ```java
-class MyClass {
-    
-    void test() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandlesX.privateLookupIn(MyObject.class, MethodHandles.lookup());
-        final MethodHandle methodHandle = lookup.findVirtual(MyObject.class, "set", MethodType.methodType(void.class, int.class));
+final MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(MyObject.class, MethodHandles.lookup());
+final MethodHandle methodHandle = lookup.findVirtual(MyObject.class, "set", MethodType.methodType(void.class, int.class));
 
-        final ObjIntConsumer<MyObject> setter = LmbdaFactory.create(new LmbdaType<ObjIntConsumer<MyObject>>() {}, methodHandle);
-        
-        final MyObject myObject = new MyObject();
-        setter.accept(myObject, 1000);
-    }
-    
-}
+final ObjIntConsumer<MyObject> setter = LambdaFactory.create(new LambdaType<ObjIntConsumer<MyObject>>() {}, methodHandle);
+
+final MyObject myObject = new MyObject();
+setter.accept(myObject, 1000);
 ```
 
 
