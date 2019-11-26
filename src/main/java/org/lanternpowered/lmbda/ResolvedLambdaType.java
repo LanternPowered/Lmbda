@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  *
  * @param <T> The type
  */
-@SuppressWarnings({"unchecked", "ConstantConditions"})
+@SuppressWarnings("unchecked")
 final class ResolvedLambdaType<@NonNull T> {
 
     final @NonNull Class<T> functionClass;
@@ -201,7 +201,7 @@ final class ResolvedLambdaType<@NonNull T> {
         }
         if (validMethod == null) {
             throw new IllegalStateException("Couldn't find a non-default method in: " +
-                    functionClass.getClass().getName());
+                    functionClass.getName());
         }
         return validMethod;
     }
