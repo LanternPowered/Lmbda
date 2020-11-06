@@ -224,7 +224,5 @@ public abstract class LambdaType<@NonNull T> {
 
     @Deprecated
     @Override
-    protected final void finalize() throws Throwable {
-        super.finalize();
-    }
+    protected final void finalize() {}
 }
