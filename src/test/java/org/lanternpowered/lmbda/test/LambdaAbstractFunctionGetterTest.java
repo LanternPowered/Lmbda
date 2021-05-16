@@ -24,6 +24,7 @@
  */
 package org.lanternpowered.lmbda.test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
@@ -33,11 +34,20 @@ import org.lanternpowered.lmbda.MethodHandlesExtensions;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.function.ToIntFunction;
 
 class LambdaAbstractFunctionGetterTest {
 
     @Test
-    void test() throws Exception {
+    void testFindMethod() {
+        assertDoesNotThrow(() -> LambdaType.of(MyFunction.class),
+                "Unable to find function method in abstract class");
+        assertDoesNotThrow(() -> LambdaType.of(MyToIntFunction.class),
+                "Unable to find function method in abstract class which implements an interface");
+    }
+
+    @Test
+    void testGetter() throws Exception {
         final MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
         final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
@@ -53,12 +63,22 @@ class LambdaAbstractFunctionGetterTest {
 
         private int data = 100;
 
-        void setData(int value) {
+        void setData(final int value) {
             this.data = value;
         }
     }
 
     abstract static class MyFunction {
+
+        public abstract int getValue(TestObject testObject);
+    }
+
+    abstract static class MyToIntFunction implements ToIntFunction<TestObject> {
+
+        @Override
+        public int applyAsInt(TestObject value) {
+            return getValue(value);
+        }
 
         public abstract int getValue(TestObject testObject);
     }

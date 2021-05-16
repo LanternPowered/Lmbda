@@ -173,7 +173,7 @@ final class ResolvedLambdaType<@NonNull T> {
             findClassMethods(interf, methods);
         }
         final Class<?> superclass = functionClass.getSuperclass();
-        if (superclass != Object.class) {
+        if (superclass != null && superclass != Object.class) {
             findClassMethods(superclass, methods);
         }
     }
