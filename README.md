@@ -1,4 +1,4 @@
-## Lmbda [![Build Status](https://travis-ci.org/LanternPowered/Lmbda.svg?branch=master)](https://travis-ci.org/LanternPowered/Lmbda) [![Discord](https://img.shields.io/badge/chat-on%20discord-6E85CF.svg)](https://discord.gg/ArSrsuU) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda)
+## Lmbda [![Discord](https://img.shields.io/badge/chat-on%20discord-6E85CF.svg)](https://discord.gg/ArSrsuU) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda)
 
 This is library that can be used to generate lambdas from method handles. This includes methods, constructors, field accessors (getter, setter, even for final fields) and any other [`MethodHandle`] that can be constructed.
 
