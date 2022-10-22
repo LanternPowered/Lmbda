@@ -12,6 +12,8 @@ package org.lanternpowered.lmbda.test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.condition.DisabledOnJre
+import org.junit.jupiter.api.condition.JRE
 import org.lanternpowered.lmbda.createLambda
 import java.lang.invoke.MethodHandles
 import kotlin.reflect.KMutableProperty
@@ -79,6 +81,8 @@ class LambdaKFunctionTest {
     assertEquals(100, testObject.fetchPrivateData())
   }
 
+  @DisabledOnJre(JRE.JAVA_8,
+    disabledReason = "Java 8 doesn't care that much about access restriction")
   @Test fun testPrivateFieldWithoutAccess() {
     val kProperty = TestObject::class.memberProperties
       .find { it.name == "privateData" } as KMutableProperty<*>
