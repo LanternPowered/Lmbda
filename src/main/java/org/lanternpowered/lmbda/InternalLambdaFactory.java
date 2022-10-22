@@ -44,8 +44,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,8 +74,7 @@ public final class InternalLambdaFactory {
   /**
    * The internal lookup that has access to this library package.
    */
-  private static final MethodHandles.@NonNull Lookup internalLookup =
-    AccessController.doPrivileged((PrivilegedAction<MethodHandles.Lookup>) MethodHandles::lookup);
+  private static final MethodHandles.@NonNull Lookup internalLookup = MethodHandles.lookup();
 
   /**
    * A thread local which temporarily holds the {@link MethodHandle}
@@ -337,10 +334,8 @@ public final class InternalLambdaFactory {
       currentMethodHandle.set(convertedMethodHandle);
 
       // Define the class within the provided lookup
-      final Class<?> theClass = AccessController.doPrivileged(
-        (PrivilegedAction<Class<?>>) () -> doUnchecked(() ->
-          MethodHandlesExtensions.defineClass(defineLookup, cw.toByteArray())
-        ));
+      final Class<?> theClass = doUnchecked(() ->
+          MethodHandlesExtensions.defineClass(defineLookup, cw.toByteArray()));
 
       // Instantiate the function object
       return doUnchecked(() -> (T) defineLookup.in(theClass)

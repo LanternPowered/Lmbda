@@ -1,14 +1,14 @@
 ## Lmbda [![Discord](https://img.shields.io/badge/chat-on%20discord-6E85CF.svg)](https://discord.gg/ArSrsuU) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda)
 
-This is library that can be used to generate lambdas from method handles. This includes methods, constructors, field accessors (getter, setter) and any other [`MethodHandle`] that can be constructed.
+This is library that can be used to generate lambdas from method handles with any kind of 
+access modifier without any performance loss. This includes methods, constructors, field accessors 
+(getter, setter) and any other [`MethodHandle`] that can be constructed.
 
 * [Source]
 * [Issues]
-* [Wiki]
 
 [Source]: https://github.com/LanternPowered/Lmbda
 [Issues]: https://github.com/LanternPowered/Lmbda/issues
-[Wiki]: https://github.com/LanternPowered/Lmbda/wiki
 
 [`MethodHandle`]: https://docs.oracle.com/javase/10/docs/api/java/lang/invoke/MethodHandle.html
 [`MethodHandles#privateLookupIn`]: https://docs.oracle.com/javase/10/docs/api/java/lang/invoke/MethodHandles.html#privateLookupIn(java.lang.Class,java.lang.invoke.MethodHandles.Lookup)

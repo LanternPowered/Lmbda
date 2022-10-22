@@ -23,9 +23,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ReflectPermission;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 
 /**
@@ -41,12 +38,10 @@ final class InternalMethodHandles {
    * @return The adapter
    */
   private static @NonNull Adapter loadAdapter() {
-    return AccessController.doPrivileged((PrivilegedAction<Adapter>) () -> {
-      if (isJava9Available()) {
-        return new Java9Adapter();
-      }
-      return new Java8Adapter();
-    });
+    if (isJava9Available()) {
+      return new Java9Adapter();
+    }
+    return new Java8Adapter();
   }
 
   /**
@@ -215,10 +210,6 @@ final class InternalMethodHandles {
       final @NonNull Class<?> targetClass,
       final MethodHandles.@NonNull Lookup lookup
     ) {
-      final SecurityManager securityManager = System.getSecurityManager();
-      if (securityManager != null) {
-        securityManager.checkPermission(new ReflectPermission("suppressAccessChecks"));
-      }
       if (targetClass.isPrimitive()) {
         throw new IllegalArgumentException(targetClass + " is a primitive class");
       }
@@ -233,10 +224,6 @@ final class InternalMethodHandles {
       final MethodHandles.@NonNull Lookup lookup,
       final byte @NonNull [] byteCode
     ) {
-      final SecurityManager securityManager = System.getSecurityManager();
-      if (securityManager != null) {
-        securityManager.checkPermission(new ReflectPermission("defineClass"));
-      }
       if ((lookup.lookupModes() & MethodHandles.Lookup.PACKAGE) == 0) {
         throw throwUnchecked(new IllegalAccessException("Lookup does not have PACKAGE access"));
       }
@@ -255,12 +242,10 @@ final class InternalMethodHandles {
       if (!packageName.equals(lookupPackageName)) {
         throw new IllegalArgumentException("Class not in same package as lookup class");
       }
-      return AccessController.doPrivileged((PrivilegedAction<Class<?>>) () -> {
-        final ClassLoader classLoader = lookupClass.getClassLoader();
-        final ProtectionDomain protectionDomain = lookupClass.getProtectionDomain();
-        return doUnchecked(() -> (Class<?>) defineClassMethodHandle.invoke(classLoader,
-          className, byteCode, 0, byteCode.length, protectionDomain));
-      });
+      final ClassLoader classLoader = lookupClass.getClassLoader();
+      final ProtectionDomain protectionDomain = lookupClass.getProtectionDomain();
+      return doUnchecked(() -> (Class<?>) defineClassMethodHandle.invoke(classLoader,
+        className, byteCode, 0, byteCode.length, protectionDomain));
     }
   }
 }
