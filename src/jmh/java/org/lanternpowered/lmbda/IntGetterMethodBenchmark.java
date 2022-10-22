@@ -1,26 +1,11 @@
 /*
- * This file is part of Lmbda, licensed under the MIT License (MIT).
+ * Lmbda
  *
  * Copyright (c) LanternPowered <https://www.lanternpowered.org>
  * Copyright (c) contributors
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * This work is licensed under the terms of the MIT License (MIT). For
+ * a copy, see 'LICENSE.txt' or <https://opensource.org/licenses/MIT>.
  */
 package org.lanternpowered.lmbda;
 
@@ -47,7 +32,7 @@ import java.util.function.ToIntFunction;
 /**
  * Based on the original benchmark found on the stack overflow post:
  * <a href="https://stackoverflow.com/questions/22244402/how-can-i-improve-performance-of-field-set-perhap-using-methodhandles?noredirect=1&lq=1">
- *     How can I improve performance of Field.set (perhaps using MethodHandles)?</a>
+ * How can I improve performance of Field.set (perhaps using MethodHandles)?</a>
  */
 @SuppressWarnings("unchecked")
 @Warmup(iterations = 5, time = 1)
@@ -58,116 +43,119 @@ import java.util.function.ToIntFunction;
 @State(Scope.Thread)
 public class IntGetterMethodBenchmark {
 
-    private Integer value = 42;
+  private int value = 42;
 
-    private static final MethodHandle staticMethodHandle;
-    private static final Method staticReflective;
+  private static final MethodHandle mhConst;
+  @SuppressWarnings("FieldMayBeFinal")
+  private static MethodHandle mhDyn;
 
-    private static MethodHandle methodHandle;
-    private static Method reflective;
+  private static final Method methodConst;
+  @SuppressWarnings("FieldMayBeFinal")
+  private static Method methodDyn;
 
-    private static ToIntFunction<IntGetterMethodBenchmark> plainFunction;
-    private static ToIntFunction<IntGetterMethodBenchmark> staticMethodHandleFunction;
-    private static ToIntFunction<IntGetterMethodBenchmark> staticReflectiveFunction;
-    private static ToIntFunction<IntGetterMethodBenchmark> methodHandleFunction;
-    private static ToIntFunction<IntGetterMethodBenchmark> reflectiveFunction;
-    private static ToIntFunction<IntGetterMethodBenchmark> proxyFunction;
-    private static ToIntFunction<IntGetterMethodBenchmark> lambdaFunction;
-    private static ToIntFunction<IntGetterMethodBenchmark> lmbdaFunction;
+  private static final ToIntFunction<IntGetterMethodBenchmark> plainFunction;
+  private static final ToIntFunction<IntGetterMethodBenchmark> methodConstFunction;
+  private static final ToIntFunction<IntGetterMethodBenchmark> methodDynFunction;
+  private static final ToIntFunction<IntGetterMethodBenchmark> mhConstFunction;
+  private static final ToIntFunction<IntGetterMethodBenchmark> mhDynFunction;
+  private static final ToIntFunction<IntGetterMethodBenchmark> mhProxyFunction;
+  private static final ToIntFunction<IntGetterMethodBenchmark> lambdaMetafactoryFunction;
+  private static final ToIntFunction<IntGetterMethodBenchmark> lmbdaFunction;
 
-    // We would normally use @Setup, but we need to initialize "static final" fields here...
-    static {
+  static {
+    try {
+      methodDyn = IntGetterMethodBenchmark.class.getDeclaredMethod("getValue");
+      mhDyn = MethodHandles.lookup().findVirtual(IntGetterMethodBenchmark.class,
+        "getValue", MethodType.methodType(Integer.class));
+      methodConst = methodDyn;
+      mhConst = mhDyn;
+
+      plainFunction = IntGetterMethodBenchmark::getValue;
+      methodConstFunction = object -> {
         try {
-            // Access method handles, etc.
-            reflective = IntGetterMethodBenchmark.class.getDeclaredMethod("getValue");
-            methodHandle = MethodHandles.lookup().findVirtual(IntGetterMethodBenchmark.class, "getValue", MethodType.methodType(Integer.class));
-            staticReflective = reflective;
-            staticMethodHandle = methodHandle;
-
-            // Generate functions
-            plainFunction = IntGetterMethodBenchmark::getValue;
-            staticMethodHandleFunction = object -> {
-                try {
-                    return (Integer) staticMethodHandle.invokeExact(object);
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            };
-            staticReflectiveFunction = object -> {
-                try {
-                    return (Integer) staticReflective.invoke(object);
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            };
-            methodHandleFunction = object -> {
-                try {
-                    return (Integer) methodHandle.invokeExact(object);
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            };
-            reflectiveFunction = object -> {
-                try {
-                    return (Integer) reflective.invoke(object);
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            };
-            proxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, methodHandle);
-            lambdaFunction = JavaLambdaFactory.create(new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, MethodHandles.lookup(), methodHandle);
-            lmbdaFunction = LambdaFactory.create(new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, methodHandle);
+          return (Integer) methodConst.invoke(object);
         } catch (Throwable t) {
-            throw throwUnchecked(t);
+          throw throwUnchecked(t);
         }
+      };
+      methodDynFunction = object -> {
+        try {
+          return (Integer) methodDyn.invoke(object);
+        } catch (Throwable t) {
+          throw throwUnchecked(t);
+        }
+      };
+      mhConstFunction = object -> {
+        try {
+          return (Integer) mhConst.invokeExact(object);
+        } catch (Throwable t) {
+          throw throwUnchecked(t);
+        }
+      };
+      mhDynFunction = object -> {
+        try {
+          return (Integer) mhDyn.invokeExact(object);
+        } catch (Throwable t) {
+          throw throwUnchecked(t);
+        }
+      };
+      mhProxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, mhDyn);
+      lambdaMetafactoryFunction = JavaLambdaFactory.create(
+        new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {},
+        MethodHandles.lookup(), mhDyn);
+      lmbdaFunction = LambdaFactory.create(
+        new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, mhDyn);
+    } catch (Throwable t) {
+      throw throwUnchecked(t);
     }
+  }
 
-    private Integer getValue() {
-        return this.value;
-    }
+  private Integer getValue() {
+    return this.value++;
+  }
 
-    @Benchmark
-    public int direct() {
-        return getValue();
-    }
+  @Benchmark
+  public int direct() {
+    return getValue();
+  }
 
-    @Benchmark
-    public int plain() {
-        return plainFunction.applyAsInt(this);
-    }
+  @Benchmark
+  public int plain() {
+    return plainFunction.applyAsInt(this);
+  }
 
-    @Benchmark
-    public int staticMethodHandle() {
-        return staticMethodHandleFunction.applyAsInt(this);
-    }
+  @Benchmark
+  public int methodConst() {
+    return methodConstFunction.applyAsInt(this);
+  }
 
-    @Benchmark
-    public int staticReflect() {
-        return staticReflectiveFunction.applyAsInt(this);
-    }
+  @Benchmark
+  public int methodDyn() {
+    return methodDynFunction.applyAsInt(this);
+  }
 
-    @Benchmark
-    public int dynamicMethodHandle() {
-        return methodHandleFunction.applyAsInt(this);
-    }
+  @Benchmark
+  public int methodHandleConst() {
+    return mhConstFunction.applyAsInt(this);
+  }
 
-    @Benchmark
-    public int dynamicReflect() {
-        return reflectiveFunction.applyAsInt(this);
-    }
+  @Benchmark
+  public int methodHandleDyn() {
+    return mhDynFunction.applyAsInt(this);
+  }
 
-    @Benchmark
-    public int proxy() {
-        return proxyFunction.applyAsInt(this);
-    }
+  @Benchmark
+  public int methodHandleProxy() {
+    return mhProxyFunction.applyAsInt(this);
+  }
 
-    @Benchmark
-    public int lambda() {
-        return lambdaFunction.applyAsInt(this);
-    }
+  @Benchmark
+  public int lambdaMetafactory() {
+    return lambdaMetafactoryFunction.applyAsInt(this);
+  }
 
-    @Benchmark
-    public int lmbda() {
-        return lmbdaFunction.applyAsInt(this);
-    }
+  @Benchmark
+  public int lmbda() {
+    return lmbdaFunction.applyAsInt(this);
+  }
 }

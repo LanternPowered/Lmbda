@@ -1,6 +1,6 @@
 ## Lmbda [![Discord](https://img.shields.io/badge/chat-on%20discord-6E85CF.svg)](https://discord.gg/ArSrsuU) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda)
 
-This is library that can be used to generate lambdas from method handles. This includes methods, constructors, field accessors (getter, setter, even for final fields) and any other [`MethodHandle`] that can be constructed.
+This is library that can be used to generate lambdas from method handles. This includes methods, constructors, field accessors (getter, setter) and any other [`MethodHandle`] that can be constructed.
 
 * [Source]
 * [Issues]
@@ -17,7 +17,7 @@ This is library that can be used to generate lambdas from method handles. This i
 
 Every available `MethodHandle` can be implemented by a functional interface. But only if the two method signatures match. Object types will be auto casted to the target type if possible, the same goes for boxing/unboxing of primitive types.
 
-Non static methods will always take a extra parameter which represents the target object of the method. This is always the first parameter.
+Non-static methods will always take an extra parameter which represents the target object of the method. This is always the first parameter.
 
 Note: Generating functions requires that you have access to the target class.
 Since Java 9, this is even more important because the module your code is located in must be able to access the module of the target class, see
@@ -89,25 +89,30 @@ same as the `static_mh`.
 The following benchmark implements a lambda function to access a `int` field, a `ToIntFunction`
 is implemented in this case to avoid boxing/unboxing.
 
-Benchmark                                        | Mode | Cnt | Score | Error | Units
--------------------------------------------------|:----:|:---:|:-----:|:-----:|:----:
-IntGetterFieldBenchmark.dynamic_mh               | avgt | 15 | 3.891 | ± 0.450 | ns/op
-IntGetterFieldBenchmark.dynamic_reflect          | avgt | 15 | 4.788 | ± 0.205 | ns/op
-IntGetterFieldBenchmark.lmbda                    | avgt | 15 | 1.988 | ± 0.061 | ns/op
-IntGetterFieldBenchmark.plain                    | avgt | 15 | 1.969 | ± 0.049 | ns/op
-IntGetterFieldBenchmark.static_mh                | avgt | 15 | 1.935 | ± 0.021 | ns/op
-IntGetterFieldBenchmark.static_reflect           | avgt | 15 | 3.912 | ± 0.007 | ns/op
+The benchmark was run on an AMD Ryzen 9 5900X CPU and using JDK 16.0.2
+
+Benchmark                                   | Mode | Cnt | Score | Error | Units
+--------------------------------------------|:----:|:---:|:-----:|:-----:|:----:
+IntGetterFieldBenchmark.direct              | avgt | 15 | 1.304 | ± 0.008 | ns/op
+IntGetterFieldBenchmark.fieldConst          | avgt | 15 | 2.698 | ± 0.061 | ns/op
+IntGetterFieldBenchmark.fieldDyn            | avgt | 15 | 2.986 | ± 0.005 | ns/op
+IntGetterFieldBenchmark.lmbda               | avgt | 15 | 1.299 | ± 0.005 | ns/op
+IntGetterFieldBenchmark.methodHandleConst   | avgt | 15 | 1.300 | ± 0.004 | ns/op
+IntGetterFieldBenchmark.methodHandleDyn     | avgt | 15 | 3.013 | ± 0.018 | ns/op
+IntGetterFieldBenchmark.methodHandleProxy   | avgt | 15 | 7.530 | ± 0.185 | ns/op
+IntGetterFieldBenchmark.plain               | avgt | 15 | 1.304 | ± 0.006 | ns/op
 
 
 This benchmark returns a `Integer` through the `getValue` method from a target object.
 
-Benchmark                                        | Mode | Cnt | Score | Error | Units
--------------------------------------------------|:----:|:---:|:-----:|:-----:|:----:
-IntGetterMethodBenchmark.dynamic_mh              | avgt | 15 |  3.986 | ± 0.088 | ns/op
-IntGetterMethodBenchmark.dynamic_reflect         | avgt | 15 |  4.524 | ± 0.028 | ns/op
-IntGetterMethodBenchmark.lambda                  | avgt | 15 |  1.986 | ± 0.030 | ns/op
-IntGetterMethodBenchmark.lmbda                   | avgt | 15 |  1.977 | ± 0.007 | ns/op
-IntGetterMethodBenchmark.plain                   | avgt | 15 |  2.032 | ± 0.007 | ns/op
-IntGetterMethodBenchmark.proxy                   | avgt | 15 | 10.254 | ± 0.196 | ns/op
-IntGetterMethodBenchmark.static_mh               | avgt | 15 |  2.050 | ± 0.085 | ns/op
-IntGetterMethodBenchmark.static_reflect          | avgt | 15 |  4.668 | ± 0.030 | ns/op
+Benchmark                                  | Mode | Cnt | Score | Error | Units
+-------------------------------------------|:----:|:---:|:-----:|:-----:|:----:
+IntGetterMethodBenchmark.direct            | avgt | 15 | 1.372 | ± 0.003 | ns/op
+IntGetterMethodBenchmark.lambdaMetafactory | avgt | 15 | 1.387 | ± 0.024 | ns/op
+IntGetterMethodBenchmark.lmbda             | avgt | 15 | 1.370 | ± 0.004 | ns/op
+IntGetterMethodBenchmark.methodConst       | avgt | 15 | 3.731 | ± 0.106 | ns/op
+IntGetterMethodBenchmark.methodDyn         | avgt | 15 | 4.164 | ± 0.139 | ns/op
+IntGetterMethodBenchmark.methodHandleConst | avgt | 15 | 1.612 | ± 0.379 | ns/op
+IntGetterMethodBenchmark.methodHandleDyn   | avgt | 15 | 3.852 | ± 0.116 | ns/op
+IntGetterMethodBenchmark.methodHandleProxy | avgt | 15 | 8.085 | ± 0.070 | ns/op
+IntGetterMethodBenchmark.plain             | avgt | 15 | 1.398 | ± 0.025 | ns/op

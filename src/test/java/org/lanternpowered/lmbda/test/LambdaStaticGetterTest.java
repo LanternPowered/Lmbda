@@ -1,26 +1,11 @@
 /*
- * This file is part of Lmbda, licensed under the MIT License (MIT).
+ * Lmbda
  *
  * Copyright (c) LanternPowered <https://www.lanternpowered.org>
  * Copyright (c) contributors
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * This work is licensed under the terms of the MIT License (MIT). For
+ * a copy, see 'LICENSE.txt' or <https://opensource.org/licenses/MIT>.
  */
 package org.lanternpowered.lmbda.test;
 
@@ -37,24 +22,26 @@ import java.util.function.IntSupplier;
 
 class LambdaStaticGetterTest {
 
-    @Test
-    void test() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-        final MethodHandle methodHandle = lookup.findStaticGetter(TestObject.class, "data", int.class);
+  @Test
+  void test() throws Exception {
+    final MethodHandles.Lookup lookup =
+      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+    final MethodHandle methodHandle =
+      lookup.findStaticGetter(TestObject.class, "data", int.class);
 
-        final IntSupplier getter = LambdaFactory.create(LambdaType.of(IntSupplier.class), methodHandle);
+    final IntSupplier getter = LambdaFactory.create(LambdaType.of(IntSupplier.class), methodHandle);
 
-        assertEquals(100, getter.getAsInt());
-        TestObject.setData(10000);
-        assertEquals(10000, getter.getAsInt());
+    assertEquals(100, getter.getAsInt());
+    TestObject.setData(10000);
+    assertEquals(10000, getter.getAsInt());
+  }
+
+  public static class TestObject {
+
+    private static int data = 100;
+
+    static void setData(int value) {
+      data = value;
     }
-
-    public static class TestObject {
-
-        private static int data = 100;
-
-        static void setData(int value) {
-            data = value;
-        }
-    }
+  }
 }

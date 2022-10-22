@@ -1,30 +1,13 @@
 /*
- * This file is part of Lmbda, licensed under the MIT License (MIT).
+ * Lmbda
  *
  * Copyright (c) LanternPowered <https://www.lanternpowered.org>
  * Copyright (c) contributors
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * This work is licensed under the terms of the MIT License (MIT). For
+ * a copy, see 'LICENSE.txt' or <https://opensource.org/licenses/MIT>.
  */
 package org.lanternpowered.lmbda.test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 import org.lanternpowered.lmbda.LambdaFactory;
@@ -33,29 +16,54 @@ import org.lanternpowered.lmbda.MethodHandlesExtensions;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.function.BiFunction;
 import java.util.function.ObjIntConsumer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class LambdaSetterTest {
 
-    @Test
-    void test() throws Exception {
-        final MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-        final MethodHandle methodHandle = lookup.findSetter(TestObject.class, "data", int.class);
+  @Test
+  void testField() throws Exception {
+    final MethodHandles.Lookup lookup =
+      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+    final MethodHandle methodHandle = lookup.findSetter(TestObject.class, "data", int.class);
 
-        final ObjIntConsumer<TestObject> setter = LambdaFactory.create(new LambdaType<ObjIntConsumer<TestObject>>() {}, methodHandle);
+    final ObjIntConsumer<TestObject> setter = LambdaFactory.create(
+      new LambdaType<ObjIntConsumer<TestObject>>() {}, methodHandle);
 
-        final TestObject object = new TestObject();
-        assertEquals(100, object.getData());
-        setter.accept(object, 10000);
-        assertEquals(10000, object.getData());
+    final TestObject object = new TestObject();
+    assertEquals(100, object.getData());
+    setter.accept(object, 10000);
+    assertEquals(10000, object.getData());
+  }
+
+  @Test
+  void testMethod() throws Exception {
+    final MethodHandles.Lookup lookup =
+      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+    final MethodHandle methodHandle = lookup.findVirtual(
+      TestObject.class, "setData", MethodType.methodType(void.class, int.class));
+
+    final BiFunction<Object, Object, Object> setter = LambdaFactory.createBiFunction(methodHandle);
+
+    final TestObject object = new TestObject();
+    assertEquals(100, object.getData());
+    setter.apply(object, 10000);
+    assertEquals(10000, object.getData());
+  }
+
+  public static class TestObject {
+
+    private int data = 100;
+
+    int getData() {
+      return this.data;
     }
 
-    public static class TestObject {
-
-        private int data = 100;
-
-        int getData() {
-            return this.data;
-        }
+    void setData(int data) {
+      this.data = data;
     }
+  }
 }

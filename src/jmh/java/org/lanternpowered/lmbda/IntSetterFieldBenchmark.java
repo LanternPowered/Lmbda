@@ -1,26 +1,11 @@
 /*
- * This file is part of Lmbda, licensed under the MIT License (MIT).
+ * Lmbda
  *
  * Copyright (c) LanternPowered <https://www.lanternpowered.org>
  * Copyright (c) contributors
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * This work is licensed under the terms of the MIT License (MIT). For
+ * a copy, see 'LICENSE.txt' or <https://opensource.org/licenses/MIT>.
  */
 package org.lanternpowered.lmbda;
 
@@ -41,11 +26,12 @@ import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
+import java.util.function.ObjIntConsumer;
 
 /**
  * Based on the original benchmark found on the stack overflow post:
  * <a href="https://stackoverflow.com/questions/22244402/how-can-i-improve-performance-of-field-set-perhap-using-methodhandles?noredirect=1&lq=1">
- *     How can I improve performance of Field.set (perhaps using MethodHandles)?</a>
+ * How can I improve performance of Field.set (perhaps using MethodHandles)?</a>
  */
 @SuppressWarnings("unchecked")
 @Warmup(iterations = 5, time = 1)
@@ -56,121 +42,112 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class IntSetterFieldBenchmark {
 
-    private int value = 32;
+  private int value = 32;
 
-    private static final Field staticReflective;
-    private static final MethodHandle staticMethodHandle;
+  private static final Field fieldConst;
+  @SuppressWarnings("FieldMayBeFinal")
+  private static Field fieldDyn;
 
-    private static Field reflective;
-    private static MethodHandle methodHandle;
+  private static final MethodHandle mhConst;
+  @SuppressWarnings("FieldMayBeFinal")
+  private static MethodHandle mhDyn;
 
-    private static IntSetFunction<IntSetterFieldBenchmark> plainFunction;
-    private static IntSetFunction<IntSetterFieldBenchmark> staticMethodHandleFunction;
-    private static IntSetFunction<IntSetterFieldBenchmark> staticReflectiveFunction;
-    private static IntSetFunction<IntSetterFieldBenchmark> methodHandleFunction;
-    private static IntSetFunction<IntSetterFieldBenchmark> reflectiveFunction;
-    private static IntSetFunction<IntSetterFieldBenchmark> proxyFunction;
-    private static IntSetFunction<IntSetterFieldBenchmark> lmbdaFunction;
+  private static final ObjIntConsumer<IntSetterFieldBenchmark> plainFunction;
+  private static final ObjIntConsumer<IntSetterFieldBenchmark> fieldConstFunction;
+  private static final ObjIntConsumer<IntSetterFieldBenchmark> fieldDynFunction;
+  private static final ObjIntConsumer<IntSetterFieldBenchmark> mhConstFunction;
+  private static final ObjIntConsumer<IntSetterFieldBenchmark> mhDynFunction;
+  private static final ObjIntConsumer<IntSetterFieldBenchmark> mhProxyFunction;
+  private static final ObjIntConsumer<IntSetterFieldBenchmark> lmbdaFunction;
 
-    public interface IntSetFunction<T> {
+  static {
+    try {
+      fieldConst = IntSetterFieldBenchmark.class.getDeclaredField("value");
+      fieldDyn = fieldConst;
+      mhConst = MethodHandles.lookup()
+        .findSetter(IntSetterFieldBenchmark.class, "value", int.class);
+      mhDyn = mhConst;
 
-        void apply(T target, int value);
-    }
-
-    // We would normally use @Setup, but we need to initialize "static final" fields here...
-    static {
+      plainFunction = (object, value) -> object.value = value;
+      fieldConstFunction = (object, value) -> {
         try {
-            reflective = IntSetterFieldBenchmark.class.getDeclaredField("value");
-            methodHandle = MethodHandles.lookup().findSetter(IntSetterFieldBenchmark.class, "value", int.class);
-            staticReflective = reflective;
-            staticMethodHandle = methodHandle;
-            // Create a manually implemented lambda to compare performance with generated ones.
-            plainFunction = (object, value) -> object.value = value;
-            methodHandleFunction = (object, value) -> {
-                try {
-                    methodHandle.invokeExact(object, value);
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            };
-            staticMethodHandleFunction = (object, value) -> {
-                try {
-                    staticMethodHandle.invokeExact(object, value);
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            };
-            staticReflectiveFunction = (object, value) -> {
-                try {
-                    staticReflective.setInt(object, value);
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            };
-            methodHandleFunction = (object, value) -> {
-                try {
-                    methodHandle.invokeExact(object, value);
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            };
-            reflectiveFunction = (object, value) -> {
-                try {
-                    reflective.setInt(object, value);
-                } catch (Throwable t) {
-                    throw throwUnchecked(t);
-                }
-            };
-            proxyFunction = MethodHandleProxies.asInterfaceInstance(IntSetFunction.class, methodHandle);
-            lmbdaFunction = LambdaFactory.create(new LambdaType<IntSetFunction<IntSetterFieldBenchmark>>() {}, methodHandle);
+          fieldConst.setInt(object, value);
         } catch (Throwable t) {
-            throw throwUnchecked(t);
+          throw throwUnchecked(t);
         }
+      };
+      fieldDynFunction = (object, value) -> {
+        try {
+          fieldDyn.setInt(object, value);
+        } catch (Throwable t) {
+          throw throwUnchecked(t);
+        }
+      };
+      mhConstFunction = (object, value) -> {
+        try {
+          mhConst.invokeExact(object, value);
+        } catch (Throwable t) {
+          throw throwUnchecked(t);
+        }
+      };
+      mhDynFunction = (object, value) -> {
+        try {
+          mhDyn.invokeExact(object, value);
+        } catch (Throwable t) {
+          throw throwUnchecked(t);
+        }
+      };
+      mhProxyFunction = MethodHandleProxies.asInterfaceInstance(ObjIntConsumer.class, mhDyn);
+      lmbdaFunction = LambdaFactory.create(
+        new LambdaType<ObjIntConsumer<IntSetterFieldBenchmark>>() {}, mhDyn);
+    } catch (Throwable t) {
+      throw throwUnchecked(t);
     }
+  }
 
-    @Benchmark
-    public void direct(Data data) {
-        this.value = data.value++;
-    }
+  @Benchmark
+  public void direct(final Data data) {
+    this.value = data.value++;
+  }
 
-    @Benchmark
-    public void plain(Data data) {
-        plainFunction.apply(this, data.value++);
-    }
+  @Benchmark
+  public void plain(final Data data) {
+    plainFunction.accept(this, data.value++);
+  }
 
-    @Benchmark
-    public void dynamicReflect(Data data) {
-        reflectiveFunction.apply(this, data.value++);
-    }
+  @Benchmark
+  public void fieldConst(final Data data) {
+    fieldConstFunction.accept(this, data.value++);
+  }
 
-    @Benchmark
-    public void dynamicMethodHandle(Data data) {
-        methodHandleFunction.apply(this, data.value++);
-    }
+  @Benchmark
+  public void fieldDyn(final Data data) {
+    fieldDynFunction.accept(this, data.value++);
+  }
 
-    @Benchmark
-    public void staticReflect(Data data) {
-        staticReflectiveFunction.apply(this, data.value++);
-    }
+  @Benchmark
+  public void methodHandleConst(final Data data) {
+    mhConstFunction.accept(this, data.value++);
+  }
 
-    @Benchmark
-    public void staticMethodHandle(Data data) {
-        staticMethodHandleFunction.apply(this, data.value++);
-    }
+  @Benchmark
+  public void methodHandleDyn(final Data data) {
+    mhDynFunction.accept(this, data.value++);
+  }
 
-    @Benchmark
-    public void proxy(Data data) {
-        proxyFunction.apply(this, data.value++);
-    }
+  @Benchmark
+  public void methodHandleProxy(final Data data) {
+    mhProxyFunction.accept(this, data.value++);
+  }
 
-    @Benchmark
-    public void lmbda(Data data) {
-        lmbdaFunction.apply(this, data.value++);
-    }
+  @Benchmark
+  public void lmbda(final Data data) {
+    lmbdaFunction.accept(this, data.value++);
+  }
 
-    @State(Scope.Benchmark)
-    public static class Data {
+  @State(Scope.Benchmark)
+  public static class Data {
 
-        public int value = 0;
-    }
+    public int value = 0;
+  }
 }

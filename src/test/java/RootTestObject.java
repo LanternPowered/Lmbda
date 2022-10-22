@@ -7,8 +7,7 @@
  * This work is licensed under the terms of the MIT License (MIT). For
  * a copy, see 'LICENSE.txt' or <https://opensource.org/licenses/MIT>.
  */
-package org.lanternpowered.lmbda.test.other;
+public class RootTestObject {
 
-public final class Dummy {
-
+  private int data = 100;
 }
