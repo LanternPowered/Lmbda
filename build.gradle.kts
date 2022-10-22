@@ -18,12 +18,16 @@ repositories {
 }
 
 dependencies {
+  val guavaVersion = "31.0.1-jre"
   implementation(group = "org.ow2.asm", name = "asm", version = "9.2")
   implementation(group = "org.checkerframework", name = "checker-qual" , version = "2.8.1")
-  implementation(kotlin("stdlib-jdk8"))
-  implementation(kotlin("reflect"))
-  implementation(group = "com.google.guava", name = "guava", version = "31.0.1-jre")
+  compileOnly(kotlin("stdlib-jdk8"))
+  compileOnly(kotlin("reflect"))
+  compileOnly(group = "com.google.guava", name = "guava", version = guavaVersion)
   testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.8.2")
+  testImplementation(kotlin("stdlib-jdk8"))
+  testImplementation(kotlin("reflect"))
+  testImplementation(group = "com.google.guava", name = "guava", version = guavaVersion)
 }
 
 defaultTasks("licenseFormat", "build")
