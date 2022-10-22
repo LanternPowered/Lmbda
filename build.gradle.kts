@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "org.lanternpowered"
-version = "2.0.1-SNAPSHOT"
+version = "3.0.0-SNAPSHOT"
 
 repositories {
   mavenCentral()
