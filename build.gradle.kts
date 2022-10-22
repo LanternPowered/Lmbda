@@ -19,12 +19,12 @@ repositories {
 
 dependencies {
   val guavaVersion = "31.0.1-jre"
-  implementation(group = "org.ow2.asm", name = "asm", version = "9.2")
-  implementation(group = "org.checkerframework", name = "checker-qual" , version = "2.8.1")
+  implementation(group = "org.ow2.asm", name = "asm", version = "9.4")
+  implementation(group = "org.checkerframework", name = "checker-qual" , version = "3.25.0")
   compileOnly(kotlin("stdlib-jdk8"))
   compileOnly(kotlin("reflect"))
   compileOnly(group = "com.google.guava", name = "guava", version = guavaVersion)
-  testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.8.2")
+  testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.9.0")
   testImplementation(kotlin("stdlib-jdk8"))
   testImplementation(kotlin("reflect"))
   testImplementation(group = "com.google.guava", name = "guava", version = guavaVersion)
@@ -44,7 +44,6 @@ jmh {
 
 tasks {
   val javadocJar = create<Jar>("javadocJar") {
-    archiveBaseName.set(project.name)
     archiveClassifier.set("javadoc")
     from(javadoc)
   }
@@ -56,7 +55,7 @@ tasks {
   }
 
   jar {
-    exclude("_module-info.java")
+    exclude("module-info.java")
   }
 
   assemble {

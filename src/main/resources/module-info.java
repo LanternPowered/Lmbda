@@ -7,9 +7,9 @@
  * This work is licensed under the terms of the MIT License (MIT). For
  * a copy, see 'LICENSE.txt' or <https://opensource.org/licenses/MIT>.
  */
-open module org.lanternpowered.lmbda {
+module org.lanternpowered.lmbda {
   exports org.lanternpowered.lmbda;
-  exports org.lanternpowered.lmbda.kt;
+  exports org.lanternpowered.lmbda.mh;
 
   requires org.objectweb.asm; // Depends on the asm library
 
