@@ -8,6 +8,7 @@ plugins {
   kotlin("jvm") version "1.6.0"
   id("me.champeau.jmh") version "0.6.6"
   id("org.cadixdev.licenser") version "0.6.1"
+  id("com.adarshr.test-logger") version "3.2.0"
 }
 
 group = "org.lanternpowered"
@@ -158,4 +159,8 @@ license {
     set("url", "https://www.lanternpowered.org")
     set("organization", "LanternPowered")
   }
+}
+
+testlogger {
+  theme = com.adarshr.gradle.testlogger.theme.ThemeType.PLAIN
 }
