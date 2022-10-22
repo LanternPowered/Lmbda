@@ -7,7 +7,7 @@
  * This work is licensed under the terms of the MIT License (MIT). For
  * a copy, see 'LICENSE.txt' or <https://opensource.org/licenses/MIT>.
  */
-@file:JvmName(">MethodHandlesExtensions")
+@file:JvmName(" MethodHandlesExtensions")
 @file:Suppress("unused", "NOTHING_TO_INLINE", "DeprecatedCallableAddReplaceWith")
 
 package org.lanternpowered.lmbda.mh
