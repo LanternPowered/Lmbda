@@ -29,7 +29,8 @@ public final class MethodHandlesExtensions {
    * ReflectPermission("suppressAccessChecks").</p>
    *
    * <p>When using Java 9+, see
-   * https://docs.oracle.com/javase/9/docs/api/java/lang/invoke/MethodHandles.html#privateLookupIn-java.lang.Class-java.lang.invoke.MethodHandles.Lookup-</p>
+   * <a href="https://docs.oracle.com/javase/9/docs/api/java/lang/invoke/MethodHandles.html#privateLookupIn-java.lang.Class-java.lang.invoke.MethodHandles.Lookup-">
+   *   MethodHandles.Lookup.privateLookupIn(...)</a></p>
    *
    * @param targetClass The target class for which private access should be acquired
    * @param lookup      The caller lookup object

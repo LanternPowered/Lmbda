@@ -9,10 +9,8 @@
  */
 @file:Suppress("unused", "NOTHING_TO_INLINE", "DeprecatedCallableAddReplaceWith")
 
-package org.lanternpowered.lmbda.kt
+package org.lanternpowered.lmbda
 
-import org.lanternpowered.lmbda.LambdaFactory
-import org.lanternpowered.lmbda.LambdaType
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 

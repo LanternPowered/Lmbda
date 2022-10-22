@@ -9,11 +9,9 @@
  */
 @file:Suppress("NOTHING_TO_INLINE", "UnstableApiUsage")
 
-package org.lanternpowered.lmbda.kt
+package org.lanternpowered.lmbda
 
 import com.google.common.reflect.TypeToken
-import org.lanternpowered.lmbda.LambdaFactory
-import org.lanternpowered.lmbda.LambdaType
 import java.lang.invoke.MethodHandle
 
 /**

@@ -7,9 +7,9 @@
  * This work is licensed under the terms of the MIT License (MIT). For
  * a copy, see 'LICENSE.txt' or <https://opensource.org/licenses/MIT>.
  */
-@file:Suppress("unused", "NOTHING_TO_INLINE", "DeprecatedCallableAddReplaceWith", "UNCHECKED_CAST")
+@file:Suppress("unused", "NOTHING_TO_INLINE", "DeprecatedCallableAddReplaceWith")
 
-package org.lanternpowered.lmbda.kt
+package org.lanternpowered.lmbda.mh
 
 import org.lanternpowered.lmbda.MethodHandlesExtensions
 import java.lang.invoke.MethodHandles

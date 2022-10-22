@@ -9,9 +9,8 @@
  */
 @file:Suppress("unused", "NOTHING_TO_INLINE", "DeprecatedCallableAddReplaceWith", "UNCHECKED_CAST")
 
-package org.lanternpowered.lmbda.kt
+package org.lanternpowered.lmbda
 
-import org.lanternpowered.lmbda.LambdaType
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Type
 import java.lang.reflect.TypeVariable
