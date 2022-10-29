@@ -209,7 +209,6 @@ public abstract class LambdaType<@NonNull T> {
   }
 
   @Deprecated
-  @Override
   protected final void finalize() {
   }
 }
