@@ -87,6 +87,9 @@ public final class InternalLambdaFactory {
    */
   private static final @NonNull AtomicInteger lambdaCounter = new AtomicInteger();
 
+  private static final @Nullable MethodHandle defineHiddenClass =
+    InternalMethodHandles.findDefineHiddenClassMethodHandle();
+
   static <@NonNull T> T create(
     final @NonNull LambdaType<T> lambdaType,
     final @NonNull MethodHandle methodHandle
@@ -333,12 +336,26 @@ public final class InternalLambdaFactory {
       // class
       currentMethodHandle.set(convertedMethodHandle);
 
+      final byte[] bytes = cw.toByteArray();
+      final MethodHandles.Lookup theClassLookup;
+      final Class<?> theClass;
       // Define the class within the provided lookup
-      final Class<?> theClass = doUnchecked(() ->
+      if (defineHiddenClass != null) {
+        try {
+          theClassLookup = (MethodHandles.Lookup) defineHiddenClass
+            .invokeExact(defineLookup, bytes, true);
+          theClass = theClassLookup.lookupClass();
+        } catch (Throwable e) {
+          throw new RuntimeException(e);
+        }
+      } else {
+        theClass = doUnchecked(() ->
           MethodHandlesExtensions.defineClass(defineLookup, cw.toByteArray()));
+        theClassLookup = defineLookup;
+      }
 
       // Instantiate the function object
-      return doUnchecked(() -> (T) defineLookup.in(theClass)
+      return doUnchecked(() -> (T) theClassLookup.in(theClass)
         .findConstructor(theClass, MethodType.methodType(void.class)).invoke());
     } finally {
       // Cleanup

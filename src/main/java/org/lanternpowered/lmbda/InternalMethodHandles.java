@@ -21,6 +21,7 @@ import org.objectweb.asm.ClassReader;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
@@ -99,6 +100,26 @@ final class InternalMethodHandles {
       return MethodHandles.publicLookup().findStatic(MethodHandles.class, "privateLookupIn",
         MethodType.methodType(MethodHandles.Lookup.class, Class.class, MethodHandles.Lookup.class));
     } catch (NoSuchMethodException | IllegalAccessException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Searches for the defineHiddenClass method. Introduces in java 15.
+   *
+   * @return The method handle
+   */
+  static @Nullable MethodHandle findDefineHiddenClassMethodHandle() {
+    try {
+      final Class<?> classOption = Class.forName(
+        "java.lang.invoke.MethodHandles$Lookup$ClassOption");
+      final Object emptyOptionArray = Array.newInstance(classOption, 0);
+      final MethodType methodType = MethodType.methodType(MethodHandles.Lookup.class,
+        byte[].class, boolean.class, emptyOptionArray.getClass());
+      final MethodHandle methodHandle = MethodHandles.publicLookup().findVirtual(
+        MethodHandles.Lookup.class, "defineHiddenClass", methodType);
+      return MethodHandles.insertArguments(methodHandle, 3, emptyOptionArray);
+    } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException e) {
       return null;
     }
   }
