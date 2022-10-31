@@ -341,21 +341,17 @@ public final class InternalLambdaFactory {
       final Class<?> theClass;
       // Define the class within the provided lookup
       if (defineHiddenClass != null) {
-        try {
-          theClassLookup = (MethodHandles.Lookup) defineHiddenClass
-            .invokeExact(defineLookup, bytes, true);
-          theClass = theClassLookup.lookupClass();
-        } catch (Throwable e) {
-          throw new RuntimeException(e);
-        }
+        theClassLookup = doUnchecked(() -> (MethodHandles.Lookup) defineHiddenClass
+          .invokeExact(defineLookup, bytes, true));
+        theClass = theClassLookup.lookupClass();
       } else {
         theClass = doUnchecked(() ->
-          MethodHandlesExtensions.defineClass(defineLookup, cw.toByteArray()));
-        theClassLookup = defineLookup;
+          MethodHandlesExtensions.defineClass(defineLookup, bytes));
+        theClassLookup = defineLookup.in(theClass);
       }
 
       // Instantiate the function object
-      return doUnchecked(() -> (T) theClassLookup.in(theClass)
+      return doUnchecked(() -> (T) theClassLookup
         .findConstructor(theClass, MethodType.methodType(void.class)).invoke());
     } finally {
       // Cleanup
