@@ -5,7 +5,7 @@ plugins {
   signing
   `maven-publish`
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-  kotlin("jvm") version "1.6.0"
+  kotlin("jvm") version "1.6.20"
   id("me.champeau.jmh") version "0.6.6"
   id("org.cadixdev.licenser") version "0.6.1"
   id("com.adarshr.test-logger") version "3.2.0"
@@ -28,6 +28,7 @@ dependencies {
   testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.9.0")
   testImplementation(kotlin("stdlib-jdk8"))
   testImplementation(kotlin("reflect"))
+  testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.6.4")
   testImplementation(group = "com.google.guava", name = "guava", version = guavaVersion)
 }
 

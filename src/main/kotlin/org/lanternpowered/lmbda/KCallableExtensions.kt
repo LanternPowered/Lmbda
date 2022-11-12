@@ -15,6 +15,8 @@ package org.lanternpowered.lmbda
 import org.lanternpowered.lmbda.mh.privateLookupIn
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
+import java.lang.reflect.Member
+import java.lang.reflect.Modifier
 import kotlin.reflect.KCallable
 import kotlin.reflect.KFunction
 import kotlin.reflect.KMutableProperty
@@ -62,7 +64,8 @@ internal fun <T : Any> KCallable<*>.createLambdaWithLookup(
     try {
       // not enough access, try again with a private lookup in the declaring class,
       // if we have enough access to create a private lookup
-      methodHandle = toMethodHandle(lookup.privateLookupIn(toDeclaringClass()))
+      val privateLookup = lookup.privateLookupIn(toDeclaringClass())
+      methodHandle = toMethodHandle(privateLookup)
     } catch (_: IllegalAccessException) {
     }
   }
@@ -109,7 +112,9 @@ private fun KProperty<*>.toGetterDeclaringClass(): Class<*>? {
   return null
 }
 
-private fun KCallable<*>.toMethodHandle(lookup: MethodHandles.Lookup): MethodHandle {
+private fun KCallable<*>.toMethodHandle(
+  lookup: MethodHandles.Lookup
+): MethodHandle {
   if (this is KProperty.Getter<*>) {
     val methodHandle = property.toGetterMethodHandle(lookup)
     if (methodHandle != null)
@@ -119,13 +124,16 @@ private fun KCallable<*>.toMethodHandle(lookup: MethodHandles.Lookup): MethodHan
     val javaSetter = property.javaSetter
     if (javaSetter != null)
       return lookup.unreflect(javaSetter)
+        .bindObjectIfNeeded(javaSetter)
     val javaField = property.javaField
     if (javaField != null)
       return lookup.unreflectSetter(javaField)
+        .bindObjectIfNeeded(javaField)
   } else if (this is KFunction<*>) {
     val javaMethod = javaMethod
     if (javaMethod != null)
       return lookup.unreflect(javaMethod)
+        .bindObjectIfNeeded(javaMethod)
     val javaConstructor = javaConstructor
     if (javaConstructor != null)
       return lookup.unreflectConstructor(javaConstructor)
@@ -141,8 +149,20 @@ private fun KProperty<*>.toGetterMethodHandle(lookup: MethodHandles.Lookup): Met
   val javaGetter = javaGetter
   if (javaGetter != null)
     return lookup.unreflect(javaGetter)
+      .bindObjectIfNeeded(javaGetter)
   val javaField = javaField
   if (javaField != null)
     return lookup.unreflectGetter(javaField)
+      .bindObjectIfNeeded(javaField)
   return null
+}
+
+private fun MethodHandle.bindObjectIfNeeded(member: Member): MethodHandle {
+  var methodHandle = this
+  if (!Modifier.isStatic(member.modifiers)) {
+    val objectInstance = member.declaringClass.kotlin.objectInstance
+    if (objectInstance != null)
+      methodHandle = methodHandle.bindTo(objectInstance)
+  }
+  return methodHandle
 }

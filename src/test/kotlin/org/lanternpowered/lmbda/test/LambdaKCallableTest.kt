@@ -9,7 +9,10 @@
  */
 package org.lanternpowered.lmbda.test
 
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.condition.DisabledOnJre
@@ -89,6 +92,37 @@ class LambdaKFunctionTest {
     assertThrows<IllegalAccessException> {
       kProperty.createLambda<TestObject.() -> Int>(MethodHandles.publicLookup())
     }
+  }
+
+  @BeforeEach fun resetSingleton() {
+    TestSingleton.data = 100
+  }
+
+  @Test fun testSingletonFunction() {
+    val kFunction = TestSingleton::increase
+    kFunction.call()
+    assertEquals(101, TestSingleton.data)
+    val increase = kFunction.createLambda<() -> Unit>()
+    assertNotNull(increase())
+    assertEquals(102, TestSingleton.data)
+  }
+
+  @Test fun testSingletonSetter() {
+    val kProperty = TestSingleton::data
+    val set = kProperty.setter.createLambda<(Int) -> Unit>()
+    assertNotNull(set(200))
+    assertEquals(200, TestSingleton.data)
+  }
+
+  @Test fun testSingletonSuspend() = runBlocking {
+    val kFunction = TestSingleton::increase
+    val increase = kFunction.createLambda<suspend () -> Unit>()
+    assertNotNull(increase())
+    assertEquals(101, TestSingleton.data)
+    val kSuspendFunction = TestSingleton::increaseSuspend
+    val increaseSuspend = kSuspendFunction.createLambda<suspend () -> Unit>()
+    assertNotNull(increaseSuspend())
+    assertEquals(102, TestSingleton.data)
   }
 }
 

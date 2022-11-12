@@ -261,7 +261,13 @@ public final class InternalLambdaFactory {
     // with asm.
     // This will also throw an exception if the functional interface cannot be implemented by the
     // given method handle
-    final MethodHandle convertedMethodHandle = methodHandle.asType(lambdaType.methodType);
+    MethodType methodType = lambdaType.methodType;
+    // drop parameters at the end if we have too many
+    if (methodType.parameterCount() > methodHandle.type().parameterCount()) {
+      methodType = methodType.dropParameterTypes(methodHandle.type().parameterCount(),
+        methodType.parameterCount());
+    }
+    final MethodHandle convertedMethodHandle = methodHandle.asType(methodType);
 
     final Method method = lambdaType.method;
     final ClassWriter cw = new ClassWriter(0);
@@ -319,14 +325,17 @@ public final class InternalLambdaFactory {
     mv.visitFieldInsn(GETSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME,
       "Ljava/lang/invoke/MethodHandle;");
     final Class<?>[] parameters = method.getParameterTypes();
-    for (int i = 0; i < parameters.length; i++) {
+    for (int i = 0; i < methodType.parameterCount(); i++) {
       mv.visitVarInsn(Type.getType(parameters[i]).getOpcode(ILOAD), 1 + i);
     }
+    final Type[] methodHandleParameterTypes =
+      methodType.parameterList().stream().map(Type::getType).toArray(Type[]::new);
+    final String methodHandleDescriptor = Type.getMethodDescriptor(
+      Type.getType(methodType.returnType()), methodHandleParameterTypes);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle",
-      "invokeExact", descriptor, false);
+      "invokeExact", methodHandleDescriptor, false);
     mv.visitInsn(Type.getType(method.getReturnType()).getOpcode(IRETURN));
-    final int maxs = parameters.length + 1;
-    mv.visitMaxs(maxs, maxs);
+    mv.visitMaxs(methodType.parameterCount() + 1, parameters.length + 1);
     mv.visitEnd();
 
     cw.visitEnd();
