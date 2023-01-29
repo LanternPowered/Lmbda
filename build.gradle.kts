@@ -5,7 +5,7 @@ plugins {
   signing
   `maven-publish`
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-  kotlin("jvm") version "1.6.20"
+  kotlin("jvm") version "1.8.0"
   id("me.champeau.jmh") version "0.6.6"
   id("org.cadixdev.licenser") version "0.6.1"
   id("com.adarshr.test-logger") version "3.2.0"
