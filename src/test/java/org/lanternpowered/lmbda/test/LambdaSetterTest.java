@@ -19,24 +19,40 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.function.BiFunction;
 import java.util.function.ObjIntConsumer;
+import java.util.function.ObjLongConsumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class LambdaSetterTest {
 
   @Test
-  void testField() throws Exception {
+  void testFieldInt() throws Exception {
     final MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle = lookup.findSetter(TestObject.class, "data", int.class);
+    final MethodHandle methodHandle = lookup.findSetter(TestObject.class, "dataInt", int.class);
 
     final ObjIntConsumer<TestObject> setter = LambdaFactory.create(
       new LambdaType<ObjIntConsumer<TestObject>>() {}, methodHandle);
 
     final TestObject object = new TestObject();
-    assertEquals(100, object.getData());
+    assertEquals(100, object.getDataInt());
     setter.accept(object, 10000);
-    assertEquals(10000, object.getData());
+    assertEquals(10000, object.getDataInt());
+  }
+
+  @Test
+  void testFieldLong() throws Exception {
+    final MethodHandles.Lookup lookup =
+      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+    final MethodHandle methodHandle = lookup.findSetter(TestObject.class, "dataLong", long.class);
+
+    final ObjLongConsumer<TestObject> setter = LambdaFactory.create(
+      new LambdaType<ObjLongConsumer<TestObject>>() {}, methodHandle);
+
+    final TestObject object = new TestObject();
+    assertEquals(100, object.getDataLong());
+    setter.accept(object, 10000);
+    assertEquals(10000, object.getDataLong());
   }
 
   @Test
@@ -44,26 +60,35 @@ class LambdaSetterTest {
     final MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
     final MethodHandle methodHandle = lookup.findVirtual(
-      TestObject.class, "setData", MethodType.methodType(void.class, int.class));
+      TestObject.class, "setDataInt", MethodType.methodType(void.class, int.class));
 
     final BiFunction<Object, Object, Object> setter = LambdaFactory.createBiFunction(methodHandle);
 
     final TestObject object = new TestObject();
-    assertEquals(100, object.getData());
+    assertEquals(100, object.getDataInt());
     setter.apply(object, 10000);
-    assertEquals(10000, object.getData());
+    assertEquals(10000, object.getDataInt());
   }
 
   public static class TestObject {
 
-    private int data = 100;
+    private int dataInt = 100;
+    private long dataLong = 100;
 
-    int getData() {
-      return this.data;
+    int getDataInt() {
+      return this.dataInt;
     }
 
-    void setData(int data) {
-      this.data = data;
+    void setDataInt(int dataInt) {
+      this.dataInt = dataInt;
+    }
+
+    long getDataLong() {
+      return this.dataLong;
+    }
+
+    void setDataLong(long dataLong) {
+      this.dataLong = dataLong;
     }
   }
 }
