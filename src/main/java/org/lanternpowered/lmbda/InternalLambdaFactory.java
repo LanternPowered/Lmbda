@@ -270,7 +270,7 @@ public final class InternalLambdaFactory {
     final MethodHandle convertedMethodHandle = methodHandle.asType(methodType);
 
     final Method method = lambdaType.method;
-    final ClassWriter cw = new ClassWriter(0);
+    final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
     final String packageName = InternalUtilities.getPackageName(defineLookup.lookupClass());
 
@@ -302,7 +302,7 @@ public final class InternalLambdaFactory {
     mv.visitVarInsn(ALOAD, 0);
     mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(superclass), "<init>", "()V", false);
     mv.visitInsn(RETURN);
-    mv.visitMaxs(1, 1);
+    mv.visitMaxs(0, 0);
     mv.visitEnd();
 
     // Add the method handle field
@@ -313,7 +313,7 @@ public final class InternalLambdaFactory {
     mv.visitFieldInsn(PUTSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME,
       "Ljava/lang/invoke/MethodHandle;");
     mv.visitInsn(RETURN);
-    mv.visitMaxs(1, 0);
+    mv.visitMaxs(0, 0);
     mv.visitEnd();
 
     // Write the function method
@@ -335,7 +335,7 @@ public final class InternalLambdaFactory {
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle",
       "invokeExact", methodHandleDescriptor, false);
     mv.visitInsn(Type.getType(method.getReturnType()).getOpcode(IRETURN));
-    mv.visitMaxs(methodType.parameterCount() + 1, parameters.length + 1);
+    mv.visitMaxs(0, 0);
     mv.visitEnd();
 
     cw.visitEnd();
