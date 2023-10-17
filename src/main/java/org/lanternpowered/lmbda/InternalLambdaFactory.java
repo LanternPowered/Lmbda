@@ -270,7 +270,7 @@ public final class InternalLambdaFactory {
     final MethodHandle convertedMethodHandle = methodHandle.asType(methodType);
 
     final Method method = lambdaType.method;
-    final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+    final ClassWriter cw = new ClassWriter(0);
 
     final String packageName = InternalUtilities.getPackageName(defineLookup.lookupClass());
 
@@ -302,7 +302,7 @@ public final class InternalLambdaFactory {
     mv.visitVarInsn(ALOAD, 0);
     mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(superclass), "<init>", "()V", false);
     mv.visitInsn(RETURN);
-    mv.visitMaxs(0, 0);
+    mv.visitMaxs(1, 1);
     mv.visitEnd();
 
     // Add the method handle field
@@ -313,7 +313,7 @@ public final class InternalLambdaFactory {
     mv.visitFieldInsn(PUTSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME,
       "Ljava/lang/invoke/MethodHandle;");
     mv.visitInsn(RETURN);
-    mv.visitMaxs(0, 0);
+    mv.visitMaxs(1, 0);
     mv.visitEnd();
 
     // Write the function method
@@ -325,8 +325,15 @@ public final class InternalLambdaFactory {
     mv.visitFieldInsn(GETSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME,
       "Ljava/lang/invoke/MethodHandle;");
     final Class<?>[] parameters = method.getParameterTypes();
+    int maxStack = 1;
     for (int i = 0; i < methodType.parameterCount(); i++) {
-      mv.visitVarInsn(Type.getType(parameters[i]).getOpcode(ILOAD), 1 + i);
+      final Type type = Type.getType(parameters[i]);
+      mv.visitVarInsn(type.getOpcode(ILOAD), maxStack);
+      maxStack += type.getSize();
+    }
+    int maxLocals = maxStack;
+    for (int i = methodType.parameterCount(); i < parameters.length; i++) {
+      maxLocals += Type.getType(parameters[i]).getSize();
     }
     final Type[] methodHandleParameterTypes =
       methodType.parameterList().stream().map(Type::getType).toArray(Type[]::new);
@@ -335,7 +342,7 @@ public final class InternalLambdaFactory {
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle",
       "invokeExact", methodHandleDescriptor, false);
     mv.visitInsn(Type.getType(method.getReturnType()).getOpcode(IRETURN));
-    mv.visitMaxs(0, 0);
+    mv.visitMaxs(maxStack, maxLocals);
     mv.visitEnd();
 
     cw.visitEnd();

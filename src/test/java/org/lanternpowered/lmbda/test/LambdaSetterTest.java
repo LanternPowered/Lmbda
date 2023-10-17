@@ -18,6 +18,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.function.BiFunction;
+import java.util.function.LongBinaryOperator;
 import java.util.function.ObjIntConsumer;
 import java.util.function.ObjLongConsumer;
 
@@ -70,6 +71,25 @@ class LambdaSetterTest {
     assertEquals(10000, object.getDataInt());
   }
 
+  @Test
+  void testLongBinaryOperator() throws Exception {
+    final MethodHandles.Lookup lookup =
+      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+
+    final TestObject object = new TestObject();
+
+    MethodHandle methodHandle = lookup.findVirtual(
+      TestObject.class, "sumAndSetDataLong",
+      MethodType.methodType(long.class, long.class, long.class));
+    methodHandle = MethodHandles.insertArguments(methodHandle, 0, object);
+
+    final LongBinaryOperator operator = LambdaFactory.createLongBinaryOperator(methodHandle);
+
+    assertEquals(100, object.getDataLong());
+    assertEquals(225, operator.applyAsLong(25, 200));
+    assertEquals(225, object.getDataLong());
+  }
+
   public static class TestObject {
 
     private int dataInt = 100;
@@ -89,6 +109,11 @@ class LambdaSetterTest {
 
     void setDataLong(long dataLong) {
       this.dataLong = dataLong;
+    }
+
+    long sumAndSetDataLong(long a, long b) {
+      this.dataLong = a + b;
+      return this.dataLong;
     }
   }
 }
