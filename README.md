@@ -15,7 +15,8 @@ access modifier without any performance loss. This includes methods, constructor
 
 ## How to use
 
-Every available `MethodHandle` can be implemented by a functional interface. But only if the two method signatures match. Object types will be auto casted to the target type if possible, the same goes for boxing/unboxing of primitive types.
+Every available `MethodHandle` can be implemented by a functional interface. But only if the two method signatures match. Object types will be auto
+casted to the target type if possible, the same goes for boxing/unboxing of primitive types.
 
 Non-static methods will always take an extra parameter which represents the target object of the method. This is always the first parameter.
 
@@ -66,8 +67,7 @@ a interface which takes two parameters:
 2. The value that will be passed to the `set` method.
 
 the first one is the target where the method is declared, `MyObject` (`value`) and return `void` to reflect
-the method signature. The `ObjIntConsumer` is a good choice available within the
-Java 8 API.
+the method signature. The `ObjIntConsumer` is a good choice available within the Java 8 API.
 
 ```java
 final MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(MyObject.class, MethodHandles.lookup());

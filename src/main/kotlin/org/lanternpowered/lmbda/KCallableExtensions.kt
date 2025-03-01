@@ -7,7 +7,7 @@
  * This work is licensed under the terms of the MIT License (MIT). For
  * a copy, see 'LICENSE.txt' or <https://opensource.org/licenses/MIT>.
  */
-@file:JvmName(" KCallableExtensions")
+@file:JvmName("\$KCallableExtensions")
 @file:Suppress("NOTHING_TO_INLINE")
 
 package org.lanternpowered.lmbda

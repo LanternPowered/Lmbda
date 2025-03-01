@@ -11,7 +11,6 @@ package org.lanternpowered.lmbda.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.google.common.reflect.TypeToken;
 import org.junit.jupiter.api.Test;
 import org.lanternpowered.lmbda.LambdaFactory;
 import org.lanternpowered.lmbda.LambdaType;
@@ -47,10 +46,6 @@ class LambdaGetterTest {
 
     final ToIntFunction<TestObject> getter = LambdaFactory.create(
       new LambdaType<ToIntFunction<TestObject>>() {}, methodHandle);
-
-    final TypeToken<?> paramType = TypeToken.of(getter.getClass())
-      .resolveType(ToIntFunction.class.getTypeParameters()[0]);
-    assertEquals(paramType.getRawType(), TestObject.class);
   }
 
   public static class TestObject {

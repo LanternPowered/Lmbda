@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   java
   idea
@@ -5,10 +7,10 @@ plugins {
   signing
   `maven-publish`
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-  kotlin("jvm") version "1.6.20"
-  id("me.champeau.jmh") version "0.6.6"
-  id("org.cadixdev.licenser") version "0.6.1"
-  id("com.adarshr.test-logger") version "3.2.0"
+  kotlin("jvm") version libs.versions.kotlin.core
+  id("me.champeau.jmh") version libs.versions.jmh
+  id("org.cadixdev.licenser") version libs.versions.licenser
+  id("com.adarshr.test-logger") version libs.versions.testlogger
 }
 
 group = "org.lanternpowered"
@@ -19,25 +21,29 @@ repositories {
 }
 
 dependencies {
-  val guavaVersion = "31.0.1-jre"
-  implementation(group = "org.ow2.asm", name = "asm", version = "9.4")
-  implementation(group = "org.checkerframework", name = "checker-qual" , version = "3.25.0")
+  implementation(libs.asm)
+  implementation(libs.checkerqual)
   compileOnly(kotlin("stdlib-jdk8"))
   compileOnly(kotlin("reflect"))
-  compileOnly(group = "com.google.guava", name = "guava", version = guavaVersion)
-  testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.9.0")
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.junit.jupiter)
   testImplementation(kotlin("stdlib-jdk8"))
   testImplementation(kotlin("reflect"))
-  testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.6.4")
-  testImplementation(group = "com.google.guava", name = "guava", version = guavaVersion)
+  testImplementation(libs.kotlin.coroutines)
 }
 
 defaultTasks("licenseFormat", "build")
 
 java {
-  base.archivesName.set(project.name.toLowerCase())
+  base.archivesName.set(project.name.lowercase())
   sourceCompatibility = JavaVersion.VERSION_1_8
   targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+kotlin {
+  target {
+    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
+  }
 }
 
 jmh {
@@ -45,12 +51,12 @@ jmh {
 }
 
 tasks {
-  val javadocJar = create<Jar>("javadocJar") {
+  val javadocJar = register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
     from(javadoc)
   }
 
-  val sourceJar = create<Jar>("sourceJar") {
+  val sourceJar = register<Jar>("sourceJar") {
     archiveClassifier.set("sources")
     from(sourceSets.main.get().allSource)
     exclude("**/*.class") // For module-info.class
@@ -65,7 +71,7 @@ tasks {
     dependsOn(javadocJar)
   }
 
-  val jars = listOf(jar.get(), sourceJar, javadocJar)
+  val jars = listOf(jar.get(), sourceJar.get(), javadocJar.get())
   jars.forEach { jar ->
     jar.from(project.file("LICENSE.txt"))
   }
@@ -99,7 +105,7 @@ publishing {
   publications {
     create<MavenPublication>("maven") {
       groupId = project.group.toString()
-      artifactId = project.name.toLowerCase()
+      artifactId = project.name.lowercase()
       version = project.version.toString()
 
       from(components["java"])

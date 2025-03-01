@@ -11,8 +11,10 @@ module org.lanternpowered.lmbda {
   exports org.lanternpowered.lmbda;
   exports org.lanternpowered.lmbda.mh;
 
-  requires org.objectweb.asm; // Depends on the asm library
+  requires org.objectweb.asm;
+  requires org.checkerframework.checker.qual;
 
-  requires static kotlin.stdlib; // Optional dependency for kotlin
-  requires static com.google.common; // Optional dependency for guava
+  // Optional dependency for kotlin
+  requires static kotlin.stdlib;
+  requires static kotlin.reflect;
 }

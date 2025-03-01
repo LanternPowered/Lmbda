@@ -9,14 +9,12 @@
  */
 package org.lanternpowered.lmbda.test;
 
-import com.google.common.reflect.TypeToken;
 import org.junit.jupiter.api.Test;
 import org.lanternpowered.lmbda.LambdaType;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SuppressWarnings("UnstableApiUsage")
 class AbstractLambdaFunctionTest {
 
   @Test
@@ -89,12 +87,9 @@ class AbstractLambdaFunctionTest {
 
   @Test
   void testGenericMethodFunction() throws Exception {
-    final LambdaType<GenericFunction<Double>> testFunction =
-      new LambdaType<GenericFunction<Double>>() {};
+    final LambdaType<GenericFunction<Double>> testFunction = new LambdaType<GenericFunction<Double>>() {};
 
     assertEquals(testFunction.getFunctionClass(), GenericFunction.class);
-    assertEquals(testFunction.getFunctionType(),
-      new TypeToken<GenericFunction<Double>>() {}.getType());
     assertEquals(testFunction.getMethod(),
       GenericFunction.class.getDeclaredMethod("set", TestObject.class, Object.class));
   }

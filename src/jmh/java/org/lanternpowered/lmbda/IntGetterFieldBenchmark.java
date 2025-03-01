@@ -45,7 +45,6 @@ public class IntGetterFieldBenchmark {
   @SuppressWarnings("FieldMayBeFinal")
   private int value = 32;
 
-
   private static final MethodHandle mhConst;
   @SuppressWarnings("FieldMayBeFinal")
   private static MethodHandle mhDyn;
