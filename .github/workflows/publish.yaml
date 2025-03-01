@@ -20,7 +20,7 @@ jobs:
           distribution: adopt
           java-version: ${{ matrix.java-version }}
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@859c33240bd026ce8d5f711f5adcc65c2f8eafc1
+        uses: gradle/wrapper-validation-action@f9c9c575b8b21b6485636a91ffecd10e558c62f6
       - name: Build
         run: chmod +x ./gradlew && ./gradlew build --stacktrace
   publish:
@@ -35,7 +35,7 @@ jobs:
           distribution: adopt
           java-version: 8
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@859c33240bd026ce8d5f711f5adcc65c2f8eafc1
+        uses: gradle/wrapper-validation-action@f9c9c575b8b21b6485636a91ffecd10e558c62f6
       - name: Publish
         run: chmod +x ./gradlew && ./gradlew publishToSonatype
         env:
