@@ -39,6 +39,9 @@ import org.objectweb.asm.Type;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -47,9 +50,8 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Separated from {@link LambdaFactory} to keep it clean.
@@ -67,8 +69,28 @@ final class InternalLambdaFactory {
   private static final AtomicInteger lambdaCounter = new AtomicInteger();
 
   private static final AtomicInteger holderCounter = new AtomicInteger();
-  private static final Map<Class<?>, Holder> holders = new WeakHashMap<>();
-  private static final ReentrantLock holdersLock = new ReentrantLock();
+  private static final Map<HolderKey, Holder> holders = new ConcurrentHashMap<>();
+  private static final ReferenceQueue<Class<?>> holdersRefQueue = new ReferenceQueue<>();
+
+  private static final class HolderKey extends WeakReference<Class<?>> {
+
+    private final int hash;
+
+    HolderKey(Class<?> referent) {
+      super(referent, holdersRefQueue);
+      this.hash = referent.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return this == obj || obj instanceof HolderKey && ((HolderKey) obj).get() == get();
+    }
+
+    @Override
+    public int hashCode() {
+      return hash;
+    }
+  }
 
   private static final class Holder {
     final Class<?> theClass;
@@ -283,8 +305,7 @@ final class InternalLambdaFactory {
       new String[] { Type.getInternalName(lambdaType.functionClass) };
 
     String internalClassName = generateInternalClassName(defineLookup, lambdaCounter, "Lmbda");
-
-    Holder holder = createHolder(defineLookup);
+    Holder holder = getHolder(defineLookup);
 
     cw.visit(V1_8, ACC_SUPER, internalClassName, genericDescriptor,
       Type.getInternalName(superclass), interfaces);
@@ -372,19 +393,19 @@ final class InternalLambdaFactory {
     }
   }
 
+  private static Holder getHolder(MethodHandles.Lookup defineLookup) {
+    // Purge expired refs
+    Reference<? extends Class<?>> reference;
+    while ((reference = holdersRefQueue.poll()) != null) {
+      holders.remove((HolderKey) reference);
+    }
+    // Get or create new holder
+    HolderKey holderKey = new HolderKey(defineLookup.lookupClass());
+    return holders.computeIfAbsent(holderKey, k -> createHolder(defineLookup));
+  }
+
   @SuppressWarnings("unchecked")
   private static Holder createHolder(MethodHandles.Lookup defineLookup) {
-    Holder holder;
-    holdersLock.lock();
-    try {
-      holder = holders.get(defineLookup.lookupClass());
-    } finally {
-      holdersLock.unlock();
-    }
-    if (holder != null) {
-      return holder;
-    }
-
     String internalClassName = generateInternalClassName(defineLookup, holderCounter, "Lmbda$MH");
 
     ClassWriter cw = new ClassWriter(0);
@@ -410,7 +431,7 @@ final class InternalLambdaFactory {
     cw.visitEnd();
 
     byte[] bytes = cw.toByteArray();
-    holder = doUnchecked(() -> {
+    return doUnchecked(() -> {
       Class<?> holderClass = MethodHandlesExtensions.defineClass(defineLookup, bytes);
       ThreadLocal<MethodHandle> threadLocal;
       try {
@@ -422,14 +443,6 @@ final class InternalLambdaFactory {
       }
       return new Holder(holderClass, internalClassName, threadLocal);
     });
-
-    holdersLock.lock();
-    try {
-      holders.put(defineLookup.lookupClass(), holder);
-    } finally {
-      holdersLock.unlock();
-    }
-    return holder;
   }
 
   private static String generateInternalClassName(MethodHandles.Lookup lookup, AtomicInteger counter, String type) {
