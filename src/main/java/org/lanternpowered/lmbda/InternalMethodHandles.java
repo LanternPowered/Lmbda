@@ -105,6 +105,7 @@ final class InternalMethodHandles {
    *
    * @return The method handle
    */
+  @SuppressWarnings("JavaLangInvokeHandleSignature")
   static @Nullable MethodHandle findDefineHiddenClassMethodHandle() {
     try {
       Class<?> classOption = Class.forName(
@@ -125,17 +126,15 @@ final class InternalMethodHandles {
    */
   private static final class Java9Adapter implements Adapter {
 
-    private static final MethodHandle privateLookupMethodHandle =
-      requireNonNull(findPrivateLookupMethodHandle());
-
-    private static final MethodHandle defineClassMethodHandle =
-      getDefineClassMethodHandle();
+    private static final MethodHandle privateLookupMethodHandle = requireNonNull(findPrivateLookupMethodHandle());
+    private static final MethodHandle defineClassMethodHandle = getDefineClassMethodHandle();
 
     /**
      * Gets the {@code defineClass} method. Which is available since Java 9.
      *
      * @return The method handle of the define class method
      */
+    @SuppressWarnings("JavaLangInvokeHandleSignature")
     private static MethodHandle getDefineClassMethodHandle() {
       return doUnchecked(() -> MethodHandles.publicLookup().findVirtual(MethodHandles.Lookup.class,
         "defineClass", MethodType.methodType(Class.class, byte[].class)));

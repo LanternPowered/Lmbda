@@ -73,3 +73,4 @@ nb-configuration.xml
 # Other Files #
 ###############
 gradle.properties
+/.kotlin

@@ -39,8 +39,8 @@ final class ResolvedLambdaType<T> {
   final MethodType methodType;
 
   ResolvedLambdaType(final Type type) {
-    final Class<T> functionClass;
-    final ParameterizedType genericFunctionType;
+    Class<T> functionClass;
+    ParameterizedType genericFunctionType;
     if (type instanceof Class<?>) {
       genericFunctionType = null;
       functionClass = (Class<T>) type;
@@ -48,12 +48,10 @@ final class ResolvedLambdaType<T> {
       genericFunctionType = (ParameterizedType) type;
       functionClass = (Class<T>) genericFunctionType.getRawType();
     } else {
-      throw new IllegalStateException("A " + InternalUtilities.getTypeClassName(type) +
-        " can't be a LambdaType.");
+      throw new IllegalStateException("A " + InternalUtilities.getTypeClassName(type) + " can't be a LambdaType.");
     }
     this.method = validateClassAndFindMethod(functionClass);
-    this.methodType = MethodType.methodType(
-      this.method.getReturnType(), this.method.getParameterTypes());
+    this.methodType = MethodType.methodType(this.method.getReturnType(), this.method.getParameterTypes());
     this.functionClass = functionClass;
     this.genericFunctionType = genericFunctionType;
   }
@@ -66,9 +64,6 @@ final class ResolvedLambdaType<T> {
    * @return The function method
    */
   private static Method validateClassAndFindMethod(final Class<?> functionClass) {
-    if (Modifier.isPrivate(functionClass.getModifiers())) {
-      throw new IllegalStateException("A function class may not be private.");
-    }
     if (functionClass.isInterface()) {
       return findInterfaceMethod(functionClass);
     } else if (Modifier.isAbstract(functionClass.getModifiers())) {
@@ -89,9 +84,9 @@ final class ResolvedLambdaType<T> {
    */
   private static void validateConstructors(final Class<?> functionClass) {
     // For an abstract class is at least a package private constructor required
-    final Constructor<?>[] constructors = functionClass.getDeclaredConstructors();
+    Constructor<?>[] constructors = functionClass.getDeclaredConstructors();
     boolean found = false;
-    for (final Constructor<?> constructor : constructors) {
+    for (Constructor<?> constructor : constructors) {
       // No arguments for this constructor
       if (constructor.getParameterCount() == 0) {
         if (Modifier.isPrivate(constructor.getModifiers())) {
@@ -115,10 +110,10 @@ final class ResolvedLambdaType<T> {
    * @return The function method
    */
   private static Method findAbstractClassMethod(final Class<?> functionClass) {
-    final Map<String, Method> foundMethods = new HashMap<>();
+    Map<String, Method> foundMethods = new HashMap<>();
     findClassMethods(functionClass, foundMethods);
 
-    final List<Method> methods = foundMethods.values().stream()
+    List<Method> methods = foundMethods.values().stream()
       .filter(method -> !Modifier.isStatic(method.getModifiers()) && Modifier.isAbstract(method.getModifiers()))
       .collect(Collectors.toList());
 
@@ -150,17 +145,14 @@ final class ResolvedLambdaType<T> {
    * @param functionClass The function class
    * @param methods       The method map
    */
-  private static void findClassMethods(
-    final Class<?> functionClass,
-    final Map<String, Method> methods
-  ) {
-    for (final Method method : functionClass.getDeclaredMethods()) {
+  private static void findClassMethods(Class<?> functionClass, Map<String, Method> methods) {
+    for (Method method : functionClass.getDeclaredMethods()) {
       methods.putIfAbsent(toKey(method), method);
     }
-    for (final Class<?> interf : functionClass.getInterfaces()) {
+    for (Class<?> interf : functionClass.getInterfaces()) {
       findClassMethods(interf, methods);
     }
-    final Class<?> superclass = functionClass.getSuperclass();
+    Class<?> superclass = functionClass.getSuperclass();
     if (superclass != null && superclass != Object.class) {
       findClassMethods(superclass, methods);
     }
@@ -210,8 +202,8 @@ final class ResolvedLambdaType<T> {
    */
   Method getMethodCopy() {
     // Find the same method object in the declaring class
-    final Class<?>[] parameters = this.method.getParameterTypes();
-    for (final Method method : this.method.getDeclaringClass().getDeclaredMethods()) {
+    Class<?>[] parameters = this.method.getParameterTypes();
+    for (Method method : this.method.getDeclaringClass().getDeclaredMethods()) {
       if (method.getName().equals(this.method.getName()) &&
         method.getReturnType().equals(this.method.getReturnType()) &&
         method.getParameterCount() == parameters.length &&
@@ -233,7 +225,7 @@ final class ResolvedLambdaType<T> {
     if (!(obj instanceof ResolvedLambdaType)) {
       return false;
     }
-    final ResolvedLambdaType<?> that = (ResolvedLambdaType<?>) obj;
+    ResolvedLambdaType<?> that = (ResolvedLambdaType<?>) obj;
     return that.method.equals(this.method) && that.functionClass == this.functionClass &&
       Objects.equals(this.genericFunctionType, that.genericFunctionType);
   }
