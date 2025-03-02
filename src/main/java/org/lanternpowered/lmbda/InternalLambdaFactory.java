@@ -18,17 +18,18 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
-import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -46,53 +47,47 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Separated from {@link LambdaFactory} to keep it clean.
  */
-public final class InternalLambdaFactory {
-
-  /**
-   * Requests a {@link MethodHandle} for the construction of a lambda implementation.
-   *
-   * <p>Calling this method outside of construction phase will result in an
-   * {@link IllegalStateException}.</p>
-   *
-   * @return The method handle
-   * @deprecated Should not be used directly, internal use only
-   */
-  @Deprecated
-  public static @NonNull MethodHandle requestMethodHandle() {
-    final MethodHandle methodHandle = currentMethodHandle.get();
-    if (methodHandle != null) {
-      return methodHandle;
-    }
-    throw new IllegalStateException("Illegal method handle request.");
-  }
+final class InternalLambdaFactory {
 
   /**
    * The internal lookup that has access to this library package.
    */
-  private static final MethodHandles.@NonNull Lookup internalLookup = MethodHandles.lookup();
-
-  /**
-   * A thread local which temporarily holds the {@link MethodHandle}
-   * that will be injected into the generated class.
-   */
-  private static final @NonNull ThreadLocal<MethodHandle> currentMethodHandle = new ThreadLocal<>();
+  private static final MethodHandles.Lookup internalLookup = MethodHandles.lookup();
 
   /**
    * A counter to make sure that lambda names don't conflict.
    */
-  private static final @NonNull AtomicInteger lambdaCounter = new AtomicInteger();
+  private static final AtomicInteger lambdaCounter = new AtomicInteger();
+
+  private static final AtomicInteger holderCounter = new AtomicInteger();
+  private static final Map<Class<?>, Holder> holders = new WeakHashMap<>();
+  private static final ReentrantLock holdersLock = new ReentrantLock();
+
+  private static final class Holder {
+    final Class<?> theClass;
+    final String internalClassName;
+    final ThreadLocal<MethodHandle> currentMethodHandle;
+
+    Holder(Class<?> theClass, String internalClassName, ThreadLocal<MethodHandle> currentMethodHandle) {
+      this.theClass = theClass;
+      this.internalClassName = internalClassName;
+      this.currentMethodHandle = currentMethodHandle;
+    }
+  }
 
   private static final @Nullable MethodHandle defineHiddenClass =
     InternalMethodHandles.findDefineHiddenClassMethodHandle();
 
-  static <@NonNull T> T create(
-    final @NonNull LambdaType<T> lambdaType,
-    final @NonNull MethodHandle methodHandle
+  static <T> T create(
+    LambdaType<T> lambdaType,
+    MethodHandle methodHandle
   ) {
     requireNonNull(lambdaType, "lambdaType");
     requireNonNull(methodHandle, "methodHandle");
@@ -103,11 +98,11 @@ public final class InternalLambdaFactory {
     }
 
     // Check that the lambda type can be defined using the lookup
-    final Class<?> functionClass = lambdaType.resolved.functionClass;
+    Class<?> functionClass = lambdaType.resolved.functionClass;
 
     // Check if the classes are in the same package, this is only a problem if the access isn't
     // public, or the constructor isn't public
-    final boolean samePackage = InternalUtilities.getPackageName(functionClass)
+    boolean samePackage = InternalUtilities.getPackageName(functionClass)
       .equals(InternalUtilities.getPackageName(defineLookup.lookupClass()));
 
     if (!Modifier.isPublic(functionClass.getModifiers()) && !samePackage) {
@@ -117,7 +112,7 @@ public final class InternalLambdaFactory {
         "LambdaType#defineClassesWith(...)"));
     } else if (!functionClass.isInterface()) {
       try {
-        final int modifiers = functionClass.getDeclaredConstructor().getModifiers();
+        int modifiers = functionClass.getDeclaredConstructor().getModifiers();
         if (!(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) && !samePackage) {
           throw throwUnchecked(new IllegalAccessException("The function class constructor isn't " +
             "public and no applicable define lookup is  provided. When the access isn't public, " +
@@ -128,7 +123,7 @@ public final class InternalLambdaFactory {
         // Should never happen, is already checked for at the construction of lambda type
         throw throwUnchecked(e);
       }
-      final int modifiers = lambdaType.resolved.method.getModifiers();
+      int modifiers = lambdaType.resolved.method.getModifiers();
       if (!(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) && !samePackage) {
         throw throwUnchecked(new IllegalAccessException("The function class method isn't public " +
           "or protected and no applicable define lookup is provided. When the access isn't " +
@@ -145,34 +140,23 @@ public final class InternalLambdaFactory {
     }
   }
 
-  private static @NonNull String toGenericDescriptor(
-    final @NonNull Class<?> superClass,
-    final @NonNull ParameterizedType genericType
+  private static String toGenericDescriptor(
+    Class<?> superClass,
+    ParameterizedType genericType
   ) {
-    final Map<String, TypeVariable<?>> typeVariables = new HashMap<>();
+    Map<String, TypeVariable<?>> typeVariables = new HashMap<>();
 
-    final StringBuilder signatureBuilder = new StringBuilder();
+    StringBuilder signatureBuilder = new StringBuilder();
     toGenericSignature(signatureBuilder, genericType, typeVariables);
 
-    final StringBuilder descriptorBuilder = new StringBuilder();
+    StringBuilder descriptorBuilder = new StringBuilder();
 
     if (!typeVariables.isEmpty()) {
       descriptorBuilder.append('<');
-      for (final TypeVariable<?> typeVariable : typeVariables.values()) {
+      for (TypeVariable<?> typeVariable : typeVariables.values()) {
         descriptorBuilder.append(typeVariable.getName());
-        for (final java.lang.reflect.Type bound : typeVariable.getBounds()) {
-          final boolean isFinal;
-          if (bound instanceof Class) {
-            isFinal = Modifier.isFinal(((Class<?>) bound).getModifiers());
-          } else if (bound instanceof GenericArrayType) {
-            throw new IllegalStateException(); // Should never happen
-          } else if (bound instanceof ParameterizedType) {
-            isFinal = Modifier.isFinal(
-              ((Class<?>) ((ParameterizedType) bound).getRawType()).getModifiers());
-          } else {
-            isFinal = false;
-          }
-          if (isFinal) {
+        for (java.lang.reflect.Type bound : typeVariable.getBounds()) {
+          if (isFinal(bound)) {
             descriptorBuilder.append(':');
           }
           descriptorBuilder.append(':');
@@ -188,19 +172,34 @@ public final class InternalLambdaFactory {
     return descriptorBuilder.toString();
   }
 
+  private static boolean isFinal(java.lang.reflect.Type bound) {
+    boolean isFinal;
+    if (bound instanceof Class) {
+      isFinal = Modifier.isFinal(((Class<?>) bound).getModifiers());
+    } else if (bound instanceof GenericArrayType) {
+      throw new IllegalStateException(); // Should never happen
+    } else if (bound instanceof ParameterizedType) {
+      isFinal = Modifier.isFinal(
+        ((Class<?>) ((ParameterizedType) bound).getRawType()).getModifiers());
+    } else {
+      isFinal = false;
+    }
+    return isFinal;
+  }
+
   private static void toGenericSignature(
-    final @NonNull StringBuilder builder,
-    final java.lang.reflect.@NonNull Type type,
-    final @Nullable Map<String, TypeVariable<?>> typeVariables
+    StringBuilder builder,
+    java.lang.reflect.Type type,
+    @Nullable Map<String, TypeVariable<?>> typeVariables
   ) {
     if (type instanceof Class) {
       builder.append(Type.getDescriptor((Class<?>) type));
     } else if (type instanceof GenericArrayType) {
-      final GenericArrayType arrayType = (GenericArrayType) type;
+      GenericArrayType arrayType = (GenericArrayType) type;
       builder.append('[');
       toGenericSignature(builder, arrayType.getGenericComponentType(), typeVariables);
     } else if (type instanceof ParameterizedType) {
-      final ParameterizedType parameterizedType = (ParameterizedType) type;
+      ParameterizedType parameterizedType = (ParameterizedType) type;
       builder.append('L');
       builder.append(Type.getInternalName((Class<?>) parameterizedType.getRawType()));
       builder.append('<');
@@ -209,19 +208,19 @@ public final class InternalLambdaFactory {
       }
       builder.append('>').append(';');
     } else if (type instanceof TypeVariable) {
-      final TypeVariable<?> typeVariable = (TypeVariable<?>) type;
+      TypeVariable<?> typeVariable = (TypeVariable<?>) type;
       builder.append('T').append(typeVariable.getName()).append(';');
       if (typeVariables != null) {
         typeVariables.put(typeVariable.getName(), typeVariable);
       }
     } else if (type instanceof WildcardType) {
-      final WildcardType wildcardType = (WildcardType) type;
+      WildcardType wildcardType = (WildcardType) type;
 
-      final java.lang.reflect.Type[] lowerBounds = wildcardType.getLowerBounds();
-      final java.lang.reflect.Type[] upperBounds = wildcardType.getUpperBounds();
+      java.lang.reflect.Type[] lowerBounds = wildcardType.getLowerBounds();
+      java.lang.reflect.Type[] upperBounds = wildcardType.getUpperBounds();
 
-      final boolean hasLower = lowerBounds != null && lowerBounds.length > 0;
-      final boolean hasUpper = upperBounds != null && upperBounds.length > 0;
+      boolean hasLower = lowerBounds != null && lowerBounds.length > 0;
+      boolean hasUpper = upperBounds != null && upperBounds.length > 0;
 
       if (hasUpper && hasLower &&
         Object.class.equals(lowerBounds[0]) &&
@@ -251,10 +250,10 @@ public final class InternalLambdaFactory {
   private static final String METHOD_HANDLE_FIELD_NAME = "methodHandle";
 
   @SuppressWarnings("unchecked")
-  private static <@NonNull T> T createGeneratedFunction(
-    final @NonNull ResolvedLambdaType<?> lambdaType,
-    final @NonNull MethodHandle methodHandle,
-    final MethodHandles.@NonNull Lookup defineLookup
+  private static <T> T createGeneratedFunction(
+    ResolvedLambdaType<?> lambdaType,
+    MethodHandle methodHandle,
+    MethodHandles.Lookup defineLookup
   ) {
     // Convert the method handle types to match the functional method signature, this will make
     // sure that all the objects are converted accordingly, so we don't have to do it ourselves
@@ -267,32 +266,30 @@ public final class InternalLambdaFactory {
       methodType = methodType.dropParameterTypes(methodHandle.type().parameterCount(),
         methodType.parameterCount());
     }
-    final MethodHandle convertedMethodHandle = methodHandle.asType(methodType);
+    MethodHandle convertedMethodHandle = methodHandle.asType(methodType);
 
-    final Method method = lambdaType.method;
-    final ClassWriter cw = new ClassWriter(0);
+    Method method = lambdaType.method;
+    ClassWriter cw = new ClassWriter(0);
 
-    final String packageName = InternalUtilities.getPackageName(defineLookup.lookupClass());
-
-    final String classPrefix = packageName.isEmpty() ? "" : packageName + ".";
-    final String className = classPrefix + "Lmbda$" + lambdaCounter.incrementAndGet();
-    final String internalClassName = className.replace('.', '/');
-
-    final Class<?> functionClass = lambdaType.functionClass;
-    final Class<?> superclass = functionClass.isInterface() ? Object.class : functionClass;
+    Class<?> functionClass = lambdaType.functionClass;
+    Class<?> superclass = functionClass.isInterface() ? Object.class : functionClass;
 
     String genericDescriptor = null;
     if (lambdaType.genericFunctionType != null) {
       genericDescriptor = toGenericDescriptor(superclass, lambdaType.genericFunctionType);
     }
 
-    final String[] interfaces = !functionClass.isInterface() ? new String[0] :
+    String[] interfaces = !functionClass.isInterface() ? new String[0] :
       new String[] { Type.getInternalName(lambdaType.functionClass) };
+
+    String internalClassName = generateInternalClassName(defineLookup, lambdaCounter, "Lmbda");
+
+    Holder holder = createHolder(defineLookup);
 
     cw.visit(V1_8, ACC_SUPER, internalClassName, genericDescriptor,
       Type.getInternalName(superclass), interfaces);
 
-    final FieldVisitor fv = cw.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC,
+    FieldVisitor fv = cw.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC,
       METHOD_HANDLE_FIELD_NAME, "Ljava/lang/invoke/MethodHandle;", null, null);
     fv.visitEnd();
 
@@ -308,8 +305,9 @@ public final class InternalLambdaFactory {
     // Add the method handle field
     mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
     mv.visitCode();
-    mv.visitMethodInsn(INVOKESTATIC, Type.getInternalName(InternalLambdaFactory.class),
-      "requestMethodHandle", "()Ljava/lang/invoke/MethodHandle;", false);
+    mv.visitFieldInsn(GETSTATIC, holder.internalClassName, "METHOD_HANDLE", "Ljava/lang/ThreadLocal;");
+    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ThreadLocal", "get", "()Ljava/lang/Object;", false);
+    mv.visitTypeInsn(CHECKCAST, "java/lang/invoke/MethodHandle");
     mv.visitFieldInsn(PUTSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME,
       "Ljava/lang/invoke/MethodHandle;");
     mv.visitInsn(RETURN);
@@ -317,17 +315,17 @@ public final class InternalLambdaFactory {
     mv.visitEnd();
 
     // Write the function method
-    final String descriptor = Type.getMethodDescriptor(method);
+    String descriptor = Type.getMethodDescriptor(method);
     mv = cw.visitMethod(ACC_PUBLIC, method.getName(), descriptor, null, null);
     // Hide the lambda from the stack trace
     mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true).visitEnd();
     mv.visitCode();
     mv.visitFieldInsn(GETSTATIC, internalClassName, METHOD_HANDLE_FIELD_NAME,
       "Ljava/lang/invoke/MethodHandle;");
-    final Class<?>[] parameters = method.getParameterTypes();
+    Class<?>[] parameters = method.getParameterTypes();
     int maxStack = 1;
     for (int i = 0; i < methodType.parameterCount(); i++) {
-      final Type type = Type.getType(parameters[i]);
+      Type type = Type.getType(parameters[i]);
       mv.visitVarInsn(type.getOpcode(ILOAD), maxStack);
       maxStack += type.getSize();
     }
@@ -335,9 +333,9 @@ public final class InternalLambdaFactory {
     for (int i = methodType.parameterCount(); i < parameters.length; i++) {
       maxLocals += Type.getType(parameters[i]).getSize();
     }
-    final Type[] methodHandleParameterTypes =
+    Type[] methodHandleParameterTypes =
       methodType.parameterList().stream().map(Type::getType).toArray(Type[]::new);
-    final String methodHandleDescriptor = Type.getMethodDescriptor(
+    String methodHandleDescriptor = Type.getMethodDescriptor(
       Type.getType(methodType.returnType()), methodHandleParameterTypes);
     mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle",
       "invokeExact", methodHandleDescriptor, false);
@@ -347,14 +345,13 @@ public final class InternalLambdaFactory {
 
     cw.visitEnd();
 
+    ThreadLocal<MethodHandle> currentMethodHandle = holder.currentMethodHandle;
     try {
-      // Store the current method handle, it will be required on initialization of the generated
-      // class
+      // Store the current method handle, it will be required on initialization of the generated class
       currentMethodHandle.set(convertedMethodHandle);
-
-      final byte[] bytes = cw.toByteArray();
-      final MethodHandles.Lookup theClassLookup;
-      final Class<?> theClass;
+      byte[] bytes = cw.toByteArray();
+      MethodHandles.Lookup theClassLookup;
+      Class<?> theClass;
       // Define the class within the provided lookup
       if (defineHiddenClass != null) {
         theClassLookup = doUnchecked(() -> (MethodHandles.Lookup) defineHiddenClass
@@ -373,6 +370,73 @@ public final class InternalLambdaFactory {
       // Cleanup
       currentMethodHandle.remove();
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Holder createHolder(MethodHandles.Lookup defineLookup) {
+    Holder holder;
+    holdersLock.lock();
+    try {
+      holder = holders.get(defineLookup.lookupClass());
+    } finally {
+      holdersLock.unlock();
+    }
+    if (holder != null) {
+      return holder;
+    }
+
+    String internalClassName = generateInternalClassName(defineLookup, holderCounter, "Lmbda$MH");
+
+    ClassWriter cw = new ClassWriter(0);
+    cw.visit(V1_8, ACC_PUBLIC | ACC_FINAL | ACC_SUPER,
+      internalClassName, null, "java/lang/Object", null);
+
+    FieldVisitor fv = cw.visitField(ACC_PUBLIC | ACC_FINAL | ACC_STATIC, "METHOD_HANDLE",
+      "Ljava/lang/ThreadLocal;", "Ljava/lang/ThreadLocal<Ljava/lang/invoke/MethodHandle;>;", null);
+    fv.visitEnd();
+
+    MethodVisitor mv = cw.visitMethod(ACC_STATIC,
+      "<clinit>", "()V", null, null);
+    mv.visitCode();
+    mv.visitTypeInsn(NEW, "java/lang/ThreadLocal");
+    mv.visitInsn(DUP);
+    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ThreadLocal", "<init>", "()V", false);
+    mv.visitFieldInsn(PUTSTATIC, internalClassName,
+      "METHOD_HANDLE", "Ljava/lang/ThreadLocal;");
+    mv.visitInsn(RETURN);
+    mv.visitMaxs(2, 0);
+    mv.visitEnd();
+
+    cw.visitEnd();
+
+    byte[] bytes = cw.toByteArray();
+    holder = doUnchecked(() -> {
+      Class<?> holderClass = MethodHandlesExtensions.defineClass(defineLookup, bytes);
+      ThreadLocal<MethodHandle> threadLocal;
+      try {
+        MethodHandle currentMethodHandleGetter = defineLookup
+          .findStaticGetter(holderClass, "METHOD_HANDLE", ThreadLocal.class);
+        threadLocal = (ThreadLocal<MethodHandle>) currentMethodHandleGetter.invokeExact();
+      } catch (Throwable ex) {
+        throw new IllegalStateException(ex);
+      }
+      return new Holder(holderClass, internalClassName, threadLocal);
+    });
+
+    holdersLock.lock();
+    try {
+      holders.put(defineLookup.lookupClass(), holder);
+    } finally {
+      holdersLock.unlock();
+    }
+    return holder;
+  }
+
+  private static String generateInternalClassName(MethodHandles.Lookup lookup, AtomicInteger counter, String type) {
+    String packageName = InternalUtilities.getPackageName(lookup.lookupClass());
+    String classPrefix = packageName.isEmpty() ? "" : packageName + ".";
+    String className = classPrefix + type + '$' + counter.incrementAndGet();
+    return className.replace('.', '/');
   }
 
   private InternalLambdaFactory() {

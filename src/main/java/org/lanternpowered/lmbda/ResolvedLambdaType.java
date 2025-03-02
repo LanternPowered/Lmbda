@@ -9,7 +9,6 @@
  */
 package org.lanternpowered.lmbda;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.invoke.MethodType;
@@ -31,15 +30,15 @@ import java.util.stream.Collectors;
  * @param <T> The type
  */
 @SuppressWarnings("unchecked")
-final class ResolvedLambdaType<@NonNull T> {
+final class ResolvedLambdaType<T> {
 
-  final @NonNull Class<T> functionClass;
+  final Class<T> functionClass;
   final @Nullable ParameterizedType genericFunctionType;
 
-  final @NonNull Method method;
-  final @NonNull MethodType methodType;
+  final Method method;
+  final MethodType methodType;
 
-  ResolvedLambdaType(final @NonNull Type type) {
+  ResolvedLambdaType(final Type type) {
     final Class<T> functionClass;
     final ParameterizedType genericFunctionType;
     if (type instanceof Class<?>) {
@@ -66,18 +65,15 @@ final class ResolvedLambdaType<@NonNull T> {
    * @param functionClass The function class
    * @return The function method
    */
-  private static @NonNull Method validateClassAndFindMethod(final @NonNull Class<?> functionClass) {
+  private static Method validateClassAndFindMethod(final Class<?> functionClass) {
     if (Modifier.isPrivate(functionClass.getModifiers())) {
       throw new IllegalStateException("A function class may not be private.");
     }
     if (functionClass.isInterface()) {
       return findInterfaceMethod(functionClass);
     } else if (Modifier.isAbstract(functionClass.getModifiers())) {
-      if (functionClass.getEnclosingClass() != null &&
-        !Modifier.isStatic(functionClass.getModifiers())
-      ) {
-        throw new IllegalStateException(
-          "An abstract function class may not be a non-static inner class.");
+      if (functionClass.getEnclosingClass() != null && !Modifier.isStatic(functionClass.getModifiers())) {
+        throw new IllegalStateException("An abstract function class may not be a non-static inner class.");
       }
       validateConstructors(functionClass);
       return findAbstractClassMethod(functionClass);
@@ -91,7 +87,7 @@ final class ResolvedLambdaType<@NonNull T> {
    *
    * @param functionClass The function class
    */
-  private static void validateConstructors(final @NonNull Class<?> functionClass) {
+  private static void validateConstructors(final Class<?> functionClass) {
     // For an abstract class is at least a package private constructor required
     final Constructor<?>[] constructors = functionClass.getDeclaredConstructors();
     boolean found = false;
@@ -107,8 +103,7 @@ final class ResolvedLambdaType<@NonNull T> {
       }
     }
     if (!found) {
-      throw new IllegalStateException(
-        "A abstract function class must have a zero arg constructor.");
+      throw new IllegalStateException("A abstract function class must have a zero arg constructor.");
     }
   }
 
@@ -119,21 +114,18 @@ final class ResolvedLambdaType<@NonNull T> {
    * @param functionClass The function class
    * @return The function method
    */
-  private static @NonNull Method findAbstractClassMethod(final @NonNull Class<?> functionClass) {
+  private static Method findAbstractClassMethod(final Class<?> functionClass) {
     final Map<String, Method> foundMethods = new HashMap<>();
     findClassMethods(functionClass, foundMethods);
 
     final List<Method> methods = foundMethods.values().stream()
-      .filter(method -> !Modifier.isStatic(method.getModifiers()) &&
-        Modifier.isAbstract(method.getModifiers()))
+      .filter(method -> !Modifier.isStatic(method.getModifiers()) && Modifier.isAbstract(method.getModifiers()))
       .collect(Collectors.toList());
 
     if (methods.size() > 1) {
-      throw new IllegalStateException("Found multiple abstract methods in: " +
-        functionClass.getName());
+      throw new IllegalStateException("Found multiple abstract methods in: " + functionClass.getName());
     } else if (methods.isEmpty()) {
-      throw new IllegalStateException("Couldn't find a abstract method in: " +
-        functionClass.getName());
+      throw new IllegalStateException("Couldn't find a abstract method in: " + functionClass.getName());
     }
 
     return methods.get(0);
@@ -145,7 +137,7 @@ final class ResolvedLambdaType<@NonNull T> {
    * @param method The method
    * @return The string
    */
-  private static @NonNull String toKey(@NonNull Method method) {
+  private static String toKey(Method method) {
     return method.getName() + ';' + org.objectweb.asm.Type.getMethodDescriptor(method);
   }
 
@@ -159,8 +151,8 @@ final class ResolvedLambdaType<@NonNull T> {
    * @param methods       The method map
    */
   private static void findClassMethods(
-    final @NonNull Class<?> functionClass,
-    final @NonNull Map<String, Method> methods
+    final Class<?> functionClass,
+    final Map<String, Method> methods
   ) {
     for (final Method method : functionClass.getDeclaredMethods()) {
       methods.putIfAbsent(toKey(method), method);
@@ -180,7 +172,7 @@ final class ResolvedLambdaType<@NonNull T> {
    * @param functionClass The function class
    * @return The function method
    */
-  private static @NonNull Method findInterfaceMethod(final @NonNull Class<?> functionClass) {
+  private static Method findInterfaceMethod(final Class<?> functionClass) {
     Method validMethod = null;
     for (final Method method : functionClass.getMethods()) {
       // Ignore default and static methods
@@ -189,14 +181,12 @@ final class ResolvedLambdaType<@NonNull T> {
       }
       // Only one non implemented method may be present
       if (validMethod != null) {
-        throw new IllegalStateException("Found multiple non-default methods in: " +
-          functionClass.getName());
+        throw new IllegalStateException("Found multiple non-default methods in: " + functionClass.getName());
       }
       validMethod = method;
     }
     if (validMethod == null) {
-      throw new IllegalStateException("Couldn't find a non-default method in: " +
-        functionClass.getName());
+      throw new IllegalStateException("Couldn't find a non-default method in: " + functionClass.getName());
     }
     return validMethod;
   }
@@ -206,7 +196,7 @@ final class ResolvedLambdaType<@NonNull T> {
    *
    * @return The function type
    */
-  @NonNull Type getFunctionType() {
+  Type getFunctionType() {
     return this.genericFunctionType != null ? this.genericFunctionType : this.functionClass;
   }
 
@@ -218,7 +208,7 @@ final class ResolvedLambdaType<@NonNull T> {
    *
    * @return The method copy
    */
-  @NonNull Method getMethodCopy() {
+  Method getMethodCopy() {
     // Find the same method object in the declaring class
     final Class<?>[] parameters = this.method.getParameterTypes();
     for (final Method method : this.method.getDeclaringClass().getDeclaredMethods()) {
@@ -233,7 +223,7 @@ final class ResolvedLambdaType<@NonNull T> {
   }
 
   @Override
-  public @NonNull String toString() {
+  public String toString() {
     return String.format("LambdaType[type=%s,method=%s]",
       getFunctionType().getTypeName(), this.method.getName() + this.methodType);
   }

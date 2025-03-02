@@ -14,7 +14,6 @@ import static org.lanternpowered.lmbda.InternalUtilities.doUnchecked;
 import static org.lanternpowered.lmbda.InternalUtilities.getPackageName;
 import static org.lanternpowered.lmbda.InternalUtilities.throwUnchecked;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.objectweb.asm.ClassReader;
 
@@ -31,14 +30,14 @@ import java.security.ProtectionDomain;
  */
 final class InternalMethodHandles {
 
-  static final @NonNull Adapter adapter = loadAdapter();
+  static final Adapter adapter = loadAdapter();
 
   /**
    * Loads the appropriate {@link Adapter}.
    *
    * @return The adapter
    */
-  private static @NonNull Adapter loadAdapter() {
+  private static Adapter loadAdapter() {
     if (isJava9Available()) {
       return new Java9Adapter();
     }
@@ -59,9 +58,9 @@ final class InternalMethodHandles {
      * @return A lookup object for the target class, with private access
      * @throws IllegalAccessException If the lookup doesn't have private access to the target class
      */
-    MethodHandles.@NonNull Lookup privateLookupIn(
-      final @NonNull Class<?> targetClass,
-      final MethodHandles.@NonNull Lookup lookup
+    MethodHandles.Lookup privateLookupIn(
+      Class<?> targetClass,
+      MethodHandles.Lookup lookup
     ) throws IllegalAccessException;
 
     /**
@@ -75,10 +74,7 @@ final class InternalMethodHandles {
      * @throws IllegalAccessException If the lookup doesn't have package private access to the
      *                                target package
      */
-    @NonNull Class<?> defineClass(
-      final MethodHandles.@NonNull Lookup lookup,
-      final byte @NonNull [] byteCode
-    ) throws IllegalAccessException;
+    Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) throws IllegalAccessException;
   }
 
   /**
@@ -111,12 +107,12 @@ final class InternalMethodHandles {
    */
   static @Nullable MethodHandle findDefineHiddenClassMethodHandle() {
     try {
-      final Class<?> classOption = Class.forName(
+      Class<?> classOption = Class.forName(
         "java.lang.invoke.MethodHandles$Lookup$ClassOption");
-      final Object emptyOptionArray = Array.newInstance(classOption, 0);
-      final MethodType methodType = MethodType.methodType(MethodHandles.Lookup.class,
+      Object emptyOptionArray = Array.newInstance(classOption, 0);
+      MethodType methodType = MethodType.methodType(MethodHandles.Lookup.class,
         byte[].class, boolean.class, emptyOptionArray.getClass());
-      final MethodHandle methodHandle = MethodHandles.publicLookup().findVirtual(
+      MethodHandle methodHandle = MethodHandles.publicLookup().findVirtual(
         MethodHandles.Lookup.class, "defineHiddenClass", methodType);
       return MethodHandles.insertArguments(methodHandle, 3, emptyOptionArray);
     } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException e) {
@@ -129,10 +125,10 @@ final class InternalMethodHandles {
    */
   private static final class Java9Adapter implements Adapter {
 
-    private static final @NonNull MethodHandle privateLookupMethodHandle =
+    private static final MethodHandle privateLookupMethodHandle =
       requireNonNull(findPrivateLookupMethodHandle());
 
-    private static final @NonNull MethodHandle defineClassMethodHandle =
+    private static final MethodHandle defineClassMethodHandle =
       getDefineClassMethodHandle();
 
     /**
@@ -140,25 +136,18 @@ final class InternalMethodHandles {
      *
      * @return The method handle of the define class method
      */
-    private static @NonNull MethodHandle getDefineClassMethodHandle() {
+    private static MethodHandle getDefineClassMethodHandle() {
       return doUnchecked(() -> MethodHandles.publicLookup().findVirtual(MethodHandles.Lookup.class,
         "defineClass", MethodType.methodType(Class.class, byte[].class)));
     }
 
     @Override
-    public MethodHandles.@NonNull Lookup privateLookupIn(
-      final @NonNull Class<?> targetClass,
-      final MethodHandles.@NonNull Lookup lookup
-    ) {
-      return doUnchecked(() ->
-        (MethodHandles.Lookup) privateLookupMethodHandle.invoke(targetClass, lookup));
+    public MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) {
+      return doUnchecked(() -> (MethodHandles.Lookup) privateLookupMethodHandle.invoke(targetClass, lookup));
     }
 
     @Override
-    public @NonNull Class<?> defineClass(
-      final MethodHandles.@NonNull Lookup lookup,
-      final byte @NonNull [] byteCode
-    ) {
+    public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
       return doUnchecked(() -> (Class<?>) defineClassMethodHandle.invoke(lookup, byteCode));
     }
   }
@@ -168,10 +157,10 @@ final class InternalMethodHandles {
    */
   private static final class Java8Adapter implements Adapter {
 
-    private static final MethodHandles.@NonNull Lookup trustedLookup =
+    private static final MethodHandles.Lookup trustedLookup =
       loadTrustedLookup();
 
-    private static final @NonNull MethodHandle defineClassMethodHandle =
+    private static final MethodHandle defineClassMethodHandle =
       getClassLoaderDefineMethodHandle();
 
     /**
@@ -179,7 +168,7 @@ final class InternalMethodHandles {
      *
      * @return The method handle
      */
-    private static @NonNull MethodHandle getClassLoaderDefineMethodHandle() {
+    private static MethodHandle getClassLoaderDefineMethodHandle() {
       return doUnchecked(() -> trustedLookup.findVirtual(ClassLoader.class, "defineClass",
         MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class,
           ProtectionDomain.class)));
@@ -190,28 +179,27 @@ final class InternalMethodHandles {
      *
      * @return The trusted lookup
      */
-    private static MethodHandles.@NonNull Lookup loadTrustedLookup() {
+    private static MethodHandles.Lookup loadTrustedLookup() {
       try {
         // See if we can find the trusted lookup field directly
-        final Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+        Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
         field.setAccessible(true);
         return (MethodHandles.Lookup) field.get(null);
       } catch (NoSuchFieldException e) {
         // Not so much luck, let's try to hack something together another way
         // Get a public lookup and create a new instance
-        final MethodHandles.Lookup lookup = MethodHandles.publicLookup().in(Object.class);
+        MethodHandles.Lookup lookup = MethodHandles.publicLookup().in(Object.class);
 
         try {
-          final Field field = MethodHandles.Lookup.class.getDeclaredField("allowedModes");
+          Field field = MethodHandles.Lookup.class.getDeclaredField("allowedModes");
           field.setAccessible(true);
 
-          final Field mField = Field.class.getDeclaredField("modifiers");
+          Field mField = Field.class.getDeclaredField("modifiers");
           mField.setAccessible(true);
           mField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
 
           // The field that holds the trusted access mode
-          final Field trustedAccessModeField =
-            MethodHandles.Lookup.class.getDeclaredField("TRUSTED");
+          Field trustedAccessModeField = MethodHandles.Lookup.class.getDeclaredField("TRUSTED");
           trustedAccessModeField.setAccessible(true);
 
           // Apply the modifier to the lookup instance
@@ -227,9 +215,9 @@ final class InternalMethodHandles {
     }
 
     @Override
-    public MethodHandles.@NonNull Lookup privateLookupIn(
-      final @NonNull Class<?> targetClass,
-      final MethodHandles.@NonNull Lookup lookup
+    public MethodHandles.Lookup privateLookupIn(
+      Class<?> targetClass,
+      MethodHandles.Lookup lookup
     ) {
       if (targetClass.isPrimitive()) {
         throw new IllegalArgumentException(targetClass + " is a primitive class");
@@ -241,30 +229,27 @@ final class InternalMethodHandles {
     }
 
     @Override
-    public @NonNull Class<?> defineClass(
-      final MethodHandles.@NonNull Lookup lookup,
-      final byte @NonNull [] byteCode
-    ) {
+    public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
       if ((lookup.lookupModes() & MethodHandles.Lookup.PACKAGE) == 0) {
         throw throwUnchecked(new IllegalAccessException("Lookup does not have PACKAGE access"));
       }
-      final String className;
+      String className;
       try {
-        final ClassReader classReader = new ClassReader(byteCode);
+        ClassReader classReader = new ClassReader(byteCode);
         className = classReader.getClassName().replace('/', '.');
       } catch (RuntimeException e) {
-        final ClassFormatError classFormatError = new ClassFormatError();
+        ClassFormatError classFormatError = new ClassFormatError();
         classFormatError.initCause(e);
         throw classFormatError;
       }
-      final Class<?> lookupClass = lookup.lookupClass();
-      final String packageName = getPackageName(className);
-      final String lookupPackageName = getPackageName(lookupClass);
+      Class<?> lookupClass = lookup.lookupClass();
+      String packageName = getPackageName(className);
+      String lookupPackageName = getPackageName(lookupClass);
       if (!packageName.equals(lookupPackageName)) {
         throw new IllegalArgumentException("Class not in same package as lookup class");
       }
-      final ClassLoader classLoader = lookupClass.getClassLoader();
-      final ProtectionDomain protectionDomain = lookupClass.getProtectionDomain();
+      ClassLoader classLoader = lookupClass.getClassLoader();
+      ProtectionDomain protectionDomain = lookupClass.getProtectionDomain();
       return doUnchecked(() -> (Class<?>) defineClassMethodHandle.invoke(classLoader,
         className, byteCode, 0, byteCode.length, protectionDomain));
     }

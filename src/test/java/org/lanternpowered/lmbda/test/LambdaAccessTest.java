@@ -23,14 +23,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class LambdaAccessTest {
 
   private MethodHandle getGetterMethodHandle() throws Exception {
-    final MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(
+    MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(
       TestObject.class, MethodHandles.lookup());
     return lookup.findGetter(TestObject.class, "data", int.class);
   }
 
   @Test
   void testPublicInterface() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     // Private function classes aren't supported
     assertDoesNotThrow(() -> LambdaFactory.create(
@@ -39,7 +39,7 @@ class LambdaAccessTest {
 
   @Test
   void testPackagePrivateInterface() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
       new LambdaType<IMyPackagePrivateFunction>() {}, methodHandle));
@@ -62,7 +62,7 @@ class LambdaAccessTest {
 
   @Test
   void testPublic() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     // Every lookup should have access to public classes
     assertDoesNotThrow(() -> LambdaFactory.create(
@@ -74,7 +74,7 @@ class LambdaAccessTest {
 
   @Test
   void testPackagePrivate() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     // The default lookup doesn't have access to the package private function class
     assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
@@ -86,7 +86,7 @@ class LambdaAccessTest {
 
   @Test
   void testProtected() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     // The default lookup doesn't have access to the protected function class
     assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
@@ -105,7 +105,7 @@ class LambdaAccessTest {
 
   @Test
   void testPackagePrivateConstructor() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     // The default lookup doesn't have access to the package private function constructor
     assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
@@ -117,7 +117,7 @@ class LambdaAccessTest {
 
   @Test
   void testProtectedConstructor() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     assertDoesNotThrow(() -> LambdaFactory.create(
       new LambdaType<MyFunctionWithProtectedConstructor>() {}, methodHandle));
@@ -128,7 +128,7 @@ class LambdaAccessTest {
 
   @Test
   void testPackagePrivateMethod() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     // The default lookup doesn't have access to the package private function method
     assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
@@ -140,7 +140,7 @@ class LambdaAccessTest {
 
   @Test
   void testProtectedMethod() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     assertDoesNotThrow(() -> LambdaFactory.create(
       new LambdaType<MyFunctionWithProtectedMethod>() {}, methodHandle));
@@ -151,7 +151,7 @@ class LambdaAccessTest {
 
   @Test
   void testInnerClass() throws Exception {
-    final MethodHandle methodHandle = getGetterMethodHandle();
+    MethodHandle methodHandle = getGetterMethodHandle();
 
     assertThrows(IllegalStateException.class, () -> LambdaFactory.create(
       new LambdaType<MyInnerFunction>() {}, methodHandle));

@@ -208,9 +208,7 @@ public final class LambdaFactory {
    * @return The created binary operator
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull BinaryOperator<T> createBinaryOperator(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull BinaryOperator<T> createBinaryOperator(@NonNull MethodHandle methodHandle) {
     return create(binaryOperatorInterface, methodHandle);
   }
 
@@ -221,9 +219,7 @@ public final class LambdaFactory {
    * @return The created int binary operator
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull IntBinaryOperator createIntBinaryOperator(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull IntBinaryOperator createIntBinaryOperator(@NonNull MethodHandle methodHandle) {
     return create(intBinaryOperatorInterface, methodHandle);
   }
 
@@ -234,9 +230,7 @@ public final class LambdaFactory {
    * @return The created double binary operator
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull DoubleBinaryOperator createDoubleBinaryOperator(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull DoubleBinaryOperator createDoubleBinaryOperator(@NonNull MethodHandle methodHandle) {
     return create(doubleBinaryOperatorInterface, methodHandle);
   }
 
@@ -247,9 +241,7 @@ public final class LambdaFactory {
    * @return The created long binary operator
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull LongBinaryOperator createLongBinaryOperator(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull LongBinaryOperator createLongBinaryOperator(@NonNull MethodHandle methodHandle) {
     return create(longBinaryOperatorInterface, methodHandle);
   }
 
@@ -261,9 +253,7 @@ public final class LambdaFactory {
    * @return The created unary operator
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull UnaryOperator<T> createUnaryOperator(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull UnaryOperator<T> createUnaryOperator(@NonNull MethodHandle methodHandle) {
     return create(unaryOperatorInterface, methodHandle);
   }
 
@@ -274,9 +264,7 @@ public final class LambdaFactory {
    * @return The created int unary operator
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull IntUnaryOperator createIntUnaryOperator(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull IntUnaryOperator createIntUnaryOperator(@NonNull MethodHandle methodHandle) {
     return create(intUnaryOperatorInterface, methodHandle);
   }
 
@@ -287,9 +275,7 @@ public final class LambdaFactory {
    * @return The created double unary operator
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull DoubleUnaryOperator createDoubleUnaryOperator(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull DoubleUnaryOperator createDoubleUnaryOperator(@NonNull MethodHandle methodHandle) {
     return create(doubleUnaryOperatorInterface, methodHandle);
   }
 
@@ -300,9 +286,7 @@ public final class LambdaFactory {
    * @return The created long unary operator
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull LongUnaryOperator createLongUnaryOperator(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull LongUnaryOperator createLongUnaryOperator(@NonNull MethodHandle methodHandle) {
     return create(longUnaryOperatorInterface, methodHandle);
   }
 
@@ -315,9 +299,7 @@ public final class LambdaFactory {
    * @return The created bi predicate
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T, U> @NonNull BiPredicate<T, U> createBiPredicate(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T, U> @NonNull BiPredicate<T, U> createBiPredicate(@NonNull MethodHandle methodHandle) {
     return create(biPredicateInterface, methodHandle);
   }
 
@@ -329,9 +311,7 @@ public final class LambdaFactory {
    * @return The created predicate
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull Predicate<T> createPredicate(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull Predicate<T> createPredicate(@NonNull MethodHandle methodHandle) {
     return create(predicateInterface, methodHandle);
   }
 
@@ -342,9 +322,7 @@ public final class LambdaFactory {
    * @return The created int predicate
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull IntPredicate createIntPredicate(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull IntPredicate createIntPredicate(@NonNull MethodHandle methodHandle) {
     return create(intPredicateInterface, methodHandle);
   }
 
@@ -355,9 +333,7 @@ public final class LambdaFactory {
    * @return The created double predicate
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull DoublePredicate createDoublePredicate(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull DoublePredicate createDoublePredicate(@NonNull MethodHandle methodHandle) {
     return create(doublePredicateInterface, methodHandle);
   }
 
@@ -368,9 +344,7 @@ public final class LambdaFactory {
    * @return The created long predicate
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull LongPredicate createLongPredicate(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull LongPredicate createLongPredicate(@NonNull MethodHandle methodHandle) {
     return create(longPredicateInterface, methodHandle);
   }
 
@@ -383,9 +357,7 @@ public final class LambdaFactory {
    * @return The created bi consumer
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T, U> @NonNull BiConsumer<T, U> createBiConsumer(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T, U> @NonNull BiConsumer<T, U> createBiConsumer(@NonNull MethodHandle methodHandle) {
     return create(biConsumerInterface, methodHandle);
   }
 
@@ -397,9 +369,7 @@ public final class LambdaFactory {
    * @return The created obj int consumer
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull ObjIntConsumer<T> createObjIntConsumer(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull ObjIntConsumer<T> createObjIntConsumer(@NonNull MethodHandle methodHandle) {
     return create(objIntConsumerInterface, methodHandle);
   }
 
@@ -411,9 +381,7 @@ public final class LambdaFactory {
    * @return The created obj double consumer
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull ObjDoubleConsumer<T> createObjDoubleConsumer(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull ObjDoubleConsumer<T> createObjDoubleConsumer(@NonNull MethodHandle methodHandle) {
     return create(objDoubleConsumerInterface, methodHandle);
   }
 
@@ -425,9 +393,7 @@ public final class LambdaFactory {
    * @return The created obj long consumer
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull ObjLongConsumer<T> createObjLongConsumer(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull ObjLongConsumer<T> createObjLongConsumer(@NonNull MethodHandle methodHandle) {
     return create(objLongConsumerInterface, methodHandle);
   }
 
@@ -439,9 +405,7 @@ public final class LambdaFactory {
    * @return The created consumer
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull Consumer<T> createConsumer(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull Consumer<T> createConsumer(@NonNull MethodHandle methodHandle) {
     return create(consumerInterface, methodHandle);
   }
 
@@ -452,9 +416,7 @@ public final class LambdaFactory {
    * @return The created int consumer
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull IntConsumer createIntConsumer(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull IntConsumer createIntConsumer(@NonNull MethodHandle methodHandle) {
     return create(intConsumerInterface, methodHandle);
   }
 
@@ -465,9 +427,7 @@ public final class LambdaFactory {
    * @return The created double consumer
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull DoubleConsumer createDoubleConsumer(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull DoubleConsumer createDoubleConsumer(@NonNull MethodHandle methodHandle) {
     return create(doubleConsumerInterface, methodHandle);
   }
 
@@ -478,9 +438,7 @@ public final class LambdaFactory {
    * @return The created long consumer
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull LongConsumer createLongConsumer(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull LongConsumer createLongConsumer(@NonNull MethodHandle methodHandle) {
     return create(longConsumerInterface, methodHandle);
   }
 
@@ -492,9 +450,7 @@ public final class LambdaFactory {
    * @return The created supplier
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull Supplier<T> createSupplier(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull Supplier<T> createSupplier(@NonNull MethodHandle methodHandle) {
     return create(supplierInterface, methodHandle);
   }
 
@@ -505,9 +461,7 @@ public final class LambdaFactory {
    * @return The created int supplier
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull IntSupplier createIntSupplier(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull IntSupplier createIntSupplier(@NonNull MethodHandle methodHandle) {
     return create(intSupplierInterface, methodHandle);
   }
 
@@ -518,9 +472,7 @@ public final class LambdaFactory {
    * @return The created double supplier
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull DoubleSupplier createDoubleSupplier(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull DoubleSupplier createDoubleSupplier(@NonNull MethodHandle methodHandle) {
     return create(doubleSupplierInterface, methodHandle);
   }
 
@@ -531,9 +483,7 @@ public final class LambdaFactory {
    * @return The created long supplier
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull LongSupplier createLongSupplier(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull LongSupplier createLongSupplier(@NonNull MethodHandle methodHandle) {
     return create(longSupplierInterface, methodHandle);
   }
 
@@ -544,9 +494,7 @@ public final class LambdaFactory {
    * @return The created boolean supplier
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull BooleanSupplier createBooleanSupplier(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull BooleanSupplier createBooleanSupplier(@NonNull MethodHandle methodHandle) {
     return create(booleanSupplierInterface, methodHandle);
   }
 
@@ -560,9 +508,7 @@ public final class LambdaFactory {
    * @return The created bi function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T, U, R> @NonNull BiFunction<T, U, R> createBiFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T, U, R> @NonNull BiFunction<T, U, R> createBiFunction(@NonNull MethodHandle methodHandle) {
     return create(biFunctionInterface, methodHandle);
   }
 
@@ -575,9 +521,7 @@ public final class LambdaFactory {
    * @return The created to int bi function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T, U> @NonNull ToIntBiFunction<T, U> createToIntBiFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T, U> @NonNull ToIntBiFunction<T, U> createToIntBiFunction(@NonNull MethodHandle methodHandle) {
     return create(toIntBiFunctionInterface, methodHandle);
   }
 
@@ -590,9 +534,7 @@ public final class LambdaFactory {
    * @return The created to double bi function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T, U> @NonNull ToDoubleBiFunction<T, U> createToDoubleBiFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T, U> @NonNull ToDoubleBiFunction<T, U> createToDoubleBiFunction(@NonNull MethodHandle methodHandle) {
     return create(toDoubleBiFunctionInterface, methodHandle);
   }
 
@@ -605,9 +547,7 @@ public final class LambdaFactory {
    * @return The created to long bi function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T, U> @NonNull ToLongBiFunction<T, U> createToLongBiFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T, U> @NonNull ToLongBiFunction<T, U> createToLongBiFunction(@NonNull MethodHandle methodHandle) {
     return create(toLongBiFunctionInterface, methodHandle);
   }
 
@@ -620,9 +560,7 @@ public final class LambdaFactory {
    * @return The created function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T, R> @NonNull Function<T, R> createFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T, R> @NonNull Function<T, R> createFunction(@NonNull MethodHandle methodHandle) {
     return create(functionInterface, methodHandle);
   }
 
@@ -634,9 +572,7 @@ public final class LambdaFactory {
    * @return The created int function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <R> @NonNull IntFunction<R> createIntFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <R> @NonNull IntFunction<R> createIntFunction(@NonNull MethodHandle methodHandle) {
     return create(intFunctionInterface, methodHandle);
   }
 
@@ -648,9 +584,7 @@ public final class LambdaFactory {
    * @return The created to int function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull ToIntFunction<T> createToIntFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull ToIntFunction<T> createToIntFunction(@NonNull MethodHandle methodHandle) {
     return create(toIntFunctionInterface, methodHandle);
   }
 
@@ -662,9 +596,7 @@ public final class LambdaFactory {
    * @return The created double function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <R> @NonNull DoubleFunction<R> createDoubleFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <R> @NonNull DoubleFunction<R> createDoubleFunction(@NonNull MethodHandle methodHandle) {
     return create(doubleFunctionInterface, methodHandle);
   }
 
@@ -676,9 +608,7 @@ public final class LambdaFactory {
    * @return The created to double function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull ToDoubleFunction<T> createToDoubleFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull ToDoubleFunction<T> createToDoubleFunction(@NonNull MethodHandle methodHandle) {
     return create(toDoubleFunctionInterface, methodHandle);
   }
 
@@ -690,9 +620,7 @@ public final class LambdaFactory {
    * @return The created long function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <R> @NonNull LongFunction<R> createLongFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <R> @NonNull LongFunction<R> createLongFunction(@NonNull MethodHandle methodHandle) {
     return create(longFunctionInterface, methodHandle);
   }
 
@@ -704,9 +632,7 @@ public final class LambdaFactory {
    * @return The created to long function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static <T> @NonNull ToLongFunction<T> createToLongFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <T> @NonNull ToLongFunction<T> createToLongFunction(@NonNull MethodHandle methodHandle) {
     return create(toLongFunctionInterface, methodHandle);
   }
 
@@ -717,9 +643,7 @@ public final class LambdaFactory {
    * @return The created int to long function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull IntToLongFunction createIntToLongFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull IntToLongFunction createIntToLongFunction(@NonNull MethodHandle methodHandle) {
     return create(intToLongFunctionInterface, methodHandle);
   }
 
@@ -730,9 +654,7 @@ public final class LambdaFactory {
    * @return The created int to double function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull IntToDoubleFunction createIntToDoubleFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull IntToDoubleFunction createIntToDoubleFunction(@NonNull MethodHandle methodHandle) {
     return create(intToDoubleFunctionInterface, methodHandle);
   }
 
@@ -743,9 +665,7 @@ public final class LambdaFactory {
    * @return The created double to int function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull DoubleToIntFunction createDoubleToIntFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull DoubleToIntFunction createDoubleToIntFunction(@NonNull MethodHandle methodHandle) {
     return create(doubleToIntFunctionInterface, methodHandle);
   }
 
@@ -756,9 +676,7 @@ public final class LambdaFactory {
    * @return The created double to long function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull DoubleToLongFunction createDoubleToLongFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull DoubleToLongFunction createDoubleToLongFunction(@NonNull MethodHandle methodHandle) {
     return create(doubleToLongFunctionInterface, methodHandle);
   }
 
@@ -769,9 +687,7 @@ public final class LambdaFactory {
    * @return The created long to int function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull LongToIntFunction createLongToIntFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull LongToIntFunction createLongToIntFunction(@NonNull MethodHandle methodHandle) {
     return create(longToIntFunctionInterface, methodHandle);
   }
 
@@ -782,9 +698,7 @@ public final class LambdaFactory {
    * @return The created long to double function
    * @see #create(LambdaType, MethodHandle)
    */
-  public static @NonNull LongToDoubleFunction createLongToDoubleFunction(
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static @NonNull LongToDoubleFunction createLongToDoubleFunction(@NonNull MethodHandle methodHandle) {
     return create(longToDoubleFunctionInterface, methodHandle);
   }
 
@@ -801,10 +715,7 @@ public final class LambdaFactory {
    * @param <T>          The functional interface type
    * @return The constructed function
    */
-  public static <@NonNull T> T create(
-    final @NonNull LambdaType<T> lambdaType,
-    final @NonNull MethodHandle methodHandle
-  ) {
+  public static <@NonNull T> T create(@NonNull LambdaType<T> lambdaType, @NonNull MethodHandle methodHandle) {
     return InternalLambdaFactory.create(lambdaType, methodHandle);
   }
 

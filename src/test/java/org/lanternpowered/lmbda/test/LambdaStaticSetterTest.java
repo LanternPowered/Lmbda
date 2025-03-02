@@ -24,12 +24,11 @@ class LambdaStaticSetterTest {
 
   @Test
   void test() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle =
-      lookup.findStaticSetter(TestObject.class, "data", int.class);
+    MethodHandle methodHandle = lookup.findStaticSetter(TestObject.class, "data", int.class);
 
-    final IntConsumer setter = LambdaFactory.create(LambdaType.of(IntConsumer.class), methodHandle);
+    IntConsumer setter = LambdaFactory.create(LambdaType.of(IntConsumer.class), methodHandle);
 
     assertEquals(100, TestObject.getData());
     setter.accept(10000);

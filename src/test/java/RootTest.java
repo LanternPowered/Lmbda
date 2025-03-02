@@ -35,8 +35,7 @@ public class RootTest {
   void testRootLambdaImplementation() throws Exception {
     final MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(RootTestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle =
-      lookup.findGetter(RootTestObject.class, "data", int.class);
+    final MethodHandle methodHandle = lookup.findGetter(RootTestObject.class, "data", int.class);
 
     final ToIntFunction<RootTestObject> getter = LambdaFactory.create(
       new LambdaType<ToIntFunction<RootTestObject>>() {}, methodHandle);
@@ -48,12 +47,10 @@ public class RootTest {
   void testRootLambdaImplementationDefineInRoot() throws Exception {
     final MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(RootTestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle =
-      lookup.findGetter(RootTestObject.class, "data", int.class);
+    final MethodHandle methodHandle = lookup.findGetter(RootTestObject.class, "data", int.class);
 
     final ToIntFunction<RootTestObject> getter = LambdaFactory.create(
-      new LambdaType<ToIntFunction<RootTestObject>>() {}
-        .defineClassesWith(lookup), methodHandle);
+      new LambdaType<ToIntFunction<RootTestObject>>() {}.defineClassesWith(lookup), methodHandle);
 
     assertEquals(100, getter.applyAsInt(new RootTestObject()));
   }

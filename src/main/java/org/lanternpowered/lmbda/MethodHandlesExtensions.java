@@ -38,8 +38,8 @@ public final class MethodHandlesExtensions {
    * @throws IllegalAccessException If the lookup doesn't have private access to the target class
    */
   public static MethodHandles.@NonNull Lookup privateLookupIn(
-    final @NonNull Class<?> targetClass,
-    final MethodHandles.@NonNull Lookup lookup
+    @NonNull Class<?> targetClass,
+    MethodHandles.@NonNull Lookup lookup
   ) throws IllegalAccessException {
     requireNonNull(targetClass, "targetClass");
     requireNonNull(lookup, "lookup");
@@ -56,9 +56,8 @@ public final class MethodHandlesExtensions {
    * @throws IllegalAccessException If the lookup doesn't have package private access to the
    * target package
    */
-  public static @NonNull Class<?> defineClass(
-    final MethodHandles.@NonNull Lookup lookup,
-    final byte @NonNull [] byteCode
+  public static @NonNull Class<?> defineClass(MethodHandles.@NonNull Lookup lookup,
+    byte @NonNull [] byteCode
   ) throws IllegalAccessException {
     requireNonNull(lookup, "lookup");
     requireNonNull(byteCode, "byteCode");

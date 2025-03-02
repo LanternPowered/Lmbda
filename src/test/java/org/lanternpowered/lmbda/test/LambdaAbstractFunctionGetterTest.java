@@ -23,14 +23,14 @@ class LambdaAbstractFunctionGetterTest {
 
   @Test
   void testGetter() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
+    MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
-    final MyFunction getter = LambdaFactory.create(
+    MyFunction getter = LambdaFactory.create(
       new LambdaType<MyFunction>() {}.defineClassesWith(MethodHandles.lookup()), methodHandle);
 
-    final TestObject object = new TestObject();
+    TestObject object = new TestObject();
     assertEquals(100, getter.getValue(object));
     object.setData(10000);
     assertEquals(10000, getter.getValue(object));
@@ -40,7 +40,7 @@ class LambdaAbstractFunctionGetterTest {
 
     private int data = 100;
 
-    void setData(final int value) {
+    void setData(int value) {
       this.data = value;
     }
   }

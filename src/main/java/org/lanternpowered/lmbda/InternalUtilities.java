@@ -9,7 +9,6 @@
  */
 package org.lanternpowered.lmbda;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.reflect.GenericArrayType;
@@ -22,7 +21,7 @@ import java.util.List;
 
 final class InternalUtilities {
 
-  private static final @NonNull List<@NonNull Class<?>> javaTypeSubclasses = Arrays.asList(
+  private static final List<Class<?>> javaTypeSubclasses = Arrays.asList(
     Class.class, ParameterizedType.class, GenericArrayType.class, WildcardType.class,
     TypeVariable.class);
 
@@ -32,7 +31,7 @@ final class InternalUtilities {
    * @param type The type
    * @return The readable name
    */
-  static @NonNull String getTypeClassName(@NonNull Type type) {
+  static String getTypeClassName(Type type) {
     return javaTypeSubclasses.stream()
       .filter(subclass -> subclass.isInstance(type))
       .map(Class::getSimpleName).findFirst()
@@ -45,7 +44,7 @@ final class InternalUtilities {
    * @param theClass The class to get the package for
    * @return The package name
    */
-  static @NonNull String getPackageName(@NonNull Class<?> theClass) {
+  static String getPackageName(Class<?> theClass) {
     Class<?> target = theClass;
     while (target.isArray()) {
       target = target.getComponentType();
@@ -62,7 +61,7 @@ final class InternalUtilities {
    * @param className The class name
    * @return The package name
    */
-  static @NonNull String getPackageName(@NonNull String className) {
+  static String getPackageName(String className) {
     final int index = className.lastIndexOf('.');
     return index == -1 ? "" : className.substring(0, index);
   }
@@ -74,7 +73,7 @@ final class InternalUtilities {
    * @param <T>      The result type
    * @return The result
    */
-  static <@Nullable T> T doUnchecked(@NonNull ThrowableSupplier<T> supplier) {
+  static <@Nullable T> T doUnchecked(ThrowableSupplier<T> supplier) {
     try {
       return supplier.get();
     } catch (Throwable t) {
@@ -99,16 +98,13 @@ final class InternalUtilities {
    * @param t The throwable to throw
    * @return A runtime exception
    */
-  static @NonNull RuntimeException throwUnchecked(@NonNull Throwable t) {
+  static RuntimeException throwUnchecked(Throwable t) {
     throwUnchecked0(t);
     throw new AssertionError("Unreachable.");
   }
 
   @SuppressWarnings("unchecked")
-  private static <@NonNull T extends Throwable> void throwUnchecked0(
-    @NonNull Throwable t
-  ) throws T {
+  private static <T extends Throwable> void throwUnchecked0(Throwable t) throws T {
     throw (T) t;
   }
-
 }

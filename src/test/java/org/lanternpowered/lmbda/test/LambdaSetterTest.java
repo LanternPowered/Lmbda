@@ -28,14 +28,14 @@ class LambdaSetterTest {
 
   @Test
   void testFieldInt() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle = lookup.findSetter(TestObject.class, "dataInt", int.class);
+    MethodHandle methodHandle = lookup.findSetter(TestObject.class, "dataInt", int.class);
 
-    final ObjIntConsumer<TestObject> setter = LambdaFactory.create(
+    ObjIntConsumer<TestObject> setter = LambdaFactory.create(
       new LambdaType<ObjIntConsumer<TestObject>>() {}, methodHandle);
 
-    final TestObject object = new TestObject();
+    TestObject object = new TestObject();
     assertEquals(100, object.getDataInt());
     setter.accept(object, 10000);
     assertEquals(10000, object.getDataInt());
@@ -43,14 +43,14 @@ class LambdaSetterTest {
 
   @Test
   void testFieldLong() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle = lookup.findSetter(TestObject.class, "dataLong", long.class);
+    MethodHandle methodHandle = lookup.findSetter(TestObject.class, "dataLong", long.class);
 
-    final ObjLongConsumer<TestObject> setter = LambdaFactory.create(
+    ObjLongConsumer<TestObject> setter = LambdaFactory.create(
       new LambdaType<ObjLongConsumer<TestObject>>() {}, methodHandle);
 
-    final TestObject object = new TestObject();
+    TestObject object = new TestObject();
     assertEquals(100, object.getDataLong());
     setter.accept(object, 10000);
     assertEquals(10000, object.getDataLong());
@@ -58,14 +58,14 @@ class LambdaSetterTest {
 
   @Test
   void testMethod() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle = lookup.findVirtual(
+    MethodHandle methodHandle = lookup.findVirtual(
       TestObject.class, "setDataInt", MethodType.methodType(void.class, int.class));
 
-    final BiFunction<Object, Object, Object> setter = LambdaFactory.createBiFunction(methodHandle);
+    BiFunction<Object, Object, Object> setter = LambdaFactory.createBiFunction(methodHandle);
 
-    final TestObject object = new TestObject();
+    TestObject object = new TestObject();
     assertEquals(100, object.getDataInt());
     setter.apply(object, 10000);
     assertEquals(10000, object.getDataInt());
@@ -73,17 +73,17 @@ class LambdaSetterTest {
 
   @Test
   void testLongBinaryOperator() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
 
-    final TestObject object = new TestObject();
+    TestObject object = new TestObject();
 
     MethodHandle methodHandle = lookup.findVirtual(
       TestObject.class, "sumAndSetDataLong",
       MethodType.methodType(long.class, long.class, long.class));
     methodHandle = MethodHandles.insertArguments(methodHandle, 0, object);
 
-    final LongBinaryOperator operator = LambdaFactory.createLongBinaryOperator(methodHandle);
+    LongBinaryOperator operator = LambdaFactory.createLongBinaryOperator(methodHandle);
 
     assertEquals(100, object.getDataLong());
     assertEquals(225, operator.applyAsLong(25, 200));

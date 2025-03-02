@@ -20,19 +20,18 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.function.ToIntFunction;
 
-@SuppressWarnings("UnstableApiUsage")
 class LambdaGetterTest {
 
   @Test
   void test() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
+    MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
-    final ToIntFunction<TestObject> getter = LambdaFactory.create(
+    ToIntFunction<TestObject> getter = LambdaFactory.create(
       new LambdaType<ToIntFunction<TestObject>>() {}, methodHandle);
 
-    final TestObject object = new TestObject();
+    TestObject object = new TestObject();
     assertEquals(100, getter.applyAsInt(object));
     object.setData(10000);
     assertEquals(10000, getter.applyAsInt(object));
@@ -40,11 +39,11 @@ class LambdaGetterTest {
 
   @Test
   void testGenericSignature() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
+    MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
-    final ToIntFunction<TestObject> getter = LambdaFactory.create(
+    ToIntFunction<TestObject> getter = LambdaFactory.create(
       new LambdaType<ToIntFunction<TestObject>>() {}, methodHandle);
   }
 
