@@ -1,12 +1,10 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jreleaser.model.Active
 
 plugins {
   java
-  idea
-  eclipse
-  signing
   `maven-publish`
-  id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+  id("org.jreleaser") version "1.17.0"
   kotlin("jvm") version libs.versions.kotlin.core
   id("me.champeau.jmh") version libs.versions.jmh
   id("org.cadixdev.licenser") version libs.versions.licenser
@@ -52,12 +50,12 @@ jmh {
 
 tasks {
   val javadocJar = register<Jar>("javadocJar") {
-    archiveClassifier.set("javadoc")
+    archiveClassifier = "javadoc"
     from(javadoc)
   }
 
   val sourceJar = register<Jar>("sourceJar") {
-    archiveClassifier.set("sources")
+    archiveClassifier = "sources"
     from(sourceSets.main.get().allSource)
     exclude("**/*.class") // For module-info.class
   }
@@ -85,21 +83,10 @@ tasks {
   }
 }
 
-if (project.hasProperty("sonatypeUsername")) {
-  nexusPublishing {
-    repositories {
-      sonatype()
-    }
-  }
-}
-
 publishing {
   repositories {
     maven {
-      val releasesRepoUrl = layout.buildDirectory.dir("repos/releases")
-      val snapshotsRepoUrl = layout.buildDirectory.dir("repos/snapshots")
-      val snapshot = project.version.toString().endsWith("-SNAPSHOT")
-      url = uri(if (snapshot) snapshotsRepoUrl else releasesRepoUrl)
+      url = uri(layout.buildDirectory.dir("staging-deploy").get())
     }
   }
   publications {
@@ -113,43 +100,69 @@ publishing {
       artifact(tasks["sourceJar"])
 
       pom {
-        name.set(project.name)
-        description.set("A lambda generation library")
-        url.set("https://github.com/LanternPowered/Lmbda")
-        inceptionYear.set("2018")
+        name = project.name
+        description = "A lambda generation library"
+        url = "https://github.com/LanternPowered/Lmbda"
+        inceptionYear = "2018"
         licenses {
           license {
-            name.set("MIT License")
-            url.set("https://opensource.org/licenses/MIT")
+            name = "MIT License"
+            url = "https://opensource.org/licenses/MIT"
           }
         }
         developers {
           developer {
-            id.set("Cybermaxke")
-            name.set("Seppe Volkaerts")
-            email.set("contact@seppevolkaerts.be")
+            id = "Cybermaxke"
+            name = "Seppe Volkaerts"
+            email = "contact@seppevolkaerts.be"
           }
         }
         issueManagement {
-          system.set("GitHub Issues")
-          url.set("https://github.com/LanternPowered/Lmbda/issues")
+          system = "GitHub Issues"
+          url = "https://github.com/LanternPowered/Lmbda/issues"
         }
         scm {
-          connection.set("scm:git@github.com:LanternPowered/Lmbda.git")
-          developerConnection.set("scm:git@github.com:LanternPowered/Lmbda.git")
-          url.set("https://github.com/LanternPowered/Lmbda")
+          connection = "scm:git@github.com:LanternPowered/Lmbda.git"
+          developerConnection = "scm:git@github.com:LanternPowered/Lmbda.git"
+          url = "https://github.com/LanternPowered/Lmbda"
         }
       }
     }
   }
 }
 
-signing {
-  val signingKey = project.findProperty("signingKey")?.toString()
-  val signingPassword = project.findProperty("signingPassword")?.toString()
-  if (signingKey != null && signingPassword != null) {
-    useInMemoryPgpKeys(signingKey, signingPassword)
-    sign(publishing.publications["maven"])
+jreleaser {
+  signing {
+    active = Active.ALWAYS
+    armored = true
+  }
+  deploy {
+    maven {
+      mavenCentral {
+        create("sonatype") {
+          active = Active.RELEASE
+          url = "https://central.sonatype.com/api/v1/publisher"
+          stagingRepository("build/staging-deploy")
+          applyMavenCentralRules = true
+        }
+      }
+      nexus2 {
+        create("sonatype-snapshots") {
+          active = Active.SNAPSHOT
+          url = "https://central.sonatype.com/repository/maven-snapshots/"
+          snapshotUrl = url
+          snapshotSupported = true
+          stagingRepository("build/staging-deploy")
+          applyMavenCentralRules = true
+        }
+      }
+    }
+  }
+  release {
+    github {
+      skipRelease = true
+      skipTag = true
+    }
   }
 }
 

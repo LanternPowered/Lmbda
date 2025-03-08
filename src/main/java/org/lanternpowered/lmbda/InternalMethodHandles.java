@@ -91,6 +91,7 @@ final class InternalMethodHandles {
    *
    * @return The method handle of the private lookup method
    */
+  @SuppressWarnings("JavaLangInvokeHandleSignature")
   private static @Nullable MethodHandle findPrivateLookupMethodHandle() {
     try {
       return MethodHandles.publicLookup().findStatic(MethodHandles.class, "privateLookupIn",
@@ -156,11 +157,8 @@ final class InternalMethodHandles {
    */
   private static final class Java8Adapter implements Adapter {
 
-    private static final MethodHandles.Lookup trustedLookup =
-      loadTrustedLookup();
-
-    private static final MethodHandle defineClassMethodHandle =
-      getClassLoaderDefineMethodHandle();
+    private static final MethodHandles.Lookup trustedLookup = loadTrustedLookup();
+    private static final MethodHandle defineClassMethodHandle = getClassLoaderDefineMethodHandle();
 
     /**
      * Gets the {@link MethodHandle} for the {@code classloader.defineClass(...)} method.
@@ -169,8 +167,7 @@ final class InternalMethodHandles {
      */
     private static MethodHandle getClassLoaderDefineMethodHandle() {
       return doUnchecked(() -> trustedLookup.findVirtual(ClassLoader.class, "defineClass",
-        MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class,
-          ProtectionDomain.class)));
+        MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class)));
     }
 
     /**

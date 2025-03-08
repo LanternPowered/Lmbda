@@ -107,10 +107,7 @@ final class InternalLambdaFactory {
   private static final @Nullable MethodHandle defineHiddenClass =
     InternalMethodHandles.findDefineHiddenClassMethodHandle();
 
-  static <T> T create(
-    LambdaType<T> lambdaType,
-    MethodHandle methodHandle
-  ) {
+  static <T> T create(LambdaType<T> lambdaType, MethodHandle methodHandle) {
     requireNonNull(lambdaType, "lambdaType");
     requireNonNull(methodHandle, "methodHandle");
 
@@ -162,10 +159,7 @@ final class InternalLambdaFactory {
     }
   }
 
-  private static String toGenericDescriptor(
-    Class<?> superClass,
-    ParameterizedType genericType
-  ) {
+  private static String toGenericDescriptor(Class<?> superClass, ParameterizedType genericType) {
     Map<String, TypeVariable<?>> typeVariables = new HashMap<>();
 
     StringBuilder signatureBuilder = new StringBuilder();
@@ -195,18 +189,14 @@ final class InternalLambdaFactory {
   }
 
   private static boolean isFinal(java.lang.reflect.Type bound) {
-    boolean isFinal;
     if (bound instanceof Class) {
-      isFinal = Modifier.isFinal(((Class<?>) bound).getModifiers());
+      return Modifier.isFinal(((Class<?>) bound).getModifiers());
     } else if (bound instanceof GenericArrayType) {
       throw new IllegalStateException(); // Should never happen
     } else if (bound instanceof ParameterizedType) {
-      isFinal = Modifier.isFinal(
-        ((Class<?>) ((ParameterizedType) bound).getRawType()).getModifiers());
-    } else {
-      isFinal = false;
+      return Modifier.isFinal(((Class<?>) ((ParameterizedType) bound).getRawType()).getModifiers());
     }
-    return isFinal;
+    return false;
   }
 
   private static void toGenericSignature(
@@ -244,10 +234,7 @@ final class InternalLambdaFactory {
       boolean hasLower = lowerBounds != null && lowerBounds.length > 0;
       boolean hasUpper = upperBounds != null && upperBounds.length > 0;
 
-      if (hasUpper && hasLower &&
-        Object.class.equals(lowerBounds[0]) &&
-        Object.class.equals(upperBounds[0])
-      ) {
+      if (hasUpper && hasLower && Object.class.equals(lowerBounds[0]) && Object.class.equals(upperBounds[0])) {
         builder.append('*');
       } else if (hasLower) {
         builder.append('-');
@@ -285,8 +272,7 @@ final class InternalLambdaFactory {
     MethodType methodType = lambdaType.methodType;
     // drop parameters at the end if we have too many
     if (methodType.parameterCount() > methodHandle.type().parameterCount()) {
-      methodType = methodType.dropParameterTypes(methodHandle.type().parameterCount(),
-        methodType.parameterCount());
+      methodType = methodType.dropParameterTypes(methodHandle.type().parameterCount(), methodType.parameterCount());
     }
     MethodHandle convertedMethodHandle = methodHandle.asType(methodType);
 
@@ -379,8 +365,7 @@ final class InternalLambdaFactory {
           .invokeExact(defineLookup, bytes, true));
         theClass = theClassLookup.lookupClass();
       } else {
-        theClass = doUnchecked(() ->
-          MethodHandlesExtensions.defineClass(defineLookup, bytes));
+        theClass = doUnchecked(() -> MethodHandlesExtensions.defineClass(defineLookup, bytes));
         theClassLookup = defineLookup.in(theClass);
       }
 

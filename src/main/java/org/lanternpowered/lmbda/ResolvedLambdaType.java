@@ -166,7 +166,7 @@ final class ResolvedLambdaType<T> {
    */
   private static Method findInterfaceMethod(final Class<?> functionClass) {
     Method validMethod = null;
-    for (final Method method : functionClass.getMethods()) {
+    for (Method method : functionClass.getMethods()) {
       // Ignore default and static methods
       if (method.isDefault() || Modifier.isStatic(method.getModifiers())) {
         continue;

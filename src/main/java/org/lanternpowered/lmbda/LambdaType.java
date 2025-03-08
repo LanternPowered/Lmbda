@@ -37,7 +37,7 @@ public abstract class LambdaType<@NonNull T> {
    * @return The lambda type
    * @throws IllegalArgumentException If no valid functional method could be found
    */
-  public static <@NonNull T> @NonNull LambdaType<T> of(final @NonNull Class<T> functionType) {
+  public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Class<T> functionType) {
     requireNonNull(functionType, "functionType");
     return new Simple<>(functionType);
   }
@@ -56,7 +56,7 @@ public abstract class LambdaType<@NonNull T> {
    * @return The lambda type
    * @throws IllegalArgumentException If no valid functional method could be found
    */
-  public static <@NonNull T> @NonNull LambdaType<T> of(final @NonNull Type functionType) {
+  public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Type functionType) {
     requireNonNull(functionType, "functionType");
     return new Simple<>(functionType);
   }
@@ -71,7 +71,7 @@ public abstract class LambdaType<@NonNull T> {
      *
      * @param functionType The function type
      */
-    Simple(final @NonNull Type functionType) {
+    Simple(@NonNull Type functionType) {
       super(new ResolvedLambdaType<>(functionType), null);
     }
 
@@ -81,10 +81,7 @@ public abstract class LambdaType<@NonNull T> {
      * @param resolved     The resolved lambda type
      * @param defineLookup The define lookup
      */
-    Simple(
-      final @NonNull ResolvedLambdaType<T> resolved,
-      final MethodHandles.@Nullable Lookup defineLookup
-    ) {
+    Simple(@NonNull ResolvedLambdaType<T> resolved, MethodHandles.@Nullable Lookup defineLookup) {
       super(resolved, defineLookup);
     }
   }
@@ -105,17 +102,16 @@ public abstract class LambdaType<@NonNull T> {
    * expected.</p>
    */
   public LambdaType() {
-    final Class<?> theClass = getClass();
-    final Class<?> superClass = theClass.getSuperclass();
+    Class<?> theClass = getClass();
+    Class<?> superClass = theClass.getSuperclass();
     if (superClass != LambdaType.class) {
       throw new IllegalStateException("Only direct subclasses of LambdaType are allowed.");
     }
-    final Type superType = theClass.getGenericSuperclass();
+    Type superType = theClass.getGenericSuperclass();
     if (!(superType instanceof ParameterizedType)) {
-      throw new IllegalStateException(
-        "Direct subclasses of LambdaType must be a parameterized type.");
+      throw new IllegalStateException("Direct subclasses of LambdaType must be a parameterized type.");
     }
-    final ParameterizedType parameterizedType = (ParameterizedType) superType;
+    ParameterizedType parameterizedType = (ParameterizedType) superType;
     this.resolved = new ResolvedLambdaType<>(parameterizedType.getActualTypeArguments()[0]);
     this.defineLookup = null;
   }
@@ -126,10 +122,7 @@ public abstract class LambdaType<@NonNull T> {
    * @param resolved     The resolved lambda type
    * @param defineLookup The define lookup
    */
-  private LambdaType(
-    final @NonNull ResolvedLambdaType<T> resolved,
-    final MethodHandles.@Nullable Lookup defineLookup
-  ) {
+  private LambdaType(@NonNull ResolvedLambdaType<T> resolved, MethodHandles.@Nullable Lookup defineLookup) {
     this.defineLookup = defineLookup;
     this.resolved = resolved;
   }
@@ -146,9 +139,7 @@ public abstract class LambdaType<@NonNull T> {
    * @param defineLookup The define lookup
    * @return The new lambda type
    */
-  public final @NonNull LambdaType<T> defineClassesWith(
-    final MethodHandles.@NonNull Lookup defineLookup
-  ) {
+  public final @NonNull LambdaType<T> defineClassesWith(MethodHandles.@NonNull Lookup defineLookup) {
     requireNonNull(defineLookup, "defineLookup");
     return new Simple<>(this.resolved, defineLookup);
   }
@@ -187,7 +178,7 @@ public abstract class LambdaType<@NonNull T> {
   }
 
   @Override
-  public final boolean equals(final @Nullable Object obj) {
+  public final boolean equals(@Nullable Object obj) {
     if (!(obj instanceof LambdaType)) {
       return false;
     }

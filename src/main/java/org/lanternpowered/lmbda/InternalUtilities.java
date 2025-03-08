@@ -62,7 +62,7 @@ final class InternalUtilities {
    * @return The package name
    */
   static String getPackageName(String className) {
-    final int index = className.lastIndexOf('.');
+    int index = className.lastIndexOf('.');
     return index == -1 ? "" : className.substring(0, index);
   }
 

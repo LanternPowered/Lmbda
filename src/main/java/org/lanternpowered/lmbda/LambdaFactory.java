@@ -125,6 +125,7 @@ public final class LambdaFactory {
 
   private static final LambdaType<ToIntBiFunction> toIntBiFunctionInterface =
     LambdaType.of(ToIntBiFunction.class);
+
   private static final LambdaType<ToDoubleBiFunction> toDoubleBiFunctionInterface =
     LambdaType.of(ToDoubleBiFunction.class);
 

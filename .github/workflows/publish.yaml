@@ -37,9 +37,13 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
       - name: Publish
-        run: chmod +x ./gradlew && ./gradlew publishToSonatype
+        run: chmod +x ./gradlew && ./gradlew publish && ./gradlew jreleaserFullRelease --stacktrace
         env:
-          ORG_GRADLE_PROJECT_sonatypeUsername: "${{ secrets.SONATYPE_USERNAME }}"
-          ORG_GRADLE_PROJECT_sonatypePassword: "${{ secrets.SONATYPE_PASSWORD }}"
-          ORG_GRADLE_PROJECT_signingKey: "${{ secrets.SIGNING_KEY }}"
-          ORG_GRADLE_PROJECT_signingPassword: "${{ secrets.SIGNING_PASSWORD }}"
+          JRELEASER_GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          JRELEASER_MAVENCENTRAL_USERNAME: "${{ secrets.SONATYPE_USERNAME }}"
+          JRELEASER_MAVENCENTRAL_TOKEN: "${{ secrets.SONATYPE_PASSWORD }}"
+          JRELEASER_NEXUS2_USERNAME: "${{ secrets.SONATYPE_USERNAME }}"
+          JRELEASER_NEXUS2_TOKEN: "${{ secrets.SONATYPE_PASSWORD }}"
+          JRELEASER_GPG_PUBLIC_KEY: "${{ secrets.SIGNING_PUBLIC_KEY }}"
+          JRELEASER_GPG_SECRET_KEY: "${{ secrets.SIGNING_SECRET_KEY }}"
+          JRELEASER_GPG_PASSPHRASE: "${{ secrets.SIGNING_PASSWORD }}"

@@ -31,12 +31,12 @@ final class JavaLambdaFactory {
    * @return The lambda function instance
    */
   static <@NonNull T> T create(
-    final @NonNull LambdaType<T> lambdaType,
-    final MethodHandles.@NonNull Lookup lookup,
-    final @NonNull MethodHandle methodHandle
+    @NonNull LambdaType<T> lambdaType,
+    MethodHandles.@NonNull Lookup lookup,
+    @NonNull MethodHandle methodHandle
   ) throws Throwable {
     // Generate the lambda class
-    final CallSite callSite = LambdaMetafactory.metafactory(lookup,
+    CallSite callSite = LambdaMetafactory.metafactory(lookup,
       lambdaType.getMethod().getName(), MethodType.methodType(lambdaType.resolved.functionClass),
       lambdaType.resolved.methodType, methodHandle, methodHandle.type());
 
