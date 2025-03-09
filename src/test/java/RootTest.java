@@ -24,8 +24,8 @@ public class RootTest {
 
   @Test
   void testMethodHandlesDefineInRootPackage() throws IllegalAccessException {
-    final byte[] byteCode = MethodHandlesTest.generateSimpleByteCode("RootAccessClass");
-    final MethodHandles.Lookup lookup =
+    byte[] byteCode = MethodHandlesTest.generateSimpleByteCode("RootAccessClass");
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(RootDummy.class, MethodHandles.lookup());
 
     assertDoesNotThrow(() -> MethodHandlesExtensions.defineClass(lookup, byteCode));
@@ -33,11 +33,11 @@ public class RootTest {
 
   @Test
   void testRootLambdaImplementation() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(RootTestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle = lookup.findGetter(RootTestObject.class, "data", int.class);
+    MethodHandle methodHandle = lookup.findGetter(RootTestObject.class, "data", int.class);
 
-    final ToIntFunction<RootTestObject> getter = LambdaFactory.create(
+    ToIntFunction<RootTestObject> getter = LambdaFactory.create(
       new LambdaType<ToIntFunction<RootTestObject>>() {}, methodHandle);
 
     assertEquals(100, getter.applyAsInt(new RootTestObject()));
@@ -45,11 +45,11 @@ public class RootTest {
 
   @Test
   void testRootLambdaImplementationDefineInRoot() throws Exception {
-    final MethodHandles.Lookup lookup =
+    MethodHandles.Lookup lookup =
       MethodHandlesExtensions.privateLookupIn(RootTestObject.class, MethodHandles.lookup());
-    final MethodHandle methodHandle = lookup.findGetter(RootTestObject.class, "data", int.class);
+    MethodHandle methodHandle = lookup.findGetter(RootTestObject.class, "data", int.class);
 
-    final ToIntFunction<RootTestObject> getter = LambdaFactory.create(
+    ToIntFunction<RootTestObject> getter = LambdaFactory.create(
       new LambdaType<ToIntFunction<RootTestObject>>() {}.defineClassesWith(lookup), methodHandle);
 
     assertEquals(100, getter.applyAsInt(new RootTestObject()));

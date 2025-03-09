@@ -24,8 +24,7 @@ class LambdaGetterTest {
 
   @Test
   void test() throws Exception {
-    MethodHandles.Lookup lookup =
-      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+    MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
     MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
     ToIntFunction<TestObject> getter = LambdaFactory.create(
@@ -39,8 +38,7 @@ class LambdaGetterTest {
 
   @Test
   void testGenericSignature() throws Exception {
-    MethodHandles.Lookup lookup =
-      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+    MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
     MethodHandle methodHandle = lookup.findGetter(TestObject.class, "data", int.class);
 
     ToIntFunction<TestObject> getter = LambdaFactory.create(

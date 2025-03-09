@@ -53,8 +53,7 @@ public final class MethodHandlesExtensions {
    * @param lookup   The lookup of which the target class will be used to define the class in
    * @param byteCode The byte code of the class to define
    * @return The defined class
-   * @throws IllegalAccessException If the lookup doesn't have package private access to the
-   * target package
+   * @throws IllegalAccessException If the lookup doesn't have package private access to the target package
    */
   public static @NonNull Class<?> defineClass(
     MethodHandles.@NonNull Lookup lookup,

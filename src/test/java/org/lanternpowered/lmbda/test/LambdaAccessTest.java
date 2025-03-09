@@ -32,7 +32,6 @@ class LambdaAccessTest {
   void testPublicInterface() throws Exception {
     MethodHandle methodHandle = getGetterMethodHandle();
 
-    // Private function classes aren't supported
     assertDoesNotThrow(() -> LambdaFactory.create(
       new LambdaType<IMyPublicFunction>() {}, methodHandle));
   }
@@ -41,11 +40,10 @@ class LambdaAccessTest {
   void testPackagePrivateInterface() throws Exception {
     MethodHandle methodHandle = getGetterMethodHandle();
 
-    assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
-      new LambdaType<IMyPackagePrivateFunction>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<IMyPackagePrivateFunction>() {}
-        .defineClassesWith(MethodHandles.lookup()), methodHandle));
+    assertDoesNotThrow(() -> new LambdaType<IMyPackagePrivateFunction>() {});
+    LambdaType<IMyPackagePrivateFunction> lambdaType = new LambdaType<IMyPackagePrivateFunction>() {};
+    assertThrows(IllegalStateException.class, () -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test
@@ -53,10 +51,10 @@ class LambdaAccessTest {
     MethodHandle methodHandle = getGetterMethodHandle();
 
     // The default lookup doesn't have access to the private function class
-    assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
-      new LambdaType<IMyPrivateFunction>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<IMyPrivateFunction>() {}.defineClassesWith(MethodHandles.lookup()), methodHandle));
+    LambdaType<IMyPrivateFunction> lambdaType = new LambdaType<IMyPrivateFunction>() {};
+    assertDoesNotThrow(() -> new LambdaType<IMyPrivateFunction>() {});
+    assertThrows(IllegalStateException.class, () -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test
@@ -64,14 +62,13 @@ class LambdaAccessTest {
     MethodHandle methodHandle = getGetterMethodHandle();
 
     // Private abstract class have by default private constructors
-    assertThrows(IllegalStateException.class, () -> LambdaFactory.create(
-      new LambdaType<MyPrivateFunction>() {}, methodHandle));
+    assertThrows(IllegalStateException.class, () -> new LambdaType<MyPrivateFunction>() {});
     // The default lookup doesn't have access to the private function class
-    assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
-      new LambdaType<MyPrivateFunctionWithPackagePrivateConstructor>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyPrivateFunctionWithPackagePrivateConstructor>() {}
-        .defineClassesWith(MethodHandles.lookup()), methodHandle));
+    LambdaType<MyPrivateFunctionWithPackagePrivateConstructor> lambdaType =
+      new LambdaType<MyPrivateFunctionWithPackagePrivateConstructor>() {};
+    assertDoesNotThrow(() -> new LambdaType<MyPrivateFunctionWithPackagePrivateConstructor>() {});
+    assertThrows(IllegalStateException.class, () -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test
@@ -79,10 +76,9 @@ class LambdaAccessTest {
     MethodHandle methodHandle = getGetterMethodHandle();
 
     // Every lookup should have access to public classes
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyPublicFunction>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyPublicFunction>() {}.defineClassesWith(MethodHandles.lookup()), methodHandle));
+    LambdaType<MyPublicFunction> lambdaType = new LambdaType<MyPublicFunction>() {};
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test
@@ -90,10 +86,9 @@ class LambdaAccessTest {
     MethodHandle methodHandle = getGetterMethodHandle();
 
     // The default lookup doesn't have access to the package private function class
-    assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
-      new LambdaType<MyPackagePrivateFunction>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyPackagePrivateFunction>() {}.defineClassesWith(MethodHandles.lookup()), methodHandle));
+    LambdaType<MyPackagePrivateFunction> lambdaType = new LambdaType<MyPackagePrivateFunction>() {};
+    assertThrows(IllegalStateException.class, () -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test
@@ -101,17 +96,15 @@ class LambdaAccessTest {
     MethodHandle methodHandle = getGetterMethodHandle();
 
     // The default lookup doesn't have access to the protected function class
-    assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
-      new LambdaType<MyProtectedFunction>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyProtectedFunction>() {}.defineClassesWith(MethodHandles.lookup()), methodHandle));
+    LambdaType<MyProtectedFunction> lambdaType = new LambdaType<MyProtectedFunction>() {};
+    assertThrows(IllegalStateException.class, () -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test
   void testPrivateConstructor() {
     // Function classes with private constructors aren't supported
-    assertThrows(IllegalStateException.class,
-      () -> new LambdaType<MyFunctionWithPrivateConstructor>() {});
+    assertThrows(IllegalStateException.class, () -> new LambdaType<MyFunctionWithPrivateConstructor>() {});
   }
 
   @Test
@@ -119,22 +112,19 @@ class LambdaAccessTest {
     MethodHandle methodHandle = getGetterMethodHandle();
 
     // The default lookup doesn't have access to the package private function constructor
-    assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
-      new LambdaType<MyFunctionWithPackagePrivateConstructor>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyFunctionWithPackagePrivateConstructor>() {}
-        .defineClassesWith(MethodHandles.lookup()), methodHandle));
+    LambdaType<MyFunctionWithPackagePrivateConstructor> lambdaType =
+      new LambdaType<MyFunctionWithPackagePrivateConstructor>() {};
+    assertThrows(IllegalStateException.class, () -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test
   void testProtectedConstructor() throws Exception {
     MethodHandle methodHandle = getGetterMethodHandle();
 
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyFunctionWithProtectedConstructor>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyFunctionWithProtectedConstructor>() {}
-        .defineClassesWith(MethodHandles.lookup()), methodHandle));
+    LambdaType<MyFunctionWithProtectedConstructor> lambdaType = new LambdaType<MyFunctionWithProtectedConstructor>() {};
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test
@@ -142,22 +132,18 @@ class LambdaAccessTest {
     MethodHandle methodHandle = getGetterMethodHandle();
 
     // The default lookup doesn't have access to the package private function method
-    assertThrows(IllegalAccessException.class, () -> LambdaFactory.create(
-      new LambdaType<MyFunctionWithPackagePrivateMethod>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyFunctionWithPackagePrivateMethod>() {}
-        .defineClassesWith(MethodHandles.lookup()), methodHandle));
+    LambdaType<MyFunctionWithPackagePrivateMethod> lambdaType = new LambdaType<MyFunctionWithPackagePrivateMethod>() {};
+    assertThrows(IllegalStateException.class, () -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test
   void testProtectedMethod() throws Exception {
     MethodHandle methodHandle = getGetterMethodHandle();
 
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyFunctionWithProtectedMethod>() {}, methodHandle));
-    assertDoesNotThrow(() -> LambdaFactory.create(
-      new LambdaType<MyFunctionWithProtectedMethod>() {}
-        .defineClassesWith(MethodHandles.lookup()), methodHandle));
+    LambdaType<MyFunctionWithProtectedMethod> lambdaType = new LambdaType<MyFunctionWithProtectedMethod>() {};
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType, methodHandle));
+    assertDoesNotThrow(() -> LambdaFactory.create(lambdaType.defineClassesWith(MethodHandles.lookup()), methodHandle));
   }
 
   @Test

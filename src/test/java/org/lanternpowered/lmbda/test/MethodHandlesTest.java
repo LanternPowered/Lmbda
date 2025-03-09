@@ -57,8 +57,7 @@ public final class MethodHandlesTest {
       "org.lanternpowered.lmbda.test.other.TestDefinePackageAccess");
 
     assertDoesNotThrow(() -> {
-      MethodHandles.Lookup lookup =
-        MethodHandlesExtensions.privateLookupIn(Dummy.class, MethodHandles.lookup());
+      MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(Dummy.class, MethodHandles.lookup());
       MethodHandlesExtensions.defineClass(lookup, byteCode);
     });
   }

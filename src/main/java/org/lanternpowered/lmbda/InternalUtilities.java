@@ -9,8 +9,6 @@
  */
 package org.lanternpowered.lmbda;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -64,47 +62,5 @@ final class InternalUtilities {
   static String getPackageName(String className) {
     int index = className.lastIndexOf('.');
     return index == -1 ? "" : className.substring(0, index);
-  }
-
-  /**
-   * Performs a unchecked action.
-   *
-   * @param supplier The supplier
-   * @param <T>      The result type
-   * @return The result
-   */
-  static <@Nullable T> T doUnchecked(ThrowableSupplier<T> supplier) {
-    try {
-      return supplier.get();
-    } catch (Throwable t) {
-      throw throwUnchecked(t);
-    }
-  }
-
-  /**
-   * Represents a supplier that may end with a exception.
-   *
-   * @param <T> The result type
-   */
-  @FunctionalInterface
-  interface ThrowableSupplier<@Nullable T> {
-
-    T get() throws Throwable;
-  }
-
-  /**
-   * Throws the {@link Throwable} as an unchecked exception.
-   *
-   * @param t The throwable to throw
-   * @return A runtime exception
-   */
-  static RuntimeException throwUnchecked(Throwable t) {
-    throwUnchecked0(t);
-    throw new AssertionError("Unreachable.");
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <T extends Throwable> void throwUnchecked0(Throwable t) throws T {
-    throw (T) t;
   }
 }

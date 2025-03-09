@@ -9,8 +9,6 @@
  */
 package org.lanternpowered.lmbda;
 
-import static org.lanternpowered.lmbda.InternalUtilities.throwUnchecked;
-
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -36,7 +34,7 @@ import java.util.function.ToIntFunction;
  */
 @SuppressWarnings("unchecked")
 @Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1, batchSize = -1)
 @Fork(3)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -75,28 +73,28 @@ public class IntGetterMethodBenchmark {
         try {
           return (Integer) methodConst.invoke(object);
         } catch (Throwable t) {
-          throw throwUnchecked(t);
+          throw new IllegalStateException(t);
         }
       };
       methodDynFunction = object -> {
         try {
           return (Integer) methodDyn.invoke(object);
         } catch (Throwable t) {
-          throw throwUnchecked(t);
+          throw new IllegalStateException(t);
         }
       };
       mhConstFunction = object -> {
         try {
           return (Integer) mhConst.invokeExact(object);
         } catch (Throwable t) {
-          throw throwUnchecked(t);
+          throw new IllegalStateException(t);
         }
       };
       mhDynFunction = object -> {
         try {
           return (Integer) mhDyn.invokeExact(object);
         } catch (Throwable t) {
-          throw throwUnchecked(t);
+          throw new IllegalStateException(t);
         }
       };
       mhProxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, mhDyn);
@@ -106,7 +104,7 @@ public class IntGetterMethodBenchmark {
       lmbdaFunction = LambdaFactory.create(
         new LambdaType<ToIntFunction<IntGetterMethodBenchmark>>() {}, mhDyn);
     } catch (Throwable t) {
-      throw throwUnchecked(t);
+      throw new IllegalStateException(t);
     }
   }
 

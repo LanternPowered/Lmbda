@@ -10,9 +10,7 @@
 package org.lanternpowered.lmbda;
 
 import static java.util.Objects.requireNonNull;
-import static org.lanternpowered.lmbda.InternalUtilities.doUnchecked;
 import static org.lanternpowered.lmbda.InternalUtilities.getPackageName;
-import static org.lanternpowered.lmbda.InternalUtilities.throwUnchecked;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.objectweb.asm.ClassReader;
@@ -96,7 +94,9 @@ final class InternalMethodHandles {
     try {
       return MethodHandles.publicLookup().findStatic(MethodHandles.class, "privateLookupIn",
         MethodType.methodType(MethodHandles.Lookup.class, Class.class, MethodHandles.Lookup.class));
-    } catch (NoSuchMethodException | IllegalAccessException e) {
+    } catch (IllegalAccessException ex) {
+      throw new IllegalStateException("Failed to access privateLookupIn method in MethodHandles", ex);
+    } catch (NoSuchMethodException ex) {
       return null;
     }
   }
@@ -117,7 +117,9 @@ final class InternalMethodHandles {
       MethodHandle methodHandle = MethodHandles.publicLookup().findVirtual(
         MethodHandles.Lookup.class, "defineHiddenClass", methodType);
       return MethodHandles.insertArguments(methodHandle, 3, emptyOptionArray);
-    } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException e) {
+    } catch (IllegalAccessException ex) {
+      throw new IllegalStateException("Failed to access defineHiddenClass method in MethodHandles.Lookup", ex);
+    } catch (ClassNotFoundException | NoSuchMethodException e) {
       return null;
     }
   }
@@ -137,18 +139,39 @@ final class InternalMethodHandles {
      */
     @SuppressWarnings("JavaLangInvokeHandleSignature")
     private static MethodHandle getDefineClassMethodHandle() {
-      return doUnchecked(() -> MethodHandles.publicLookup().findVirtual(MethodHandles.Lookup.class,
-        "defineClass", MethodType.methodType(Class.class, byte[].class)));
+      try {
+        return MethodHandles.publicLookup().findVirtual(MethodHandles.Lookup.class,
+          "defineClass", MethodType.methodType(Class.class, byte[].class));
+      } catch (NoSuchMethodException ex) {
+        throw new IllegalStateException("Failed to find defineClass method in MethodHandles.Lookup", ex);
+      } catch (IllegalAccessException ex) {
+        throw new IllegalStateException("Failed to access defineClass method in MethodHandles.Lookup", ex);
+      }
     }
 
     @Override
-    public MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) {
-      return doUnchecked(() -> (MethodHandles.Lookup) privateLookupMethodHandle.invoke(targetClass, lookup));
+    public MethodHandles.Lookup privateLookupIn(
+      Class<?> targetClass,
+      MethodHandles.Lookup lookup
+    ) throws IllegalAccessException {
+      try {
+        return (MethodHandles.Lookup) privateLookupMethodHandle.invoke(targetClass, lookup);
+      } catch (IllegalAccessException | RuntimeException ex) {
+        throw ex;
+      } catch (Throwable ex) {
+        throw new IllegalStateException("Failed to create private MethodHandles.Lookup", ex);
+      }
     }
 
     @Override
-    public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
-      return doUnchecked(() -> (Class<?>) defineClassMethodHandle.invoke(lookup, byteCode));
+    public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) throws IllegalAccessException {
+      try {
+        return (Class<?>) defineClassMethodHandle.invoke(lookup, byteCode);
+      } catch (IllegalAccessException | RuntimeException ex) {
+        throw ex;
+      } catch (Throwable ex) {
+        throw new IllegalStateException("Failed to define class", ex);
+      }
     }
   }
 
@@ -166,8 +189,12 @@ final class InternalMethodHandles {
      * @return The method handle
      */
     private static MethodHandle getClassLoaderDefineMethodHandle() {
-      return doUnchecked(() -> trustedLookup.findVirtual(ClassLoader.class, "defineClass",
-        MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class)));
+      try {
+        return trustedLookup.findVirtual(ClassLoader.class, "defineClass",
+          MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class));
+      } catch (NoSuchMethodException | IllegalAccessException ex) {
+        throw new IllegalStateException("Failed to find or access defineClass method in ClassLoader", ex);
+      }
     }
 
     /**
@@ -181,7 +208,7 @@ final class InternalMethodHandles {
         Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
         field.setAccessible(true);
         return (MethodHandles.Lookup) field.get(null);
-      } catch (NoSuchFieldException e) {
+      } catch (NoSuchFieldException ex) {
         // Not so much luck, let's try to hack something together another way
         // Get a public lookup and create a new instance
         MethodHandles.Lookup lookup = MethodHandles.publicLookup().in(Object.class);
@@ -200,21 +227,18 @@ final class InternalMethodHandles {
 
           // Apply the modifier to the lookup instance
           field.set(lookup, trustedAccessModeField.get(null));
-        } catch (Exception e1) {
-          throw new IllegalStateException("Unable to create a trusted method handles lookup", e1);
+        } catch (Exception ex2) {
+          throw new IllegalStateException("Unable to create a trusted method handles lookup", ex2);
         }
 
         return lookup;
-      } catch (IllegalAccessException e) {
-        throw new IllegalStateException("Unable to create a trusted method handles lookup", e);
+      } catch (IllegalAccessException ex) {
+        throw new IllegalStateException("Unable to create a trusted method handles lookup", ex);
       }
     }
 
     @Override
-    public MethodHandles.Lookup privateLookupIn(
-      Class<?> targetClass,
-      MethodHandles.Lookup lookup
-    ) {
+    public MethodHandles.Lookup privateLookupIn(Class<?> targetClass, MethodHandles.Lookup lookup) {
       if (targetClass.isPrimitive()) {
         throw new IllegalArgumentException(targetClass + " is a primitive class");
       }
@@ -225,9 +249,9 @@ final class InternalMethodHandles {
     }
 
     @Override
-    public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) {
+    public Class<?> defineClass(MethodHandles.Lookup lookup, byte[] byteCode) throws IllegalAccessException {
       if ((lookup.lookupModes() & MethodHandles.Lookup.PACKAGE) == 0) {
-        throw throwUnchecked(new IllegalAccessException("Lookup does not have PACKAGE access"));
+        throw new IllegalAccessException("Lookup does not have PACKAGE access");
       }
       String className;
       try {
@@ -246,8 +270,14 @@ final class InternalMethodHandles {
       }
       ClassLoader classLoader = lookupClass.getClassLoader();
       ProtectionDomain protectionDomain = lookupClass.getProtectionDomain();
-      return doUnchecked(() -> (Class<?>) defineClassMethodHandle.invoke(classLoader,
-        className, byteCode, 0, byteCode.length, protectionDomain));
+      try {
+        return (Class<?>) defineClassMethodHandle.invoke(classLoader,
+          className, byteCode, 0, byteCode.length, protectionDomain);
+      } catch (IllegalAccessException | RuntimeException ex) {
+        throw ex;
+      } catch (Throwable ex) {
+        throw new IllegalStateException("Failed to define class", ex);
+      }
     }
   }
 }

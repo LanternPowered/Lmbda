@@ -704,10 +704,9 @@ public final class LambdaFactory {
   }
 
   /**
-   * Attempts to create a lambda for the given {@link MethodHandle} implementing the
-   * {@link LambdaType}.
+   * Attempts to create a lambda for the given {@link MethodHandle} implementing the {@link LambdaType}.
    *
-   * <p>This method can also throw a {@link IllegalAccessException} if the default or provided
+   * <p>This method can also throw an {@link IllegalStateException} if the default or provided
    * {@link java.lang.invoke.MethodHandles.Lookup} doesn't have proper access to implement the
    * {@link LambdaType}. This exception is thrown as an unchecked exception for convenience.</p>
    *

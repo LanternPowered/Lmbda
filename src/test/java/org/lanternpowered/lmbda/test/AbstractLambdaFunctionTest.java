@@ -19,7 +19,7 @@ class AbstractLambdaFunctionTest {
 
   @Test
   void testImplementingFunction() throws Exception {
-    final LambdaType<IFunctionImplementing> testFunction =
+    LambdaType<IFunctionImplementing> testFunction =
       LambdaType.of(IFunctionImplementing.class);
 
     assertEquals(testFunction.getFunctionClass(), IFunctionImplementing.class);
@@ -30,7 +30,7 @@ class AbstractLambdaFunctionTest {
 
   @Test
   void testFunction() throws Exception {
-    final LambdaType<Function> testFunction = LambdaType.of(Function.class);
+    LambdaType<Function> testFunction = LambdaType.of(Function.class);
 
     assertEquals(testFunction.getFunctionClass(), Function.class);
     assertEquals(testFunction.getFunctionType(), Function.class);
@@ -40,7 +40,7 @@ class AbstractLambdaFunctionTest {
 
   @Test
   void testExtendedFunction() throws Exception {
-    final LambdaType<ExtendedFunction> testFunction = LambdaType.of(ExtendedFunction.class);
+    LambdaType<ExtendedFunction> testFunction = LambdaType.of(ExtendedFunction.class);
 
     assertEquals(testFunction.getFunctionClass(), ExtendedFunction.class);
     assertEquals(testFunction.getFunctionType(), ExtendedFunction.class);
@@ -50,7 +50,7 @@ class AbstractLambdaFunctionTest {
 
   @Test
   void testOverrideMethodFunction() throws Exception {
-    final LambdaType<OverrideMethodFunction> testFunction =
+    LambdaType<OverrideMethodFunction> testFunction =
       LambdaType.of(OverrideMethodFunction.class);
 
     assertEquals(testFunction.getFunctionClass(), OverrideMethodFunction.class);
@@ -66,7 +66,7 @@ class AbstractLambdaFunctionTest {
 
   @Test
   void testOverrideNonAbstractMethodFunction() throws Exception {
-    final LambdaType<OverrideNonAbstractMethodFunction> testFunction =
+    LambdaType<OverrideNonAbstractMethodFunction> testFunction =
       LambdaType.of(OverrideNonAbstractMethodFunction.class);
 
     assertEquals(testFunction.getFunctionClass(), OverrideNonAbstractMethodFunction.class);
@@ -87,7 +87,7 @@ class AbstractLambdaFunctionTest {
 
   @Test
   void testGenericMethodFunction() throws Exception {
-    final LambdaType<GenericFunction<Double>> testFunction = new LambdaType<GenericFunction<Double>>() {};
+    LambdaType<GenericFunction<Double>> testFunction = new LambdaType<GenericFunction<Double>>() {};
 
     assertEquals(testFunction.getFunctionClass(), GenericFunction.class);
     assertEquals(testFunction.getMethod(),

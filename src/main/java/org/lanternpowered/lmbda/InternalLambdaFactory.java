@@ -10,8 +10,6 @@
 package org.lanternpowered.lmbda;
 
 import static java.util.Objects.requireNonNull;
-import static org.lanternpowered.lmbda.InternalUtilities.doUnchecked;
-import static org.lanternpowered.lmbda.InternalUtilities.throwUnchecked;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -125,29 +123,29 @@ final class InternalLambdaFactory {
       .equals(InternalUtilities.getPackageName(defineLookup.lookupClass()));
 
     if (!Modifier.isPublic(functionClass.getModifiers()) && !samePackage) {
-      throw throwUnchecked(new IllegalAccessException("The function class isn't public and no " +
+      throw new IllegalStateException("The function class isn't public and no " +
         "applicable define lookup is provided. When the access isn't public, the defined class " +
         "must be in the same package, a lookup within the same package can be set using " +
-        "LambdaType#defineClassesWith(...)"));
+        "LambdaType#defineClassesWith(...)");
     } else if (!functionClass.isInterface()) {
       try {
         int modifiers = functionClass.getDeclaredConstructor().getModifiers();
         if (!(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) && !samePackage) {
-          throw throwUnchecked(new IllegalAccessException("The function class constructor isn't " +
-            "public and no applicable define lookup is  provided. When the access isn't public, " +
+          throw new IllegalStateException("The function class constructor isn't " +
+            "public and no applicable define lookup is provided. When the access isn't public, " +
             "the defined class must be in the same package, a lookup within the same package can " +
-            "be set using LambdaType#defineClassesWith(...)"));
+            "be set using LambdaType#defineClassesWith(...)");
         }
-      } catch (NoSuchMethodException e) {
+      } catch (NoSuchMethodException ex) {
         // Should never happen, is already checked for at the construction of lambda type
-        throw throwUnchecked(e);
+        throw new IllegalStateException("Function class is missing a zero-arg constructor", ex);
       }
       int modifiers = lambdaType.resolved.method.getModifiers();
       if (!(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) && !samePackage) {
-        throw throwUnchecked(new IllegalAccessException("The function class method isn't public " +
+        throw new IllegalStateException("The function class method isn't public " +
           "or protected and no applicable define lookup is provided. When the access isn't " +
           "public, the defined class must be in the same package, a lookup within the same " +
-          "package can be set using LambdaType#defineClassesWith(...)"));
+          "package can be set using LambdaType#defineClassesWith(...)");
       }
     }
 
@@ -361,17 +359,27 @@ final class InternalLambdaFactory {
       Class<?> theClass;
       // Define the class within the provided lookup
       if (defineHiddenClass != null) {
-        theClassLookup = doUnchecked(() -> (MethodHandles.Lookup) defineHiddenClass
-          .invokeExact(defineLookup, bytes, true));
+        try {
+          theClassLookup = (MethodHandles.Lookup) defineHiddenClass.invokeExact(defineLookup, bytes, true);
+        } catch (Throwable ex) {
+          throw new IllegalStateException("Failed to define hidden class", ex);
+        }
         theClass = theClassLookup.lookupClass();
       } else {
-        theClass = doUnchecked(() -> MethodHandlesExtensions.defineClass(defineLookup, bytes));
+        try {
+          theClass = MethodHandlesExtensions.defineClass(defineLookup, bytes);
+        } catch (IllegalAccessException ex) {
+          throw new IllegalStateException("Failed to define class", ex);
+        }
         theClassLookup = defineLookup.in(theClass);
       }
 
-      // Instantiate the function object
-      return doUnchecked(() -> (T) theClassLookup
-        .findConstructor(theClass, MethodType.methodType(void.class)).invoke());
+      try {
+        // Instantiate the function object
+        return (T) theClassLookup.findConstructor(theClass, MethodType.methodType(void.class)).invoke();
+      } catch (Throwable ex) {
+        throw new IllegalStateException("Failed to instantiate function object", ex);
+      }
     } finally {
       // Cleanup
       currentMethodHandle.remove();
@@ -416,18 +424,21 @@ final class InternalLambdaFactory {
     cw.visitEnd();
 
     byte[] bytes = cw.toByteArray();
-    return doUnchecked(() -> {
-      Class<?> holderClass = MethodHandlesExtensions.defineClass(defineLookup, bytes);
-      ThreadLocal<MethodHandle> threadLocal;
-      try {
-        MethodHandle currentMethodHandleGetter = defineLookup
-          .findStaticGetter(holderClass, "METHOD_HANDLE", ThreadLocal.class);
-        threadLocal = (ThreadLocal<MethodHandle>) currentMethodHandleGetter.invokeExact();
-      } catch (Throwable ex) {
-        throw new IllegalStateException(ex);
-      }
-      return new Holder(holderClass, internalClassName, threadLocal);
-    });
+    Class<?> holderClass;
+    try {
+      holderClass = MethodHandlesExtensions.defineClass(defineLookup, bytes);
+    } catch (IllegalAccessException ex) {
+      throw new IllegalStateException("Failed to define class", ex);
+    }
+    ThreadLocal<MethodHandle> threadLocal;
+    try {
+      MethodHandle currentMethodHandleGetter = defineLookup
+        .findStaticGetter(holderClass, "METHOD_HANDLE", ThreadLocal.class);
+      threadLocal = (ThreadLocal<MethodHandle>) currentMethodHandleGetter.invokeExact();
+    } catch (Throwable ex) {
+      throw new IllegalStateException("Failed to get thread local from defined holder class", ex);
+    }
+    return new Holder(holderClass, internalClassName, threadLocal);
   }
 
   private static String generateInternalClassName(MethodHandles.Lookup lookup, AtomicInteger counter, String type) {

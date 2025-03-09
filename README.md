@@ -4,6 +4,10 @@ This is library that can be used to generate lambdas from method handles with an
 access modifier without any performance loss. This includes methods, constructors, field accessors 
 (getter, setter) and any other [`MethodHandle`] that can be constructed.
 
+❗ **Note**: Since Java 23, `MethodHandleProxies.asInterfaceInstance(...)` has been re-written and performance is now in 
+line with direct access and lmbda implementations. It might be worth looking into that method instead to avoid adding 
+new dependencies. However, not all features like abstract functional classes will be supported.
+
 * [Source]
 * [Issues]
 

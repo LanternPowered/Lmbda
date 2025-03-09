@@ -9,8 +9,6 @@
  */
 package org.lanternpowered.lmbda;
 
-import static org.lanternpowered.lmbda.InternalUtilities.throwUnchecked;
-
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -74,35 +72,35 @@ public class IntGetterFieldBenchmark {
         try {
           return fieldConst.getInt(object);
         } catch (Throwable t) {
-          throw throwUnchecked(t);
+          throw new IllegalStateException(t);
         }
       };
       fieldDynFunction = object -> {
         try {
           return fieldDyn.getInt(object);
         } catch (Throwable t) {
-          throw throwUnchecked(t);
+          throw new IllegalStateException(t);
         }
       };
       mhConstFunction = object -> {
         try {
           return (int) mhConst.invokeExact(object);
         } catch (Throwable t) {
-          throw throwUnchecked(t);
+          throw new IllegalStateException(t);
         }
       };
       mhDynFunction = object -> {
         try {
           return (int) mhDyn.invokeExact(object);
         } catch (Throwable t) {
-          throw throwUnchecked(t);
+          throw new IllegalStateException(t);
         }
       };
       mhProxyFunction = MethodHandleProxies.asInterfaceInstance(ToIntFunction.class, mhDyn);
       lmbdaFunction = LambdaFactory.create(
         new LambdaType<ToIntFunction<IntGetterFieldBenchmark>>() {}, mhDyn);
     } catch (Throwable t) {
-      throw throwUnchecked(t);
+      throw new IllegalStateException(t);
     }
   }
 

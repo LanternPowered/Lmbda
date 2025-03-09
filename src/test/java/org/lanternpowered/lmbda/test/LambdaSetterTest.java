@@ -28,8 +28,7 @@ class LambdaSetterTest {
 
   @Test
   void testFieldInt() throws Exception {
-    MethodHandles.Lookup lookup =
-      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+    MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
     MethodHandle methodHandle = lookup.findSetter(TestObject.class, "dataInt", int.class);
 
     ObjIntConsumer<TestObject> setter = LambdaFactory.create(
@@ -43,8 +42,7 @@ class LambdaSetterTest {
 
   @Test
   void testFieldLong() throws Exception {
-    MethodHandles.Lookup lookup =
-      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+    MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
     MethodHandle methodHandle = lookup.findSetter(TestObject.class, "dataLong", long.class);
 
     ObjLongConsumer<TestObject> setter = LambdaFactory.create(
@@ -58,8 +56,7 @@ class LambdaSetterTest {
 
   @Test
   void testMethod() throws Exception {
-    MethodHandles.Lookup lookup =
-      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
+    MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
     MethodHandle methodHandle = lookup.findVirtual(
       TestObject.class, "setDataInt", MethodType.methodType(void.class, int.class));
 
@@ -73,9 +70,7 @@ class LambdaSetterTest {
 
   @Test
   void testLongBinaryOperator() throws Exception {
-    MethodHandles.Lookup lookup =
-      MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
-
+    MethodHandles.Lookup lookup = MethodHandlesExtensions.privateLookupIn(TestObject.class, MethodHandles.lookup());
     TestObject object = new TestObject();
 
     MethodHandle methodHandle = lookup.findVirtual(
