@@ -20,7 +20,7 @@ jobs:
           distribution: adopt
           java-version: ${{ matrix.java-version }}
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v5
       - name: Build
         run: chmod +x ./gradlew && ./gradlew build --stacktrace
   publish:
@@ -35,7 +35,7 @@ jobs:
           distribution: adopt
           java-version: 8
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v5
       - name: Publish
         run: chmod +x ./gradlew && ./gradlew publish && ./gradlew jreleaserFullRelease --stacktrace
         env:
