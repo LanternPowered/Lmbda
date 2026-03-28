@@ -1,4 +1,4 @@
-## Lmbda [![Discord](https://img.shields.io/badge/chat-on%20discord-6E85CF.svg)](https://discord.gg/ArSrsuU) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.lanternpowered/lmbda)
+## Lmbda [![Discord](https://img.shields.io/badge/chat-on%20discord-6E85CF.svg)](https://discord.gg/ArSrsuU) [![Maven Central](https://img.shields.io/maven-central/v/org.lanternpowered/lmbda)](https://central.sonatype.com/artifact/org.lanternpowered/lmbda)
 
 This is library that can be used to generate lambdas from method handles with any kind of 
 access modifier without any performance loss. This includes methods, constructors, field accessors 

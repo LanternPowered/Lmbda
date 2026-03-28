@@ -34,13 +34,13 @@ defaultTasks("licenseFormat", "build")
 
 java {
   base.archivesName.set(project.name.lowercase())
-  sourceCompatibility = JavaVersion.VERSION_1_9
-  targetCompatibility = JavaVersion.VERSION_1_9
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 kotlin {
   target {
-    compilerOptions.jvmTarget = JvmTarget.JVM_9
+    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   }
 }
 
