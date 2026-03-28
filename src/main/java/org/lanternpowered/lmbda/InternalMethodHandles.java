@@ -12,7 +12,7 @@ package org.lanternpowered.lmbda;
 import static java.util.Objects.requireNonNull;
 import static org.lanternpowered.lmbda.InternalUtilities.getPackageName;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 
 import java.lang.invoke.MethodHandle;

@@ -9,9 +9,9 @@
  */
 package org.lanternpowered.lmbda;
 
-import static java.util.Objects.requireNonNull;
+import org.jspecify.annotations.NonNull;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.invoke.MethodHandles;
 import java.security.ProtectionDomain;

@@ -9,7 +9,7 @@
  */
 package org.lanternpowered.lmbda;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;

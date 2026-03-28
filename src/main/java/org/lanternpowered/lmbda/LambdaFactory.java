@@ -9,7 +9,7 @@
  */
 package org.lanternpowered.lmbda;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.invoke.MethodHandle;
 import java.util.function.BiConsumer;
@@ -715,7 +715,7 @@ public final class LambdaFactory {
    * @param <T>          The functional interface type
    * @return The constructed function
    */
-  public static <@NonNull T> T create(@NonNull LambdaType<T> lambdaType, @NonNull MethodHandle methodHandle) {
+  public static <T> @NonNull T create(@NonNull LambdaType<T> lambdaType, @NonNull MethodHandle methodHandle) {
     return InternalLambdaFactory.create(lambdaType, methodHandle);
   }
 

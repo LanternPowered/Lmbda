@@ -9,8 +9,6 @@
  */
 package org.lanternpowered.lmbda;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
@@ -30,10 +28,10 @@ final class JavaLambdaFactory {
    * @param <T>          The lambda type
    * @return The lambda function instance
    */
-  static <@NonNull T> T create(
-    @NonNull LambdaType<T> lambdaType,
-    MethodHandles.@NonNull Lookup lookup,
-    @NonNull MethodHandle methodHandle
+  static <T> T create(
+    LambdaType<T> lambdaType,
+    MethodHandles.Lookup lookup,
+    MethodHandle methodHandle
   ) throws Throwable {
     // Generate the lambda class
     CallSite callSite = LambdaMetafactory.metafactory(lookup,

@@ -9,10 +9,10 @@
  */
 package org.lanternpowered.lmbda;
 
-import static java.util.Objects.requireNonNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import static java.util.Objects.requireNonNull;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
@@ -23,8 +23,10 @@ import java.util.Objects;
 /**
  * Represents a function interface or abstract class that can be implemented by a generated
  * function.
+ *
+ * @param <T> The type of the function
  */
-public abstract class LambdaType<@NonNull T> {
+public abstract class LambdaType<T> {
 
   /**
    * Constructs a new {@link LambdaType} from the given function interface or abstract class.
@@ -37,7 +39,7 @@ public abstract class LambdaType<@NonNull T> {
    * @return The lambda type
    * @throws IllegalArgumentException If no valid functional method could be found
    */
-  public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Class<T> functionType) {
+  public static <T> @NonNull LambdaType<T> of(@NonNull Class<T> functionType) {
     requireNonNull(functionType, "functionType");
     return new Simple<>(functionType);
   }
@@ -56,7 +58,7 @@ public abstract class LambdaType<@NonNull T> {
    * @return The lambda type
    * @throws IllegalArgumentException If no valid functional method could be found
    */
-  public static <@NonNull T> @NonNull LambdaType<T> of(@NonNull Type functionType) {
+  public static <T> @NonNull LambdaType<T> of(@NonNull Type functionType) {
     requireNonNull(functionType, "functionType");
     return new Simple<>(functionType);
   }
@@ -64,7 +66,7 @@ public abstract class LambdaType<@NonNull T> {
   /**
    * A simple implementation.
    */
-  private static final class Simple<@NonNull T> extends LambdaType<T> {
+  private static final class Simple<T> extends LambdaType<T> {
 
     /**
      * Constructs a new {@link LambdaType}.
