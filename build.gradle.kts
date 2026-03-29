@@ -162,6 +162,9 @@ jreleaser {
     github {
       skipRelease = false
       skipTag = false
+      prerelease {
+        enabled = false
+      }
     }
   }
 }
