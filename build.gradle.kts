@@ -4,7 +4,7 @@ import org.jreleaser.model.Active
 plugins {
   java
   `maven-publish`
-  id("org.jreleaser") version "1.17.0"
+  id("org.jreleaser") version "1.23.0"
   kotlin("jvm") version libs.versions.kotlin.core
   id("me.champeau.jmh") version libs.versions.jmh
   id("org.cadixdev.licenser") version libs.versions.licenser
@@ -158,13 +158,11 @@ jreleaser {
       }
     }
   }
+  val snapshot = project.version.toString().endsWith("-SNAPSHOT")
   release {
     github {
-      skipRelease = false
-      skipTag = false
-      prerelease {
-        enabled = false
-      }
+      skipRelease = snapshot
+      skipTag = snapshot
     }
   }
 }
