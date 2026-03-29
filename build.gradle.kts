@@ -158,9 +158,11 @@ jreleaser {
       }
     }
   }
+  val snapshot = project.version.get().endsWith("-SNAPSHOT")
   release {
     github {
-      enabled = !project.version.get().endsWith("-SNAPSHOT")
+      skipRelease = snapshot
+      skipTag = snapshot
     }
   }
 }
