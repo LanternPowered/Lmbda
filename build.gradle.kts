@@ -160,9 +160,7 @@ jreleaser {
   }
   release {
     github {
-      enabled = !project.version.toString().endsWith("-SNAPSHOT")
-      skipRelease = false
-      skipTag = false
+      enabled = !project.version.get().endsWith("-SNAPSHOT")
     }
   }
 }
