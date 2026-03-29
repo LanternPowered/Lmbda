@@ -158,11 +158,11 @@ jreleaser {
       }
     }
   }
-  val snapshot = project.version.toString().endsWith("-SNAPSHOT")
   release {
     github {
-      skipRelease = snapshot
-      skipTag = snapshot
+      enabled = !project.version.toString().endsWith("-SNAPSHOT")
+      skipRelease = false
+      skipTag = false
     }
   }
 }
