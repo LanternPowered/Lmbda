@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "org.lanternpowered"
-version = "3.0.0-SNAPSHOT"
+version = "3.0.0"
 
 repositories {
   mavenCentral()
@@ -160,8 +160,8 @@ jreleaser {
   }
   release {
     github {
-      skipRelease = true
-      skipTag = true
+      skipRelease = false
+      skipTag = false
     }
   }
 }
